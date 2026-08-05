@@ -1,0 +1,12 @@
+.idea/
+target/
+build/
+.gradle/
+*.iml
+.vscode/
+
+.env
+logs/
+
+**/target/
+**/build/

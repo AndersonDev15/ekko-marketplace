@@ -1,0 +1,135 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+
+          httpclient:
+            connect-timeout: 5000
+            response-timeout: 10s
+
+          discovery:
+            locator:
+              enabled: false
+              lower-case-service-id: true
+          globalcors:
+            corsConfigurations:
+              '[/**]':
+                allowedOrigins:
+                  - ${FRONTEND_URL:http://localhost:4200}
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+          routes:
+            - id: seller-service
+              uri: lb://seller-service
+              predicates:
+                - Path=/api/sellers/**,/api/admin/sellers/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: seller-cb
+                    fallbackUri: forward:/fallback/sellers
+                - StripPrefix=1
+
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: product-cb
+                    fallbackUri: forward:/fallback/products
+                - StripPrefix=1
+
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: order-cb
+                    fallbackUri: forward:/fallback/orders
+                - StripPrefix=1
+
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: payment-cb
+                    fallbackUri: forward:/fallback/payments
+                - StripPrefix=1
+
+            - id: review-service
+              uri: lb://review-service
+              predicates:
+                - Path=/api/reviews/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: review-cb
+                - StripPrefix=1
+
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notification-cb
+                - StripPrefix=1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      seller-cb:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+
+  timelimiter:
+    instances:
+      seller-cb:
+        timeout-duration: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    reactor.netty.http.client: DEBUG
+    reactor.netty.http.server: DEBUG
