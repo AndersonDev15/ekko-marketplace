@@ -18,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 
 import java.sql.SQLException;
 import java.util.Optional;
@@ -45,6 +47,12 @@ class SellerProfileServiceTest {
 
     @Mock
     private SellerMapper sellerMapper;
+
+    @Mock
+    private PlatformTransactionManager transactionManager;
+
+    @Mock
+    private TransactionStatus transactionStatus;
 
     @InjectMocks
     private SellerProfileService sellerProfileService;
@@ -78,6 +86,7 @@ class SellerProfileServiceTest {
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenAnswer(inv -> inv.getArgument(0));
             when(metricsRepository.saveAndFlush(any(SellerMetrics.class))).thenAnswer(inv -> inv.getArgument(0));
             when(sellerMapper.toResponse(any(Seller.class))).thenReturn(expected);
+            when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
 
             SellerResponse result = sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL);
 
@@ -102,6 +111,7 @@ class SellerProfileServiceTest {
                     .thenReturn(Optional.empty(), Optional.of(existing));
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(race);
             when(sellerMapper.toResponse(existing)).thenReturn(expected);
+            when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
 
             SellerResponse result = sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL);
 
@@ -116,6 +126,7 @@ class SellerProfileServiceTest {
                     "uk_sellers_keycloak_id", "40001");
             when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.empty());
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(violation);
+            when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
 
             assertThrows(DataIntegrityViolationException.class,
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
@@ -129,6 +140,21 @@ class SellerProfileServiceTest {
                     "uk_sellers_email", "23505");
             when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.empty());
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(violation);
+            when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
+
+            assertThrows(DataIntegrityViolationException.class,
+                    () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
+
+            verify(metricsRepository, never()).saveAndFlush(any(SellerMetrics.class));
+        }
+
+        @Test
+        void carrera_conCausaNoSql_relanzaExcepcion() {
+            DataIntegrityViolationException violation =
+                    new DataIntegrityViolationException("stmt", new RuntimeException("boom"));
+            when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.empty());
+            when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(violation);
+            when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
 
             assertThrows(DataIntegrityViolationException.class,
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));

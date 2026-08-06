@@ -145,6 +145,53 @@ class SellerBankAccountServiceTest {
         }
 
         @Test
+        void dataIntegrityViolation_conOtroError_relanzaExcepcion() {
+            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            SQLException sql = new SQLException(
+                    "value too long for type character varying(50)", "22001");
+            DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
+            when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
+            when(bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
+                    SELLER_ID, REQUEST.bankName(), REQUEST.accountNumber())).thenReturn(false);
+            when(bankRepository.existsBySellerId(SELLER_ID)).thenReturn(false);
+            when(bankRepository.save(any(SellerBankAccount.class))).thenThrow(violation);
+
+            assertThrows(DataIntegrityViolationException.class,
+                    () -> sellerBankAccountService.addBankAccount(SELLER_ID, REQUEST));
+        }
+
+        @Test
+        void dataIntegrityViolation_conConstraintDistinta_relanzaExcepcion() {
+            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            SQLException sql = new SQLException(
+                    "value too long for type character varying(50)", "23505");
+            DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
+            when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
+            when(bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
+                    SELLER_ID, REQUEST.bankName(), REQUEST.accountNumber())).thenReturn(false);
+            when(bankRepository.existsBySellerId(SELLER_ID)).thenReturn(false);
+            when(bankRepository.save(any(SellerBankAccount.class))).thenThrow(violation);
+
+            assertThrows(DataIntegrityViolationException.class,
+                    () -> sellerBankAccountService.addBankAccount(SELLER_ID, REQUEST));
+        }
+
+        @Test
+        void dataIntegrityViolation_conCausaNoSql_relanzaExcepcion() {
+            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            DataIntegrityViolationException violation =
+                    new DataIntegrityViolationException("stmt", new RuntimeException("boom"));
+            when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
+            when(bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
+                    SELLER_ID, REQUEST.bankName(), REQUEST.accountNumber())).thenReturn(false);
+            when(bankRepository.existsBySellerId(SELLER_ID)).thenReturn(false);
+            when(bankRepository.save(any(SellerBankAccount.class))).thenThrow(violation);
+
+            assertThrows(DataIntegrityViolationException.class,
+                    () -> sellerBankAccountService.addBankAccount(SELLER_ID, REQUEST));
+        }
+
+        @Test
         void vendedorInexistente_lanzaSellerNotFound() {
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.empty());
 

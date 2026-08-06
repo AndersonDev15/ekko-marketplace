@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/sellers/admin")
+@RequestMapping("/admin/sellers")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminSellerController {

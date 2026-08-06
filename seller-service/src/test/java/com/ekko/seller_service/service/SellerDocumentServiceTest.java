@@ -131,6 +131,35 @@ class SellerDocumentServiceTest {
             assertThrows(DocumentAlreadyPendingException.class,
                     () -> sellerDocumentService.addDocument(SELLER_ID, REQUEST));
         }
+
+        @Test
+        void dataIntegrityViolation_conConstraintDistinta_relanzaExcepcion() {
+            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            SQLException sql = new SQLException(
+                    "duplicate key value violates unique constraint \"uk_sellers_email\"", "23505");
+            DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+            when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
+            when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(false);
+            when(documentRepository.saveAndFlush(any(SellerDocument.class))).thenThrow(violation);
+
+            assertThrows(DataIntegrityViolationException.class,
+                    () -> sellerDocumentService.addDocument(SELLER_ID, REQUEST));
+        }
+
+        @Test
+        void dataIntegrityViolation_conCausaNoSql_relanzaExcepcion() {
+            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            DataIntegrityViolationException violation =
+                    new DataIntegrityViolationException("stmt", new RuntimeException("boom"));
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+            when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
+            when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(false);
+            when(documentRepository.saveAndFlush(any(SellerDocument.class))).thenThrow(violation);
+
+            assertThrows(DataIntegrityViolationException.class,
+                    () -> sellerDocumentService.addDocument(SELLER_ID, REQUEST));
+        }
     }
 
     @Nested
