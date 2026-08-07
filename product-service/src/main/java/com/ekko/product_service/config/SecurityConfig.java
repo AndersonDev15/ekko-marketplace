@@ -29,6 +29,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/catalog/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/brands").permitAll()
+                        // TODO: proteger con client credentials de SERVICE_ORDER (order-service)
+                        // cuando se configure el client de servicio en Keycloak.
+                        .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth

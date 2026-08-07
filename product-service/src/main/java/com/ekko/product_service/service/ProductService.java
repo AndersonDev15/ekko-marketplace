@@ -16,12 +16,15 @@ import com.ekko.product_service.exception.InvalidProductStatusException;
 import com.ekko.product_service.exception.NoActiveVariantException;
 import com.ekko.product_service.exception.NoPrimaryImageException;
 import com.ekko.product_service.exception.ProductAlreadyDeletedException;
+import com.ekko.product_service.exception.ProductNotAvailableException;
 import com.ekko.product_service.exception.ProductNotFoundException;
+import com.ekko.product_service.exception.VariantNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
 import com.ekko.product_service.repository.ProductRepository;
+import com.ekko.product_service.repository.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +42,7 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final ProductAttributeRepository productAttributeRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
@@ -94,9 +98,7 @@ public class ProductService {
         }
 
         ProductStatus status = product.getStatus();
-        if (status != ProductStatus.DRAFT
-                && status != ProductStatus.REJECTED
-                && status != ProductStatus.ACTIVE) {
+        if (status != ProductStatus.DRAFT && status != ProductStatus.REJECTED) {
             throw new InvalidProductStatusException();
         }
 
@@ -188,6 +190,16 @@ public class ProductService {
     public ProductDetailResponse getProductById(UUID productId, UUID sellerKeycloakId) {
         Product product = ownershipValidator.validate(productId, sellerKeycloakId);
         return productMapper.toDetailResponse(product);
+    }
+
+    @Transactional(readOnly = true)
+    public void verifyPurchasable(UUID variantId) {
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(VariantNotFoundException::new);
+
+        if (variant.getProduct().getStatus() != ProductStatus.ACTIVE) {
+            throw new ProductNotAvailableException();
+        }
     }
 
     private Brand resolveBrand(UUID brandId) {

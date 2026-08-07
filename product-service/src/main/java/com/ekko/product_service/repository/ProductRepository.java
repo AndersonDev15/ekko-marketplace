@@ -4,12 +4,16 @@ import com.ekko.product_service.entity.Product;
 import com.ekko.product_service.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ProductRepository extends JpaRepository<Product, UUID> {
+public interface ProductRepository
+        extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
 
     boolean existsBySellerKeycloakIdAndSlug(UUID sellerKeycloakId, String slug);
 
@@ -21,4 +25,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             ProductStatus status);
 
     Page<Product> findByStatusAndDeletedAtIsNull(ProductStatus status, Pageable pageable);
+
+    Optional<Product> findBySlugAndStatusAndDeletedAtIsNull(String slug, ProductStatus status);
+
+    boolean existsByCategoryIdAndStatusAndDeletedAtIsNull(UUID categoryId, ProductStatus status);
+
+    @Override
+    @EntityGraph(attributePaths = {"variants.inventory", "brand", "category"})
+    Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 }

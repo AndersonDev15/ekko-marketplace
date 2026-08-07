@@ -18,12 +18,15 @@ import com.ekko.product_service.exception.InvalidProductStatusException;
 import com.ekko.product_service.exception.NoActiveVariantException;
 import com.ekko.product_service.exception.NoPrimaryImageException;
 import com.ekko.product_service.exception.ProductAlreadyDeletedException;
+import com.ekko.product_service.exception.ProductNotAvailableException;
 import com.ekko.product_service.exception.ProductNotFoundException;
+import com.ekko.product_service.exception.VariantNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
 import com.ekko.product_service.repository.ProductRepository;
+import com.ekko.product_service.repository.ProductVariantRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -46,6 +49,7 @@ import static com.ekko.product_service.util.TestConstants.CATEGORY_ID;
 import static com.ekko.product_service.util.TestConstants.PRODUCT_NAME;
 import static com.ekko.product_service.util.TestConstants.SELLER_KEYCLOAK_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -63,6 +67,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private ProductVariantRepository productVariantRepository;
 
     @Mock
     private ProductAttributeRepository productAttributeRepository;
@@ -232,6 +239,36 @@ class ProductServiceTest {
     }
 
     @Test
+    void updateProduct_noPermiteModificarEnEstadoPendingReview() {
+        Product product = ProductTestDataBuilder.aProduct()
+                .withStatus(ProductStatus.PENDING_REVIEW).build();
+        UpdateProductRequest request = new UpdateProductRequest(
+                "Nuevo nombre", null, null, null);
+
+        when(ownershipValidator.validate(productId, sellerId)).thenReturn(product);
+
+        assertThrows(InvalidProductStatusException.class,
+                () -> productService.updateProduct(productId, request, sellerId));
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void updateProduct_noPermiteModificarEnEstadoActive() {
+        Product product = ProductTestDataBuilder.aProduct()
+                .withStatus(ProductStatus.ACTIVE).build();
+        UpdateProductRequest request = new UpdateProductRequest(
+                "Nuevo nombre", null, null, null);
+
+        when(ownershipValidator.validate(productId, sellerId)).thenReturn(product);
+
+        assertThrows(InvalidProductStatusException.class,
+                () -> productService.updateProduct(productId, request, sellerId));
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
     void updateProduct_lanzaExcepcionSiElProductoEstaEliminado() {
         Product product = ProductTestDataBuilder.aProduct()
                 .withDeletedAt(LocalDateTime.now())
@@ -394,6 +431,39 @@ class ProductServiceTest {
         assertSame(detail, result);
         verify(ownershipValidator).validate(productId, sellerId);
         verify(productMapper).toDetailResponse(product);
+    }
+
+    // ------------------------------------------------------------------- verifyPurchasable
+
+    @Test
+    void verifyPurchasable_varianteNoExisteLanzaNotFoundException() {
+        when(productVariantRepository.findById(any())).thenReturn(Optional.empty());
+
+        assertThrows(VariantNotFoundException.class,
+                () -> productService.verifyPurchasable(productId));
+    }
+
+    @Test
+    void verifyPurchasable_productoNoActivoLanzaNotAvailable() {
+        ProductVariant variant = ProductVariantTestDataBuilder.aVariant().build();
+        Product product = ProductTestDataBuilder.aProduct().withStatus(ProductStatus.DRAFT).build();
+        variant.setProduct(product);
+
+        when(productVariantRepository.findById(any())).thenReturn(Optional.of(variant));
+
+        assertThrows(ProductNotAvailableException.class,
+                () -> productService.verifyPurchasable(productId));
+    }
+
+    @Test
+    void verifyPurchasable_productoActivoPermiteCompra() {
+        ProductVariant variant = ProductVariantTestDataBuilder.aVariant().build();
+        Product product = ProductTestDataBuilder.aProduct().withStatus(ProductStatus.ACTIVE).build();
+        variant.setProduct(product);
+
+        when(productVariantRepository.findById(any())).thenReturn(Optional.of(variant));
+
+        assertDoesNotThrow(() -> productService.verifyPurchasable(productId));
     }
 
     // ------------------------------------------------------------------- helpers

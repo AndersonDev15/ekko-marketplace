@@ -61,6 +61,9 @@ public class ProductVariant {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY)
     @Builder.Default
     private List<ProductVariantAttribute> attributes = new ArrayList<>();

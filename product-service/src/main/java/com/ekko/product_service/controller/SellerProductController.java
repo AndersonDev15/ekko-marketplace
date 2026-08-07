@@ -5,6 +5,7 @@ import com.ekko.product_service.dto.request.UpdateProductRequest;
 import com.ekko.product_service.dto.response.ProductDetailResponse;
 import com.ekko.product_service.dto.response.ProductResponse;
 import com.ekko.product_service.service.ProductService;
+import com.ekko.product_service.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -37,7 +38,7 @@ public class SellerProductController {
             @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal Jwt jwt) {
         ProductResponse response =
-                productService.createProduct(request, keycloakId(jwt));
+                productService.createProduct(request, JwtUtils.keycloakId(jwt));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -46,14 +47,14 @@ public class SellerProductController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(productService.getMyProducts(keycloakId(jwt), page, size));
+        return ResponseEntity.ok(productService.getMyProducts(JwtUtils.keycloakId(jwt), page, size));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetailResponse> getProductById(
             @PathVariable UUID id,
             @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(productService.getProductById(id, keycloakId(jwt)));
+        return ResponseEntity.ok(productService.getProductById(id, JwtUtils.keycloakId(jwt)));
     }
 
     @PutMapping("/{id}")
@@ -61,14 +62,14 @@ public class SellerProductController {
             @PathVariable UUID id,
             @RequestBody UpdateProductRequest request,
             @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(productService.updateProduct(id, request, keycloakId(jwt)));
+        return ResponseEntity.ok(productService.updateProduct(id, request, JwtUtils.keycloakId(jwt)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> softDeleteProduct(
             @PathVariable UUID id,
             @AuthenticationPrincipal Jwt jwt) {
-        productService.softDeleteProduct(id, keycloakId(jwt));
+        productService.softDeleteProduct(id, JwtUtils.keycloakId(jwt));
         return ResponseEntity.noContent().build();
     }
 
@@ -76,11 +77,7 @@ public class SellerProductController {
     public ResponseEntity<Void> submitForReview(
             @PathVariable UUID id,
             @AuthenticationPrincipal Jwt jwt) {
-        productService.submitForReview(id, keycloakId(jwt));
+        productService.submitForReview(id, JwtUtils.keycloakId(jwt));
         return ResponseEntity.noContent().build();
-    }
-
-    private UUID keycloakId(Jwt jwt) {
-        return UUID.fromString(jwt.getSubject());
     }
 }
