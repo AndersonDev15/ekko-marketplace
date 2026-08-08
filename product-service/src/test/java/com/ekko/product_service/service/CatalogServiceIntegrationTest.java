@@ -7,6 +7,7 @@ import com.ekko.product_service.builder.ProductTestDataBuilder;
 import com.ekko.product_service.config.AbstractPostgresIntegrationTest;
 import com.ekko.product_service.dto.request.CreateVariantRequest;
 import com.ekko.product_service.dto.request.ProductFiltersRequest;
+import com.ekko.product_service.dto.response.ProductDetailResponse;
 import com.ekko.product_service.dto.response.ProductSummaryResponse;
 import com.ekko.product_service.entity.Brand;
 import com.ekko.product_service.entity.Category;
@@ -16,6 +17,7 @@ import com.ekko.product_service.entity.ProductImage;
 import com.ekko.product_service.entity.ProductVariant;
 import com.ekko.product_service.enums.ProductSortOption;
 import com.ekko.product_service.enums.ProductStatus;
+import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductImageRepository;
@@ -133,6 +135,15 @@ class CatalogServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void searchProducts_precioMinimoMayorQueMaximoLanzaError() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.ekko.product_service.exception.InvalidPriceRangeException.class,
+                () -> searchProducts(new ProductFiltersRequest(
+                        null, null, null, new BigDecimal("500.00"), new BigDecimal("100.00"), null),
+                        ProductSortOption.RECENT));
+    }
+
+    @Test
     void searchProducts_filtraPorNombre() {
         Product product = persistActiveProduct();
         product.setName("iPhone 16 Pro");
@@ -144,6 +155,26 @@ class CatalogServiceIntegrationTest extends AbstractPostgresIntegrationTest {
                 ProductSortOption.RECENT);
 
         assertTrue(result.getContent().stream().anyMatch(s -> s.id().equals(product.getId())));
+    }
+
+    @Test
+    void getProductDetail_devuelveDetalleDelProductoActivo() {
+        Product product = persistActiveProduct();
+        persistVariantWithStock(product, new BigDecimal("150.00"));
+        attachPrimaryImage(product);
+
+        ProductDetailResponse detail = catalogService.getProductDetail(product.getSlug());
+
+        assertEquals(product.getId(), detail.id());
+        assertEquals(product.getName(), detail.name());
+        assertEquals(1, detail.variants().size());
+        assertEquals(1, detail.images().size());
+    }
+
+    @Test
+    void getProductDetail_noExisteLanzaNotFound() {
+        org.junit.jupiter.api.Assertions.assertThrows(ProductNotFoundException.class,
+                () -> catalogService.getProductDetail("no-existe-" + UUID.randomUUID()));
     }
 
     @Test

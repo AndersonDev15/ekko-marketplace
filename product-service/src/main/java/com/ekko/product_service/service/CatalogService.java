@@ -9,6 +9,7 @@ import com.ekko.product_service.entity.ProductImage;
 import com.ekko.product_service.entity.ProductVariant;
 import com.ekko.product_service.enums.ProductSortOption;
 import com.ekko.product_service.enums.ProductStatus;
+import com.ekko.product_service.exception.InvalidPriceRangeException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.repository.ProductRepository;
@@ -38,6 +39,11 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Page<ProductSummaryResponse> searchProducts(ProductFiltersRequest filters, int page, int size,
                                                        ProductSortOption sort) {
+        if (filters != null && filters.minPrice() != null && filters.maxPrice() != null
+                && filters.minPrice().compareTo(filters.maxPrice()) > 0) {
+            throw new InvalidPriceRangeException();
+        }
+
         Specification<Product> spec = baseSpecification(filters);
 
         Pageable pageable = buildPageable(page, size, sort);

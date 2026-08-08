@@ -1,0 +1,4 @@
+ALTER TYPE order_status RENAME VALUE 'PAID' TO 'CONFIRMED';
+ALTER TYPE order_status RENAME VALUE 'COMPLETED' TO 'DELIVERED';
+
+ALTER TABLE order_items RENAME COLUMN seller_id TO seller_keycloak_id;

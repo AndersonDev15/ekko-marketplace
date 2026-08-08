@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -44,9 +44,9 @@ public class BrandController {
         return ResponseEntity.ok(brandService.updateBrand(id, request));
     }
 
-    @PatchMapping("/admin/brands/{id}/deactivate")
+    @DeleteMapping("/admin/brands/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deactivateBrand(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteBrand(@PathVariable UUID id) {
         brandService.deactivateBrand(id);
         return ResponseEntity.noContent().build();
     }
