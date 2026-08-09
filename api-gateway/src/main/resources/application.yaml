@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: api-gateway
 
@@ -10,6 +13,25 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
+
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${KEYCLOAK_CLIENT_ID:ekko-bff}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - email
+
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+
+
 
   cloud:
     gateway:
@@ -38,6 +60,12 @@ spring:
                 allowedHeaders: "*"
                 allowCredentials: true
           routes:
+            - id: keycloak-userinfo-test
+              uri: http://localhost:8180
+              predicates:
+                - Path=/test/relay
+              filters:
+                - SetPath=/realms/ekko/protocol/openid-connect/userinfo
             - id: seller-service
               uri: lb://seller-service
               predicates:
@@ -104,10 +132,7 @@ spring:
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
-  instance:
-    prefer-ip-address: true
+    enabled: false
 
 resilience4j:
   circuitbreaker:

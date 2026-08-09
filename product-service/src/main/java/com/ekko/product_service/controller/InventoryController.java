@@ -26,13 +26,6 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
-    @PostMapping("/internal/inventory/reserve")
-    // TODO: configurar seguridad SERVICE_ORDER en Keycloak (client credentials flow).
-    // Por ahora el endpoint queda SIN @PreAuthorize hasta configurar el client en Keycloak.
-    public ResponseEntity<Void> reserve(@RequestBody InventoryQuantityRequest request) {
-        inventoryService.reserveStock(request.variantId(), request.quantity());
-        return ResponseEntity.ok().build();
-    }
 
     @PostMapping("/internal/inventory/confirm")
     // TODO: configurar seguridad SERVICE_ORDER en Keycloak (client credentials flow).

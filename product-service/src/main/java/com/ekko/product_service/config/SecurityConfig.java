@@ -33,9 +33,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/catalog/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/brands").permitAll()
                         .requestMatchers("/admin/brands/**").hasRole("ADMIN")
-                        // TODO: proteger con client credentials de SERVICE_ORDER (order-service)
-                        // cuando se configure el client de servicio en Keycloak.
-                        .requestMatchers("/internal/**").permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/internal/variants"
+                        ).hasRole("SERVICE_ORDER")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/internal/inventory/reserve"
+                        ).hasRole("SERVICE_ORDER")
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth
