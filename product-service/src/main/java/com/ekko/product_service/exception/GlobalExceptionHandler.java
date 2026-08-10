@@ -1,5 +1,6 @@
 package com.ekko.product_service.exception;
 
+import com.ekko.product_service.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +11,16 @@ import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientStock(InsufficientStockException ex) {
+        ErrorResponse body = new ErrorResponse(
+                "INSUFFICIENT_STOCK",
+                ex.getMessage(),
+                ex.getVariantId(),
+                HttpStatus.CONFLICT.value());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<Void> handleProductNotFound(ProductNotFoundException ex) {
@@ -93,7 +104,6 @@ public class GlobalExceptionHandler {
             NoPrimaryImageException.class,
             DuplicateSkuException.class,
             LastActiveVariantException.class,
-            InsufficientStockException.class,
             DuplicateSlugException.class,
             InactiveParentCategoryException.class,
             CyclicCategoryException.class,

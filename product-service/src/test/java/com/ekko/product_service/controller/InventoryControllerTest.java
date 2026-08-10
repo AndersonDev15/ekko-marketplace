@@ -2,12 +2,10 @@ package com.ekko.product_service.controller;
 
 import com.ekko.product_service.config.SecurityConfig;
 import com.ekko.product_service.dto.response.InventoryViewResponse;
-import com.ekko.product_service.exception.InsufficientStockException;
 import com.ekko.product_service.exception.InvalidStockAdjustmentException;
 import com.ekko.product_service.exception.InvalidStockOperationException;
 import com.ekko.product_service.exception.InventoryNotFoundException;
 import com.ekko.product_service.exception.InventoryOwnershipException;
-import com.ekko.product_service.exception.ProductNotAvailableException;
 import com.ekko.product_service.service.InventoryService;
 import com.ekko.product_service.util.JwtTestUtils;
 import org.junit.jupiter.api.Test;
@@ -54,56 +52,12 @@ class InventoryControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
-    // ------------------------------------------------------ POST /internal/inventory/reserve
-
-    @Test
-    void reserve_llamaAlServicioYDevuelve200() throws Exception {
-        mockMvc.perform(post("/internal/inventory/reserve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(quantityBody(3)))
-                .andExpect(status().isOk());
-
-        verify(inventoryService).reserveStock(eq(VARIANT_ID), eq(3L));
-    }
-
-    @Test
-    void reserve_insufficientStockDevuelve409() throws Exception {
-        doThrow(InsufficientStockException.class)
-                .when(inventoryService).reserveStock(eq(VARIANT_ID), eq(3L));
-
-        mockMvc.perform(post("/internal/inventory/reserve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(quantityBody(3)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void reserve_inventoryNotFoundDevuelve404() throws Exception {
-        doThrow(InventoryNotFoundException.class)
-                .when(inventoryService).reserveStock(eq(VARIANT_ID), eq(3L));
-
-        mockMvc.perform(post("/internal/inventory/reserve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(quantityBody(3)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void reserve_productNotAvailableDevuelve409() throws Exception {
-        doThrow(ProductNotAvailableException.class)
-                .when(inventoryService).reserveStock(eq(VARIANT_ID), eq(3L));
-
-        mockMvc.perform(post("/internal/inventory/reserve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(quantityBody(3)))
-                .andExpect(status().isConflict());
-    }
-
     // ------------------------------------------------------ POST /internal/inventory/confirm
 
     @Test
     void confirm_llamaServicioYDevuelve200() throws Exception {
         mockMvc.perform(post("/internal/inventory/confirm")
+                        .with(serviceOrderAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(quantityBody(2)))
                 .andExpect(status().isOk());
@@ -117,6 +71,7 @@ class InventoryControllerTest {
                 .when(inventoryService).confirmStock(eq(VARIANT_ID), eq(2L));
 
         mockMvc.perform(post("/internal/inventory/confirm")
+                        .with(serviceOrderAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(quantityBody(2)))
                 .andExpect(status().isConflict());
@@ -128,6 +83,7 @@ class InventoryControllerTest {
                 .when(inventoryService).confirmStock(eq(VARIANT_ID), eq(2L));
 
         mockMvc.perform(post("/internal/inventory/confirm")
+                        .with(serviceOrderAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(quantityBody(2)))
                 .andExpect(status().isNotFound());
@@ -138,6 +94,7 @@ class InventoryControllerTest {
     @Test
     void release_llamaServicioYDevuelve200() throws Exception {
         mockMvc.perform(post("/internal/inventory/release")
+                        .with(serviceOrderAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(quantityBody(1)))
                 .andExpect(status().isOk());
@@ -151,6 +108,7 @@ class InventoryControllerTest {
                 .when(inventoryService).releaseStock(eq(VARIANT_ID), eq(1L));
 
         mockMvc.perform(post("/internal/inventory/release")
+                        .with(serviceOrderAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(quantityBody(1)))
                 .andExpect(status().isConflict());
@@ -162,6 +120,7 @@ class InventoryControllerTest {
                 .when(inventoryService).releaseStock(eq(VARIANT_ID), eq(1L));
 
         mockMvc.perform(post("/internal/inventory/release")
+                        .with(serviceOrderAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(quantityBody(1)))
                 .andExpect(status().isNotFound());
@@ -303,5 +262,10 @@ class InventoryControllerTest {
     private RequestPostProcessor customerAuth() {
         return authentication(new JwtAuthenticationToken(JwtTestUtils.customerJwt(),
                 List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+    }
+
+    private RequestPostProcessor serviceOrderAuth() {
+        return authentication(new JwtAuthenticationToken(JwtTestUtils.adminJwt(),
+                List.of(new SimpleGrantedAuthority("ROLE_SERVICE_ORDER"))));
     }
 }

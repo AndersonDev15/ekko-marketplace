@@ -1,5 +1,6 @@
 package com.ekko.product_service.service;
 
+import com.ekko.product_service.dto.request.StockReservationItem;
 import com.ekko.product_service.dto.response.InventoryViewResponse;
 import com.ekko.product_service.entity.Inventory;
 import com.ekko.product_service.entity.ProductVariant;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -57,7 +59,7 @@ public class InventoryService {
 
         long availableForSale = StockCalculator.getAvailableForSale(inventory);
         if (availableForSale < quantity) {
-            throw new InsufficientStockException();
+            throw new InsufficientStockException(variantId, quantity);
         }
 
         inventory.setStockReserved(inventory.getStockReserved() + quantity);
@@ -66,6 +68,13 @@ public class InventoryService {
 
         if (StockCalculator.isLowStock(inventory)) {
             // TODO: publicar LowStockEvent cuando se implemente messaging
+        }
+    }
+
+    @Transactional
+    public void reserveStockBatch(List<StockReservationItem> items) {
+        for (StockReservationItem item : items) {
+            reserveStock(item.variantId(), item.quantity());
         }
     }
 

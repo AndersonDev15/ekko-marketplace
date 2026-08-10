@@ -2,6 +2,8 @@ server:
   port: 8083
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: order-service
 
@@ -34,6 +36,30 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${KEYCLOAK_CLIENT_ID:order-service}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope:
+              - profile
+              - email
+
+        provider:
+          keycloak:
+            token-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/token
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:ekko}
+    password: ${RABBITMQ_PASSWORD:ekko123}
+
+services:
+ product-service:
+  url: http://localhost:8082
 
 management:
   endpoints:

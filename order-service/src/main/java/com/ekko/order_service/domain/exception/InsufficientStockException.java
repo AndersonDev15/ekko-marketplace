@@ -1,4 +1,4 @@
-package com.ekko.product_service.exception;
+package com.ekko.order_service.domain.exception;
 
 import java.util.UUID;
 
@@ -6,12 +6,6 @@ public class InsufficientStockException extends RuntimeException {
 
     private final UUID variantId;
     private final long requestedQuantity;
-
-    public InsufficientStockException(UUID variantId) {
-        super("Insufficient stock for variant: " + variantId);
-        this.variantId = variantId;
-        this.requestedQuantity = 0;
-    }
 
     public InsufficientStockException(UUID variantId, long requestedQuantity) {
         super("Insufficient stock for variant " + variantId + " (requested " + requestedQuantity + ")");

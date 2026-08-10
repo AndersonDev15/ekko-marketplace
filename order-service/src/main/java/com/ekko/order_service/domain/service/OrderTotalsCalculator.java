@@ -1,10 +1,12 @@
 package com.ekko.order_service.domain.service;
 
 import com.ekko.order_service.domain.model.OrderItem;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+@Component
 public class OrderTotalsCalculator {
 
     public OrderTotals calculate(List<OrderItem> items) {

@@ -1,4 +1,4 @@
-package com.ekko.order_service.infrastructure.persistence.adapter;
+package com.ekko.order_service.infrastructure.persistence.adapter.out;
 
 import com.ekko.order_service.domain.model.Order;
 import com.ekko.order_service.domain.port.out.OrderRepositoryPort;

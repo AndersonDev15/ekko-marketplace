@@ -4,6 +4,7 @@ import com.ekko.product_service.dto.response.ProductVariantInfo;
 import com.ekko.product_service.service.VariantQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/internal/variants")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('SERVICE_ORDER')")
 public class InternalVariantController {
 
     private final VariantQueryService variantQueryService;

@@ -1,9 +1,12 @@
 package com.ekko.order_service.domain.service;
 
+import org.springframework.stereotype.Component;
+
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+@Component
 public class OrderNumberGenerator {
 
     private static final String PREFIX = "EKK";
