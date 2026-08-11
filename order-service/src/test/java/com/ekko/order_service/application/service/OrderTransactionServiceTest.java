@@ -67,13 +67,73 @@ class OrderTransactionServiceTest {
                 any(), any(), any(), isNull(), eq("Order created"));
     }
 
-    private static Order anOrderBuilderWithId(UUID id) {
+    @Test
+    void cancelsOrderAndRecordsCancellationHistory() {
+        Order order = anOrder();
+        UUID savedId = UUID.randomUUID();
+        UUID changedBy = UUID.randomUUID();
+        Order saved = anOrderBuilderWithId(savedId);
+        when(orderRepositoryPort.save(order)).thenReturn(saved);
+
+        Order result = service.cancelOrder(
+                order, OrderChangeSource.CUSTOMER, changedBy, "Order cancelled");
+
+        assertSame(saved, result);
+        InOrder inOrder = inOrder(orderRepositoryPort, orderStatusHistoryPort);
+        inOrder.verify(orderRepositoryPort).save(order);
+        inOrder.verify(orderStatusHistoryPort).recordStatusChange(
+                savedId,
+                OrderStatus.CANCELLED,
+                OrderChangeSource.CUSTOMER,
+                changedBy,
+                "Order cancelled");
+    }
+
+    @Test
+    void doesNotRecordHistoryWhenCancellationFails() {
+        when(orderRepositoryPort.save(any(Order.class)))
+                .thenThrow(new RuntimeException("db failure"));
+
+        assertThrows(RuntimeException.class, () -> service.cancelOrder(
+                anOrder(), OrderChangeSource.ADMIN, null, "Order cancelled by admin"));
+
+        verify(orderStatusHistoryPort, never()).recordStatusChange(
+                any(), any(), any(), isNull(), eq("Order cancelled by admin"));
+    }
+
+    @Test
+    void changesStatusAndRecordsHistoryWithProvidedSource() {
+        Order order = anOrderBuilderWithStatus(OrderStatus.SHIPPED);
+        UUID savedId = UUID.randomUUID();
+        UUID changedBy = UUID.randomUUID();
+        Order saved = anOrderBuilderWithId(savedId, OrderStatus.SHIPPED);
+        when(orderRepositoryPort.save(order)).thenReturn(saved);
+
+        Order result = service.changeStatus(
+                order, OrderChangeSource.ADMIN, changedBy, "manual update");
+
+        assertSame(saved, result);
+        InOrder inOrder = inOrder(orderRepositoryPort, orderStatusHistoryPort);
+        inOrder.verify(orderRepositoryPort).save(order);
+        inOrder.verify(orderStatusHistoryPort).recordStatusChange(
+                savedId,
+                OrderStatus.SHIPPED,
+                OrderChangeSource.ADMIN,
+                changedBy,
+                "manual update");
+    }
+
+    private static Order anOrderBuilderWithStatus(OrderStatus status) {
+        return anOrderBuilderWithId(UUID.randomUUID(), status);
+    }
+
+    private static Order anOrderBuilderWithId(UUID id, OrderStatus status) {
         Order base = anOrder();
         return Order.builder()
                 .id(id)
                 .customerId(base.getCustomerId())
                 .guestEmail(base.getGuestEmail())
-                .status(base.getStatus())
+                .status(status)
                 .subtotal(base.getSubtotal())
                 .shippingCost(base.getShippingCost())
                 .discount(base.getDiscount())
@@ -85,5 +145,9 @@ class OrderTransactionServiceTest {
                 .createdAt(base.getCreatedAt())
                 .updatedAt(base.getUpdatedAt())
                 .build();
+    }
+
+    private static Order anOrderBuilderWithId(UUID id) {
+        return anOrderBuilderWithId(id, anOrder().getStatus());
     }
 }

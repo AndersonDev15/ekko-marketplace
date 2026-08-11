@@ -88,6 +88,7 @@ class OrderCreationServiceTest {
         return new OrderDraft(
                 CUSTOMER_KEYCLOAK_ID,
                 null,
+                "customer@example.com",
                 anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 2)),
                 null);
@@ -162,9 +163,51 @@ class OrderCreationServiceTest {
     }
 
     @Test
+    void publishesCustomerIdAndCustomerEmailForAuthenticatedCustomer() {
+        stubHappyPath();
+        when(orderTransactionService.commitOrder(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.execute(new OrderDraft(
+                CUSTOMER_KEYCLOAK_ID,
+                null,
+                "customer@example.com",
+                anOrderAddress(),
+                List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 2)),
+                null));
+
+        verify(orderEventPublisherPort).publishOrderCreated(argThat(event ->
+                CUSTOMER_KEYCLOAK_ID.equals(event.customerId())
+                        && "customer@example.com".equals(event.customerEmail())));
+    }
+
+    @Test
+    void publishesNullCustomerIdWithGuestEmailForGuestCheckout() {
+        when(orderNumberGenerator.generate()).thenReturn("EKK-20250809-AB12");
+        when(orderRepositoryPort.findByOrderNumber("EKK-20250809-AB12"))
+                .thenReturn(Optional.empty());
+        when(productServicePort.getVariantsInfo(anyList()))
+                .thenReturn(List.of(aProductVariant(10L)));
+        when(orderTransactionService.commitOrder(any(Order.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.execute(new OrderDraft(
+                null,
+                "guest@example.com",
+                "guest@example.com",
+                anOrderAddress(),
+                List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 1)),
+                null));
+
+        verify(orderEventPublisherPort).publishOrderCreated(argThat(event ->
+                event.customerId() == null
+                        && "guest@example.com".equals(event.customerEmail())));
+    }
+
+    @Test
     void rejectsDraftWithoutCustomerIdOrGuestEmail() {
         OrderDraft draft = new OrderDraft(
-                null, null, anOrderAddress(),
+                null, null, null, anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 1)), null);
 
         assertThrows(InvalidGuestEmailException.class, () -> service.execute(draft));
@@ -175,7 +218,7 @@ class OrderCreationServiceTest {
     @Test
     void rejectsBlankGuestEmail() {
         OrderDraft draft = new OrderDraft(
-                null, "   ", anOrderAddress(),
+                null, "   ", "   ", anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 1)), null);
 
         assertThrows(InvalidGuestEmailException.class, () -> service.execute(draft));
@@ -186,7 +229,7 @@ class OrderCreationServiceTest {
     @Test
     void rejectsEmptyItemsList() {
         OrderDraft draft = new OrderDraft(
-                CUSTOMER_KEYCLOAK_ID, null, anOrderAddress(), List.of(), null);
+                CUSTOMER_KEYCLOAK_ID, null, "customer@example.com", anOrderAddress(), List.of(), null);
 
         assertThrows(ProductVariantNotFoundException.class, () -> service.execute(draft));
         verifyNoInteractions(productServicePort, orderRepositoryPort,
@@ -313,6 +356,7 @@ class OrderCreationServiceTest {
         OrderDraft draft = new OrderDraft(
                 null,
                 " guest@example.com ",
+                "guest@example.com",
                 address,
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 1)),
                 null);

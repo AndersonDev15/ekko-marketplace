@@ -34,6 +34,7 @@ import static com.ekko.order_service.util.TestConstants.VARIANT_ID;
 import static com.ekko.order_service.util.TestConstants.VARIANT_SKU;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -60,6 +61,7 @@ class OrderCreationServiceIntegrationTest extends AbstractPostgresIntegrationTes
         whenVariantAvailable();
         OrderDraft draft = new OrderDraft(
                 CUSTOMER_KEYCLOAK_ID,
+                null,
                 null,
                 anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 2)),
@@ -91,6 +93,17 @@ class OrderCreationServiceIntegrationTest extends AbstractPostgresIntegrationTes
         assertEquals(created.getOrderNumber(), event.orderNumber());
         assertEquals(created.getStatus(), event.status());
         assertEquals(0, new BigDecimal("200.00").compareTo(event.total()));
+        assertEquals(CUSTOMER_KEYCLOAK_ID, event.customerId());
+        assertNull(event.customerEmail());
+
+        assertEquals(1, event.items().size());
+        OrderCreatedEvent.OrderItemPayload item = event.items().get(0);
+        assertEquals(VARIANT_ID, item.variantId());
+        assertEquals(PRODUCT_ID, item.productId());
+        assertEquals(2, item.quantity());
+        assertEquals(SELLER_KEYCLOAK_ID, item.sellerKeycloakId());
+        assertEquals(0, new BigDecimal("100.00").compareTo(item.priceSnapshot()));
+        assertEquals(0, new BigDecimal("200.00").compareTo(item.subtotal()));
     }
 
     @Test
@@ -99,6 +112,7 @@ class OrderCreationServiceIntegrationTest extends AbstractPostgresIntegrationTes
         OrderDraft draft = new OrderDraft(
                 null,
                 " guest@example.com ",
+                "guest@example.com",
                 anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 1)),
                 null);

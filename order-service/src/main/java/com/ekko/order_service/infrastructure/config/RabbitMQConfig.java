@@ -9,6 +9,8 @@ public class RabbitMQConfig {
 
     public static final String ORDER_EXCHANGE = "order.exchange";
     public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
+    public static final String ORDER_CANCELLED_ROUTING_KEY = "order.cancelled";
+    public static final String ORDER_STATUS_CHANGED_ROUTING_KEY = "order.status_changed";
 
     @Bean
     public DirectExchange orderExchange() {

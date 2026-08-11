@@ -1,5 +1,7 @@
 package com.ekko.order_service.domain.model;
 
+import com.ekko.order_service.domain.exception.InvalidOrderStatusTransitionException;
+import com.ekko.order_service.domain.policy.OrderStatusTransitionPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,4 +34,27 @@ public class Order {
     private OrderAddress address;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public void cancel() {
+        this.status = OrderStatus.CANCELLED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void ship(OrderStatusTransitionPolicy transitionPolicy) {
+        validateTransition(transitionPolicy, OrderStatus.SHIPPED);
+        this.status = OrderStatus.SHIPPED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void deliver(OrderStatusTransitionPolicy transitionPolicy) {
+        validateTransition(transitionPolicy, OrderStatus.DELIVERED);
+        this.status = OrderStatus.DELIVERED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    private void validateTransition(OrderStatusTransitionPolicy policy, OrderStatus to) {
+        if (!policy.isValidTransition(this.status, to)) {
+            throw new InvalidOrderStatusTransitionException(this.status, to);
+        }
+    }
 }

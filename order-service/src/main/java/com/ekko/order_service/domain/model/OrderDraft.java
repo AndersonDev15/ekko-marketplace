@@ -6,6 +6,7 @@ import java.util.UUID;
 public record OrderDraft(
         UUID customerId,
         String guestEmail,
+        String customerEmail,
         OrderAddress shippingAddress,
         List<OrderItemDraft> items,
         String notes

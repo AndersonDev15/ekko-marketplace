@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class OrderTransactionService {
@@ -26,6 +28,34 @@ public class OrderTransactionService {
                 OrderChangeSource.SYSTEM,
                 null,
                 "Order created");
+
+        return saved;
+    }
+
+    @Transactional
+    public Order cancelOrder(Order order, OrderChangeSource source, UUID changedBy, String notes) {
+        Order saved = orderRepositoryPort.save(order);
+
+        orderStatusHistoryPort.recordStatusChange(
+                saved.getId(),
+                OrderStatus.CANCELLED,
+                source,
+                changedBy,
+                notes);
+
+        return saved;
+    }
+
+    @Transactional
+    public Order changeStatus(Order order, OrderChangeSource source, UUID changedBy, String notes) {
+        Order saved = orderRepositoryPort.save(order);
+
+        orderStatusHistoryPort.recordStatusChange(
+                saved.getId(),
+                saved.getStatus(),
+                source,
+                changedBy,
+                notes);
 
         return saved;
     }

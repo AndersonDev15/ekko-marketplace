@@ -1,13 +1,13 @@
-package com.ekko.order_service.infrastructure.config;
+package com.ekko.payment_service.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,16 +26,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/test/product-variants").permitAll()
-                        .requestMatchers("/orders/**").permitAll()
-                        .requestMatchers("/admin/orders/**").permitAll()
+                        .requestMatchers("/webhooks/stripe").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(
-                                        jwtAuthenticationConverter()
-                                )
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
                         )
                 );
 
@@ -44,29 +40,17 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-
-        JwtAuthenticationConverter converter =
-                new JwtAuthenticationConverter();
-
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-
-            Map<String, Object> realmAccess =
-                    jwt.getClaim("realm_access");
-
-            if (realmAccess == null ||
-                    realmAccess.get("roles") == null) {
+            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+            if (realmAccess == null || realmAccess.get("roles") == null) {
                 return Collections.emptyList();
             }
-
-            List<String> roles =
-                    (List<String>) realmAccess.get("roles");
-
+            List<String> roles = (List<String>) realmAccess.get("roles");
             return roles.stream()
-                    .map(role ->
-                            new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());
         });
-
         return converter;
     }
 }

@@ -82,18 +82,28 @@ public class OrderCreationService implements CreateOrderUseCase {
                 .toList());
 
         Order saved = orderTransactionService.commitOrder(order);
-        orderEventPublisherPort.publishOrderCreated(toEvent(saved));
+        orderEventPublisherPort.publishOrderCreated(toEvent(saved, draft.customerEmail()));
         return saved;
     }
 
-    private OrderCreatedEvent toEvent(Order saved) {
+    private OrderCreatedEvent toEvent(Order saved, String customerEmail) {
         return new OrderCreatedEvent(
                 saved.getId(),
                 saved.getOrderNumber(),
-                saved.getGuestEmail(),
+                saved.getCustomerId(),
+                customerEmail,
                 saved.getTotal(),
                 saved.getStatus(),
-                saved.getCreatedAt());
+                saved.getCreatedAt(),
+                saved.getItems().stream()
+                        .map(item -> new OrderCreatedEvent.OrderItemPayload(
+                                item.variantId(),
+                                item.productId(),
+                                item.quantity(),
+                                item.sellerKeycloakId(),
+                                item.priceSnapshot(),
+                                item.subtotal()))
+                        .toList());
     }
 
     private void validateGuest(OrderDraft draft) {
