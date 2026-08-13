@@ -14,4 +14,6 @@ public record OrderDraft(
 
     public record OrderItemDraft(UUID variantId, long quantity) {
     }
+
+
 }
