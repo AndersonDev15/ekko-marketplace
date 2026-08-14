@@ -8,4 +8,8 @@ import java.util.UUID;
 public interface VendorStripeAccountRepositoryPort {
 
     Optional<VendorStripeAccount> findByVendorId(UUID vendorId);
+
+    Optional<VendorStripeAccount> findByStripeAccountId(String stripeAccountId);
+
+    VendorStripeAccount save(VendorStripeAccount account);
 }

@@ -12,6 +12,8 @@ public interface PaymentRepositoryPort {
 
     Optional<Payment> findById(UUID id);
 
+    Optional<Payment> findByOrderId(UUID orderId);
+
     Optional<Payment> findByOrderIdAndStatus(UUID orderId, PaymentStatus status);
 
     Optional<Payment> findByPaymentIntentId(String paymentIntentId);

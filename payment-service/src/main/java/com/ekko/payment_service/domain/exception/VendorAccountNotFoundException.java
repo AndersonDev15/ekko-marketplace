@@ -11,6 +11,11 @@ public class VendorAccountNotFoundException extends RuntimeException {
         this.vendorId = vendorId;
     }
 
+    public VendorAccountNotFoundException(String stripeAccountId) {
+        super("Stripe account not found for stripe account id " + stripeAccountId);
+        this.vendorId = null;
+    }
+
     public UUID getVendorId() {
         return vendorId;
     }

@@ -28,7 +28,7 @@ public class RefundService implements CreateRefundUseCase {
     @Override
     public Refund execute(CreateRefundCommand command) {
         Payment payment = paymentRepositoryPort.findById(command.paymentId())
-                .orElseThrow(() -> new PaymentNotFoundException(command.paymentId().toString()));
+                .orElseThrow(() -> new PaymentNotFoundException(command.paymentId()));
 
         assertRefundAllowed(payment);
         assertAmountWithinLimit(payment, command.amount());

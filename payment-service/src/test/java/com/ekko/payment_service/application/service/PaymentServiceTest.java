@@ -7,6 +7,7 @@ import com.ekko.payment_service.domain.model.InitiatePaymentCommand;
 import com.ekko.payment_service.domain.model.Payment;
 import com.ekko.payment_service.domain.model.PaymentInitiatedEvent;
 import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.model.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorAllocation;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
@@ -78,7 +79,7 @@ class PaymentServiceTest {
         when(paymentGatewayPort.resolveOrCreateCustomer("cus_existing", "customer@example.com"))
                 .thenReturn("cus_existing");
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ID))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ID, "acct_1", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ID, "acct_1", true)));
         when(paymentGatewayPort.createPaymentIntent(AMOUNT, "USD", "cus_existing", ORDER_ID.toString()))
                 .thenReturn("pi_123");
         when(paymentTransactionService.commitPayment(any(Payment.class)))
@@ -143,7 +144,7 @@ class PaymentServiceTest {
         when(paymentRepositoryPort.findByOrderIdAndStatus(ORDER_ID, PaymentStatus.SUCCEEDED))
                 .thenReturn(Optional.empty());
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ID))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ID, "acct_1", false)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ID, "acct_1", false)));
 
         VendorAccountNotActiveException ex = assertThrows(VendorAccountNotActiveException.class,
                 () -> paymentService.execute(command(List.of(
@@ -160,7 +161,7 @@ class PaymentServiceTest {
         when(paymentGatewayPort.resolveOrCreateCustomer(null, "guest@example.com"))
                 .thenReturn("cus_guest");
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ID))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ID, "acct_1", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ID, "acct_1", true)));
         when(paymentGatewayPort.createPaymentIntent(AMOUNT, "USD", "cus_guest", ORDER_ID.toString()))
                 .thenReturn("pi_123");
         when(paymentTransactionService.commitPayment(any(Payment.class)))
@@ -183,6 +184,18 @@ class PaymentServiceTest {
         verify(paymentEventPublisherPort).publishPaymentInitiated(captor.capture());
         assertNull(captor.getValue().customerId());
         assertTrue(captor.getValue().orderId().equals(ORDER_ID));
+    }
+
+    private VendorStripeAccount vendorAccount(UUID vendorId, String stripeAccountId, boolean chargesEnabled) {
+        return VendorStripeAccount.restore(
+                UUID.randomUUID(),
+                vendorId,
+                stripeAccountId,
+                chargesEnabled ? VendorAccountStatus.ACTIVE : VendorAccountStatus.PENDING,
+                chargesEnabled,
+                false,
+                LocalDateTime.now(),
+                LocalDateTime.now());
     }
 
     private InitiatePaymentCommand command(List<InitiatePaymentCommand.VendorGrossAmount> vendors) {

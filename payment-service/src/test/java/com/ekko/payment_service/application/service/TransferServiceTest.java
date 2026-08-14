@@ -4,6 +4,7 @@ import com.ekko.payment_service.domain.model.Payment;
 import com.ekko.payment_service.domain.model.PaymentStatus;
 import com.ekko.payment_service.domain.model.PaymentTransfer;
 import com.ekko.payment_service.domain.model.TransferStatus;
+import com.ekko.payment_service.domain.model.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorAllocation;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
@@ -67,9 +68,9 @@ class TransferServiceTest {
         when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
         when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ONE))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ONE, "acct_1", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ONE, "acct_1", true)));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_TWO, "acct_2", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_TWO, "acct_2", true)));
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any()))
                 .thenReturn("tr_1")
                 .thenReturn("tr_2");
@@ -96,7 +97,7 @@ class TransferServiceTest {
         when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
         when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ONE))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ONE, "acct_1", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ONE, "acct_1", true)));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
                 .thenReturn(Optional.empty());
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any())).thenReturn("tr_1");
@@ -117,9 +118,9 @@ class TransferServiceTest {
         when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
         when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ONE))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ONE, "acct_1", false)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ONE, "acct_1", false)));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_TWO, "acct_2", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_TWO, "acct_2", true)));
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any())).thenReturn("tr_2");
 
         service.execute(PAYMENT_ID);
@@ -138,9 +139,9 @@ class TransferServiceTest {
         when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
         when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ONE))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_ONE, "acct_1", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ONE, "acct_1", true)));
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
-                .thenReturn(Optional.of(new VendorStripeAccount(VENDOR_TWO, "acct_2", true)));
+                .thenReturn(Optional.of(vendorAccount(VENDOR_TWO, "acct_2", true)));
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any()))
                 .thenThrow(new PaymentGatewayException("boom"))
                 .thenReturn("tr_2");
@@ -179,6 +180,18 @@ class TransferServiceTest {
         when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.empty());
 
         assertThrows(IllegalStateException.class, () -> service.execute(PAYMENT_ID));
+    }
+
+    private VendorStripeAccount vendorAccount(UUID vendorId, String stripeAccountId, boolean chargesEnabled) {
+        return VendorStripeAccount.restore(
+                UUID.randomUUID(),
+                vendorId,
+                stripeAccountId,
+                chargesEnabled ? VendorAccountStatus.ACTIVE : VendorAccountStatus.PENDING,
+                chargesEnabled,
+                false,
+                LocalDateTime.now(),
+                LocalDateTime.now());
     }
 
     private Payment paymentWith(UUID... vendorIds) {

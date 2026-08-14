@@ -123,6 +123,11 @@ public static Payment initiate(UUID orderId, UUID customerId, String guestEmail,
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void markRefunded() {
+        this.status = PaymentStatus.REFUNDED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void addAllocations(List<VendorAllocation> newAllocations) {
         this.allocations.addAll(newAllocations);
     }

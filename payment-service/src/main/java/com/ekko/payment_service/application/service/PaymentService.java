@@ -83,7 +83,7 @@ public class PaymentService implements InitiatePaymentUseCase {
             VendorStripeAccount account = vendorStripeAccountRepositoryPort
                     .findByVendorId(vendor.vendorId())
                     .orElseThrow(() -> new VendorAccountNotFoundException(vendor.vendorId()));
-            if (!account.chargesEnabled()) {
+            if (!account.isChargesEnabled()) {
                 throw new VendorAccountNotActiveException(vendor.vendorId());
             }
             VendorAllocation allocation = applicationFeeCalculator.calculate(

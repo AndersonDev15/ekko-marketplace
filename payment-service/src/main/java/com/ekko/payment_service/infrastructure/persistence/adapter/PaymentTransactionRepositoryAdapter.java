@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentTransactionRepositoryAdapter implements PaymentTransactionRepositoryPort {
@@ -32,5 +35,13 @@ public class PaymentTransactionRepositoryAdapter implements PaymentTransactionRe
     @Transactional(readOnly = true)
     public boolean existsByStripeEventId(String stripeEventId) {
         return paymentTransactionJpaRepository.existsByStripeEventId(stripeEventId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PaymentTransaction> findByPaymentId(UUID paymentId) {
+        return paymentTransactionJpaRepository.findByPaymentId(paymentId).stream()
+                .map(paymentTransactionPersistenceMapper::toDomain)
+                .toList();
     }
 }

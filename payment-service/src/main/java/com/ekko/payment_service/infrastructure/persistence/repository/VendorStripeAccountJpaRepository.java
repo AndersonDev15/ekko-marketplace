@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface VendorStripeAccountJpaRepository extends JpaRepository<VendorStripeAccountEntity, UUID> {
 
     Optional<VendorStripeAccountEntity> findByVendorId(UUID vendorId);
+
+    Optional<VendorStripeAccountEntity> findByStripeAccountId(String stripeAccountId);
 }

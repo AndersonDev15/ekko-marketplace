@@ -45,6 +45,11 @@ stripe:
   api-key: ${STRIPE_API_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
 
+app:
+  stripe-onboarding:
+    refresh-url: ${STRIPE_ONBOARDING_REFRESH_URL:http://localhost:8084/vendor/onboarding/refresh}
+    return-url: ${STRIPE_ONBOARDING_RETURN_URL:http://localhost:8084/vendor/onboarding/return}
+
 management:
   endpoints:
     web:

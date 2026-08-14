@@ -68,6 +68,16 @@ public class Refund {
         this.stripeRefundId = stripeRefundId;
     }
 
+    public void markSucceeded() {
+        this.status = RefundStatus.SUCCEEDED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markFailed() {
+        this.status = RefundStatus.FAILED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public UUID getId() {
         return id;
     }

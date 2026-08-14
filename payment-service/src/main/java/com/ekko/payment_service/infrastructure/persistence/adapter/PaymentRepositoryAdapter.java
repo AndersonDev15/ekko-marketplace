@@ -38,6 +38,13 @@ public class PaymentRepositoryAdapter implements PaymentRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Payment> findByOrderId(UUID orderId) {
+        return paymentJpaRepository.findByOrderId(orderId)
+                .map(paymentPersistenceMapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Payment> findByOrderIdAndStatus(UUID orderId, PaymentStatus status) {
         return paymentJpaRepository.findByOrderIdAndStatus(orderId, status)
                 .map(paymentPersistenceMapper::toDomain);

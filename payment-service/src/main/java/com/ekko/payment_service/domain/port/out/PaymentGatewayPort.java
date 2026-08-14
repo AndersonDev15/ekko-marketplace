@@ -13,4 +13,8 @@ public interface PaymentGatewayPort {
     String createTransfer(BigDecimal amount, String currency, String stripeAccountId, String transferGroup);
 
     String createRefund(String paymentIntentId, BigDecimal amount, RefundReason reason);
+
+    String createConnectedAccount(String country, String email);
+
+    String createAccountLink(String stripeAccountId, String refreshUrl, String returnUrl);
 }

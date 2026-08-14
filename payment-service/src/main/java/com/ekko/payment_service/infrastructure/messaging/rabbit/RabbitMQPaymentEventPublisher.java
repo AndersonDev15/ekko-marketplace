@@ -4,6 +4,8 @@ import com.ekko.payment_service.domain.model.PaymentCancelledEvent;
 import com.ekko.payment_service.domain.model.PaymentCompletedEvent;
 import com.ekko.payment_service.domain.model.PaymentFailedEvent;
 import com.ekko.payment_service.domain.model.PaymentInitiatedEvent;
+import com.ekko.payment_service.domain.model.PaymentRefundFailedEvent;
+import com.ekko.payment_service.domain.model.PaymentRefundedEvent;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.infrastructure.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,24 @@ public class RabbitMQPaymentEventPublisher implements PaymentEventPublisherPort 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.PAYMENT_EXCHANGE,
                 RabbitMQConfig.PAYMENT_CANCELLED_ROUTING_KEY,
+                event
+        );
+    }
+
+    @Override
+    public void publishPaymentRefunded(PaymentRefundedEvent event) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.PAYMENT_EXCHANGE,
+                RabbitMQConfig.PAYMENT_REFUNDED_ROUTING_KEY,
+                event
+        );
+    }
+
+    @Override
+    public void publishPaymentRefundFailed(PaymentRefundFailedEvent event) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.PAYMENT_EXCHANGE,
+                RabbitMQConfig.PAYMENT_REFUND_FAILED_ROUTING_KEY,
                 event
         );
     }

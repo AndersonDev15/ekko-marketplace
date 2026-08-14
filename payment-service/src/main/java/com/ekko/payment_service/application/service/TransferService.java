@@ -48,7 +48,7 @@ public class TransferService implements ProcessTransfersUseCase {
                 .findByVendorId(allocation.vendorId())
                 .orElse(null);
 
-        if (account == null || !account.chargesEnabled()) {
+        if (account == null || !account.isChargesEnabled()) {
             PaymentTransfer transfer = PaymentTransfer.initiate(
                     payment.getId(),
                     allocation.vendorId(),
@@ -71,7 +71,7 @@ public class TransferService implements ProcessTransfersUseCase {
             String stripeTransferId = paymentGatewayPort.createTransfer(
                     allocation.netAmount(),
                     payment.getCurrency(),
-                    account.stripeAccountId(),
+                    account.getStripeAccountId(),
                     payment.getId().toString());
             transfer.markSucceeded(stripeTransferId);
         } catch (PaymentGatewayException e) {

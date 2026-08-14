@@ -159,6 +159,8 @@ class PaymentServiceIntegrationTest extends AbstractPostgresIntegrationTest {
                 .accountStatus(VendorAccountStatus.ACTIVE)
                 .chargesEnabled(true)
                 .payoutsEnabled(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build());
     }
 
