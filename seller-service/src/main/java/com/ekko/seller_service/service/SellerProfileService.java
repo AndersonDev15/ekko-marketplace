@@ -8,6 +8,8 @@ import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
+import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.dto.SellerCreatedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class SellerProfileService {
     private final SellerRepository sellerRepository;
     private final SellerMetricsRepository metricsRepository;
     private final SellerMapper sellerMapper;
+    private final SellerEventPublisher sellerEventPublisher;
     private final PlatformTransactionManager transactionManager;
     private static final String UNIQUE_VIOLATION = "23505";
 
@@ -68,9 +71,20 @@ public class SellerProfileService {
                 .orElseThrow(() -> new SellerNotFoundException(keycloakId));
     }
 
+    private SellerCreatedEvent toSellerCreatedEvent(Seller seller) {
+        return new SellerCreatedEvent(
+                seller.getId(),
+                seller.getKeycloakId(),
+                seller.getStoreName(),
+                seller.getEmail(),
+                seller.getStatus(),
+                seller.getCreatedAt()
+        );
+    }
+
     private SellerResponse createMyProfile(String keycloakId, String email) {
         try {
-            return inNewTransaction(status -> {
+            Seller created = inNewTransaction(status -> {
                 Seller saved = sellerRepository.saveAndFlush(
                         Seller.builder()
                                 .keycloakId(keycloakId)
@@ -86,8 +100,11 @@ public class SellerProfileService {
                                 .build()
                 );
 
-                return sellerMapper.toResponse(saved);
+                return saved;
             });
+
+            sellerEventPublisher.publishSellerCreated(toSellerCreatedEvent(created));
+            return sellerMapper.toResponse(created);
 
         } catch (DataIntegrityViolationException e) {
             Throwable cause = e.getMostSpecificCause();

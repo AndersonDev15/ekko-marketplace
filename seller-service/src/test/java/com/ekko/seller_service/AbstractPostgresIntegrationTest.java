@@ -12,7 +12,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -51,6 +53,9 @@ public abstract class AbstractPostgresIntegrationTest {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    @MockitoBean
+    protected RabbitTemplate rabbitTemplate;
 
     @BeforeEach
     void cleanDatabase() {

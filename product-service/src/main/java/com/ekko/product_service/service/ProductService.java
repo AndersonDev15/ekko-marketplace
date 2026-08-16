@@ -20,6 +20,8 @@ import com.ekko.product_service.exception.ProductNotAvailableException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.exception.VariantNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
+import com.ekko.product_service.messaging.ProductEventPublisher;
+import com.ekko.product_service.messaging.dto.ProductDeactivatedEvent;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
@@ -49,6 +51,7 @@ public class ProductService {
     private final SlugService slugService;
     private final OwnershipValidator ownershipValidator;
     private final ProductMapper productMapper;
+    private final ProductEventPublisher productEventPublisher;
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request, UUID sellerKeycloakId) {
@@ -174,7 +177,7 @@ public class ProductService {
         productRepository.save(product);
 
         if (previousStatus == ProductStatus.ACTIVE) {
-            // TODO: publicar ProductDeactivatedEvent
+            productEventPublisher.publishProductDeactivated(toDeactivatedEvent(product, previousStatus));
         }
     }
 
@@ -216,5 +219,14 @@ public class ProductService {
         }
         return categoryRepository.findById(categoryId)
                 .orElseThrow(ProductNotFoundException::new);
+    }
+
+    private ProductDeactivatedEvent toDeactivatedEvent(Product product, ProductStatus previousStatus) {
+        return new ProductDeactivatedEvent(
+                product.getId(),
+                product.getSellerKeycloakId(),
+                previousStatus,
+                LocalDateTime.now()
+        );
     }
 }

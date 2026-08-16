@@ -9,6 +9,8 @@ import com.ekko.product_service.exception.InvalidStockAdjustmentException;
 import com.ekko.product_service.exception.InvalidStockOperationException;
 import com.ekko.product_service.exception.InventoryNotFoundException;
 import com.ekko.product_service.exception.InventoryOwnershipException;
+import com.ekko.product_service.messaging.ProductEventPublisher;
+import com.ekko.product_service.messaging.dto.InventoryLowStockEvent;
 import com.ekko.product_service.repository.InventoryRepository;
 import com.ekko.product_service.util.StockCalculator;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final ProductService productService;
+    private final ProductEventPublisher productEventPublisher;
 
     @Transactional
     public InventoryViewResponse adjustStock(UUID variantId, long newStock, UUID sellerKeycloakId) {
@@ -46,7 +49,7 @@ public class InventoryService {
         inventoryRepository.save(inventory);
 
         if (StockCalculator.isLowStock(inventory)) {
-            // TODO: publicar LowStockEvent cuando se implemente messaging
+            publishLowStockEvent(inventory);
         }
 
         return toView(inventory);
@@ -67,7 +70,7 @@ public class InventoryService {
         inventoryRepository.save(inventory);
 
         if (StockCalculator.isLowStock(inventory)) {
-            // TODO: publicar LowStockEvent cuando se implemente messaging
+            publishLowStockEvent(inventory);
         }
     }
 
@@ -139,5 +142,17 @@ public class InventoryService {
     private boolean verifyOwnership(Inventory inventory, UUID sellerKeycloakId) {
         ProductVariant variant = inventory.getVariant();
         return variant.getProduct().getSellerKeycloakId().equals(sellerKeycloakId);
+    }
+
+    private void publishLowStockEvent(Inventory inventory) {
+        ProductVariant variant = inventory.getVariant();
+        productEventPublisher.publishInventoryLowStock(new InventoryLowStockEvent(
+                variant.getProduct().getId(),
+                variant.getId(),
+                variant.getProduct().getSellerKeycloakId(),
+                inventory.getStockAvailable(),
+                inventory.getStockMinimum(),
+                LocalDateTime.now()
+        ));
     }
 }

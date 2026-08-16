@@ -26,13 +26,13 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void getAllSellers_sinToken_devuelve401() throws Exception {
-        mockMvc.perform(get("/sellers/admin"))
+        mockMvc.perform(get("/admin/sellers"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void getAllSellers_jwtInvalido_devuelve401() throws Exception {
-        mockMvc.perform(get("/sellers/admin")
+        mockMvc.perform(get("/admin/sellers")
                         .header("Authorization", "Bearer " + JwtTestUtils.malformedToken()))
                 .andExpect(status().isUnauthorized());
     }
@@ -41,7 +41,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void getAllSellers_rolIncorrecto_devuelve403() throws Exception {
-        mockMvc.perform(get("/sellers/admin")
+        mockMvc.perform(get("/admin/sellers")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
@@ -57,7 +57,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .withEmail("tienda2@ekko.test")
                 .withStatus(SellerStatus.PENDING_REVIEW));
 
-        mockMvc.perform(get("/sellers/admin")
+        mockMvc.perform(get("/admin/sellers")
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2));
@@ -70,7 +70,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .withEmail("tienda2@ekko.test")
                 .withStatus(SellerStatus.PENDING_REVIEW));
 
-        mockMvc.perform(get("/sellers/admin")
+        mockMvc.perform(get("/admin/sellers")
                         .param("status", "PENDING_REVIEW")
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken()))
                 .andExpect(status().isOk())
@@ -86,7 +86,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .active());
         insertSellerMetrics(seller.getId());
 
-        mockMvc.perform(get("/sellers/admin/{id}", seller.getId())
+        mockMvc.perform(get("/admin/sellers/{id}", seller.getId())
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.storeName").value("Tienda detalle"))
@@ -100,7 +100,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .withEmail("status@ekko.test")
                 .pendingReview());
 
-        mockMvc.perform(put("/sellers/admin/{id}/status", seller.getId())
+        mockMvc.perform(put("/admin/sellers/{id}/status", seller.getId())
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -114,7 +114,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
     void reviewDocument_pendienteAAprobado_devuelve200() throws Exception {
         String documentId = addDocument();
 
-        mockMvc.perform(put("/sellers/admin/documents/{id}/review", documentId)
+        mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -134,7 +134,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .withEmail("status400@ekko.test")
                 .pendingReview());
 
-        mockMvc.perform(put("/sellers/admin/{id}/status", seller.getId())
+        mockMvc.perform(put("/admin/sellers/{id}/status", seller.getId())
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -151,7 +151,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .withEmail("status409@ekko.test")
                 .active());
 
-        mockMvc.perform(put("/sellers/admin/{id}/status", seller.getId())
+        mockMvc.perform(put("/admin/sellers/{id}/status", seller.getId())
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -167,7 +167,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
         String documentId = addDocument();
 
         reviewDocument(documentId);
-        mockMvc.perform(put("/sellers/admin/documents/{id}/review", documentId)
+        mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -181,7 +181,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void getSellerDetail_inexistente_devuelve404() throws Exception {
-        mockMvc.perform(get("/sellers/admin/{id}", UUID.randomUUID())
+        mockMvc.perform(get("/admin/sellers/{id}", UUID.randomUUID())
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
@@ -202,7 +202,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
     }
 
     private void reviewDocument(String documentId) throws Exception {
-        mockMvc.perform(put("/sellers/admin/documents/{id}/review", documentId)
+        mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

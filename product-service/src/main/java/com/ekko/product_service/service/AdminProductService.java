@@ -6,6 +6,9 @@ import com.ekko.product_service.enums.ProductStatus;
 import com.ekko.product_service.exception.InvalidProductStatusException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
+import com.ekko.product_service.messaging.ProductEventPublisher;
+import com.ekko.product_service.messaging.dto.ProductPublishedEvent;
+import com.ekko.product_service.messaging.dto.ProductRejectedEvent;
 import com.ekko.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +26,7 @@ public class AdminProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final ProductEventPublisher productEventPublisher;
 
     @Transactional
     public void approveProduct(UUID productId) {
@@ -38,7 +42,7 @@ public class AdminProductService {
 
         productRepository.save(product);
 
-        // TODO: publicar ProductPublishedEvent
+        productEventPublisher.publishProductPublished(toPublishedEvent(product));
     }
 
     @Transactional
@@ -55,7 +59,7 @@ public class AdminProductService {
 
         productRepository.save(product);
 
-        // TODO: publicar ProductRejectedEvent(reason)
+        productEventPublisher.publishProductRejected(toRejectedEvent(product, reason));
     }
 
     @Transactional(readOnly = true)
@@ -64,5 +68,25 @@ public class AdminProductService {
         Pageable pageable = PageRequest.of(page, size);
         return productRepository.findAll(pageable)
                 .map(productMapper::toResponse);
+    }
+
+    private ProductPublishedEvent toPublishedEvent(Product product) {
+        return new ProductPublishedEvent(
+                product.getId(),
+                product.getSellerKeycloakId(),
+                product.getName(),
+                product.getCategory().getName(),
+                LocalDateTime.now()
+        );
+    }
+
+    private ProductRejectedEvent toRejectedEvent(Product product, String reason) {
+        return new ProductRejectedEvent(
+                product.getId(),
+                product.getSellerKeycloakId(),
+                product.getName(),
+                reason,
+                LocalDateTime.now()
+        );
     }
 }

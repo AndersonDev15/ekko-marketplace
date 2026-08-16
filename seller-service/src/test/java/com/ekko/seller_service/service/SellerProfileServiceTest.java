@@ -8,6 +8,8 @@ import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
+import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.dto.SellerCreatedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
 import org.junit.jupiter.api.Nested;
@@ -49,6 +51,9 @@ class SellerProfileServiceTest {
     private SellerMapper sellerMapper;
 
     @Mock
+    private SellerEventPublisher sellerEventPublisher;
+
+    @Mock
     private PlatformTransactionManager transactionManager;
 
     @Mock
@@ -72,6 +77,7 @@ class SellerProfileServiceTest {
             assertEquals(expected, result);
             verify(sellerRepository, never()).saveAndFlush(any(Seller.class));
             verify(metricsRepository, never()).saveAndFlush(any(SellerMetrics.class));
+            verify(sellerEventPublisher, never()).publishSellerCreated(any(SellerCreatedEvent.class));
         }
 
         @Test
@@ -99,6 +105,14 @@ class SellerProfileServiceTest {
             assertEquals("Mi tienda", created.getStoreName());
             assertEquals(SellerStatus.PENDING_REVIEW, created.getStatus());
             verify(metricsRepository).saveAndFlush(any(SellerMetrics.class));
+
+            ArgumentCaptor<SellerCreatedEvent> eventCaptor = ArgumentCaptor.forClass(SellerCreatedEvent.class);
+            verify(sellerEventPublisher).publishSellerCreated(eventCaptor.capture());
+            SellerCreatedEvent event = eventCaptor.getValue();
+            assertEquals(KEYCLOAK_ID, event.keycloakId());
+            assertEquals(EMAIL, event.email());
+            assertEquals("Mi tienda", event.storeName());
+            assertEquals(SellerStatus.PENDING_REVIEW, event.status());
         }
 
         @Test
@@ -118,6 +132,7 @@ class SellerProfileServiceTest {
             assertEquals(expected, result);
             verify(metricsRepository, never()).saveAndFlush(any(SellerMetrics.class));
             verify(sellerRepository).saveAndFlush(any(Seller.class));
+            verify(sellerEventPublisher, never()).publishSellerCreated(any(SellerCreatedEvent.class));
         }
 
         @Test
@@ -132,6 +147,7 @@ class SellerProfileServiceTest {
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
 
             verify(metricsRepository, never()).saveAndFlush(any(SellerMetrics.class));
+            verify(sellerEventPublisher, never()).publishSellerCreated(any(SellerCreatedEvent.class));
         }
 
         @Test
@@ -146,6 +162,7 @@ class SellerProfileServiceTest {
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
 
             verify(metricsRepository, never()).saveAndFlush(any(SellerMetrics.class));
+            verify(sellerEventPublisher, never()).publishSellerCreated(any(SellerCreatedEvent.class));
         }
 
         @Test
@@ -160,6 +177,7 @@ class SellerProfileServiceTest {
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
 
             verify(metricsRepository, never()).saveAndFlush(any(SellerMetrics.class));
+            verify(sellerEventPublisher, never()).publishSellerCreated(any(SellerCreatedEvent.class));
         }
     }
 
@@ -182,6 +200,7 @@ class SellerProfileServiceTest {
             assertEquals("3110000000", seller.getPhone());
             assertEquals("Descripción", seller.getDescription());
             verify(sellerRepository).save(seller);
+            verify(sellerEventPublisher, never()).publishSellerCreated(any(SellerCreatedEvent.class));
         }
 
         @Test

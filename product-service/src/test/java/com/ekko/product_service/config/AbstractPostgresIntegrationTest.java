@@ -1,14 +1,19 @@
 package com.ekko.product_service.config;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 @SpringBootTest
 public abstract class AbstractPostgresIntegrationTest {
 
     private static final PostgreSQLContainer<?> POSTGRES;
+
+    @MockitoBean
+    protected RabbitTemplate rabbitTemplate;
 
     static {
         POSTGRES = new PostgreSQLContainer<>("postgres:16")

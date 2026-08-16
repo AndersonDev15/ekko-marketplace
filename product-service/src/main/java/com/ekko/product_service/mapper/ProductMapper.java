@@ -10,112 +10,39 @@ import com.ekko.product_service.dto.response.ProductVariantAttributeResponse;
 import com.ekko.product_service.dto.response.ProductVariantResponse;
 import com.ekko.product_service.entity.Inventory;
 import com.ekko.product_service.entity.Product;
+import com.ekko.product_service.entity.ProductAttribute;
 import com.ekko.product_service.entity.ProductImage;
 import com.ekko.product_service.entity.ProductVariant;
-import org.springframework.stereotype.Component;
+import com.ekko.product_service.entity.ProductVariantAttribute;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-import java.util.List;
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface ProductMapper {
 
-@Component
-public class ProductMapper {
+    ProductResponse toResponse(Product product);
 
-    public ProductResponse toResponse(Product product) {
-        List<ProductAttributeResponse> attributes = product.getAttributes().stream()
-                .map(attribute -> new ProductAttributeResponse(
-                        attribute.getId(),
-                        attribute.getName(),
-                        attribute.getValue()))
-                .toList();
+    ProductDetailResponse toDetailResponse(Product product);
 
-        return new ProductResponse(
-                product.getId(),
-                product.getSellerKeycloakId(),
-                product.getName(),
-                product.getSlug(),
-                product.getDescription(),
-                product.getStatus(),
-                product.getAverageRating(),
-                product.getReviewCount(),
-                attributes);
-    }
+    ProductVariantResponse toVariantResponse(ProductVariant variant);
 
-    public ProductDetailResponse toDetailResponse(Product product) {
-        List<ProductAttributeResponse> attributes = product.getAttributes().stream()
-                .map(attribute -> new ProductAttributeResponse(
-                        attribute.getId(),
-                        attribute.getName(),
-                        attribute.getValue()))
-                .toList();
+    @Mapping(target = "primaryImageUrl", expression = "java(primaryImageUrl(product))")
+    ProductCatalogResponse toCatalogResponse(Product product);
 
-        List<ProductImageResponse> images = product.getImages().stream()
-                .map(image -> new ProductImageResponse(
-                        image.getId(),
-                        image.getUrl(),
-                        image.getIsPrimary(),
-                        image.getSortOrder()))
-                .toList();
+    ProductAttributeResponse toAttributeResponse(ProductAttribute attribute);
 
-        List<ProductVariantResponse> variants = product.getVariants().stream()
-                .map(this::toVariantResponse)
-                .toList();
+    ProductImageResponse toImageResponse(ProductImage image);
 
-        return new ProductDetailResponse(
-                product.getId(),
-                product.getSellerKeycloakId(),
-                product.getName(),
-                product.getSlug(),
-                product.getDescription(),
-                product.getStatus(),
-                product.getAverageRating(),
-                product.getReviewCount(),
-                attributes,
-                images,
-                variants);
-    }
+    ProductVariantAttributeResponse toVariantAttributeResponse(ProductVariantAttribute attribute);
 
-    public ProductVariantResponse toVariantResponse(ProductVariant variant) {
-        List<ProductVariantAttributeResponse> attributes = variant.getAttributes().stream()
-                .map(attribute -> new ProductVariantAttributeResponse(
-                        attribute.getId(),
-                        attribute.getName(),
-                        attribute.getValue()))
-                .toList();
+    InventoryResponse toInventoryResponse(Inventory inventory);
 
-        InventoryResponse inventory = null;
-        Inventory variantInventory = variant.getInventory();
-        if (variantInventory != null) {
-            inventory = new InventoryResponse(
-                    variantInventory.getId(),
-                    variantInventory.getStockAvailable(),
-                    variantInventory.getStockReserved(),
-                    variantInventory.getStockMinimum());
-        }
-
-        return new ProductVariantResponse(
-                variant.getId(),
-                variant.getSku(),
-                variant.getPrice(),
-                variant.getDiscountPrice(),
-                variant.getCurrency(),
-                variant.getIsActive(),
-                inventory,
-                attributes);
-    }
-
-    public ProductCatalogResponse toCatalogResponse(Product product) {
-        String primaryImageUrl = product.getImages().stream()
+    default String primaryImageUrl(Product product) {
+        return product.getImages().stream()
                 .filter(ProductImage::getIsPrimary)
                 .map(ProductImage::getUrl)
                 .findFirst()
                 .orElse(null);
-
-        return new ProductCatalogResponse(
-                product.getId(),
-                product.getName(),
-                product.getSlug(),
-                product.getDescription(),
-                product.getAverageRating(),
-                product.getReviewCount(),
-                primaryImageUrl);
     }
 }

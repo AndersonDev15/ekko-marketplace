@@ -11,6 +11,7 @@ import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.entity.SellerDocument;
 import com.ekko.seller_service.entity.SellerMetrics;
 import com.ekko.seller_service.enums.DocumentStatus;
+import com.ekko.seller_service.enums.DocumentType;
 import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.DocumentAlreadyReviewedException;
 import com.ekko.seller_service.exception.InvalidStatusTransitionException;
@@ -18,11 +19,15 @@ import com.ekko.seller_service.exception.SellerDocumentNotFoundException;
 import com.ekko.seller_service.exception.SellerMetricsNotFoundException;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.mapper.SellerMapper;
+import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.dto.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.SellerStatusChangedEvent;
 import com.ekko.seller_service.repository.SellerDocumentRepository;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -63,6 +68,9 @@ class AdminSellerServiceTest {
 
     @Mock
     private SellerMapper sellerMapper;
+
+    @Mock
+    private SellerEventPublisher sellerEventPublisher;
 
     @InjectMocks
     private AdminSellerService adminSellerService;
@@ -141,6 +149,15 @@ class AdminSellerServiceTest {
         assertEquals(SellerStatus.SUSPENDED, result.status());
         assertEquals(SELLER_ID, result.id());
         verify(sellerRepository).save(seller);
+
+        ArgumentCaptor<SellerStatusChangedEvent> captor = ArgumentCaptor.forClass(SellerStatusChangedEvent.class);
+        verify(sellerEventPublisher).publishSellerStatusChanged(captor.capture());
+        SellerStatusChangedEvent event = captor.getValue();
+        assertEquals(SELLER_ID, event.sellerId());
+        assertEquals(seller.getKeycloakId(), event.keycloakId());
+        assertEquals(SellerStatus.ACTIVE, event.previousStatus());
+        assertEquals(SellerStatus.SUSPENDED, event.newStatus());
+        assertNotNull(event.changedAt());
     }
 
     @Test
@@ -153,6 +170,7 @@ class AdminSellerServiceTest {
                 () -> adminSellerService.updateSellerStatus(SELLER_ID, request));
 
         verify(sellerRepository, never()).save(any(Seller.class));
+        verify(sellerEventPublisher, never()).publishSellerStatusChanged(any());
     }
 
     @Test
@@ -162,11 +180,14 @@ class AdminSellerServiceTest {
 
         assertThrows(SellerNotFoundException.class,
                 () -> adminSellerService.updateSellerStatus(SELLER_ID, request));
+
+        verify(sellerEventPublisher, never()).publishSellerStatusChanged(any());
     }
 
     @Test
     void reviewDocument_documentoPending_actualizaRevision() {
-        SellerDocument document = aDocument().withId(DOCUMENT_ID).pending().build();
+        Seller seller = aSeller().withId(SELLER_ID).build();
+        SellerDocument document = aDocument().withId(DOCUMENT_ID).withSeller(seller).pending().build();
         Jwt jwt = Jwt.withTokenValue("token").header("alg", "none").subject("admin-kc-1").build();
         ReviewDocumentRequest request = new ReviewDocumentRequest(DocumentStatus.APPROVED, "ok");
         when(sellerDocumentRepository.findById(DOCUMENT_ID)).thenReturn(Optional.of(document));
@@ -182,6 +203,16 @@ class AdminSellerServiceTest {
         assertEquals("admin-kc-1", document.getReviewedBy());
         assertNotNull(document.getReviewedAt());
         verify(sellerDocumentRepository).save(document);
+
+        ArgumentCaptor<SellerDocumentReviewEvent> captor = ArgumentCaptor.forClass(SellerDocumentReviewEvent.class);
+        verify(sellerEventPublisher).publishSellerDocumentReview(captor.capture());
+        SellerDocumentReviewEvent event = captor.getValue();
+        assertEquals(SELLER_ID, event.sellerId());
+        assertEquals(DOCUMENT_ID, event.documentId());
+        assertEquals(DocumentType.ID_CARD, event.documentType());
+        assertEquals(DocumentStatus.APPROVED, event.reviewStatus());
+        assertEquals("ok", event.notes());
+        assertNotNull(event.reviewedAt());
     }
 
     @Test
@@ -195,6 +226,7 @@ class AdminSellerServiceTest {
                 () -> adminSellerService.reviewDocument(DOCUMENT_ID, request, jwt));
 
         verify(sellerDocumentRepository, never()).save(any(SellerDocument.class));
+        verify(sellerEventPublisher, never()).publishSellerDocumentReview(any());
     }
 
     @Test
@@ -205,6 +237,8 @@ class AdminSellerServiceTest {
 
         assertThrows(SellerDocumentNotFoundException.class,
                 () -> adminSellerService.reviewDocument(DOCUMENT_ID, request, jwt));
+
+        verify(sellerEventPublisher, never()).publishSellerDocumentReview(any());
     }
 
     private static SellerResponse sellerResponseFor(Seller seller) {

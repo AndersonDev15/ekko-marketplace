@@ -7,6 +7,9 @@ import com.ekko.product_service.enums.ProductStatus;
 import com.ekko.product_service.exception.InvalidProductStatusException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
+import com.ekko.product_service.messaging.ProductEventPublisher;
+import com.ekko.product_service.messaging.dto.ProductPublishedEvent;
+import com.ekko.product_service.messaging.dto.ProductRejectedEvent;
 import com.ekko.product_service.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +48,9 @@ class AdminProductServiceTest {
     @Mock
     private ProductMapper productMapper;
 
+    @Mock
+    private ProductEventPublisher productEventPublisher;
+
     @InjectMocks
     private AdminProductService adminProductService;
 
@@ -66,6 +72,15 @@ class AdminProductServiceTest {
 
         assertEquals(ProductStatus.ACTIVE, product.getStatus());
         verify(productRepository).save(product);
+
+        ArgumentCaptor<ProductPublishedEvent> captor = ArgumentCaptor.forClass(ProductPublishedEvent.class);
+        verify(productEventPublisher).publishProductPublished(captor.capture());
+        ProductPublishedEvent event = captor.getValue();
+        assertEquals(product.getId(), event.productId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getName(), event.name());
+        assertEquals(product.getCategory().getName(), event.category());
+        assertNotNull(event.publishedAt());
     }
 
     @Test
@@ -100,6 +115,7 @@ class AdminProductServiceTest {
                 () -> adminProductService.approveProduct(productId));
 
         verify(productRepository, never()).save(any(Product.class));
+        verify(productEventPublisher, never()).publishProductPublished(any());
     }
 
     @Test
@@ -114,6 +130,7 @@ class AdminProductServiceTest {
                 () -> adminProductService.approveProduct(productId));
 
         verify(productRepository, never()).save(any(Product.class));
+        verify(productEventPublisher, never()).publishProductPublished(any());
     }
 
     // ----------------------------------------------------------------- rejectProduct
@@ -131,6 +148,15 @@ class AdminProductServiceTest {
 
         assertEquals(ProductStatus.REJECTED, product.getStatus());
         verify(productRepository).save(product);
+
+        ArgumentCaptor<ProductRejectedEvent> captor = ArgumentCaptor.forClass(ProductRejectedEvent.class);
+        verify(productEventPublisher).publishProductRejected(captor.capture());
+        ProductRejectedEvent event = captor.getValue();
+        assertEquals(product.getId(), event.productId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getName(), event.name());
+        assertEquals("marca prohibida", event.reason());
+        assertNotNull(event.rejectedAt());
     }
 
     @Test
@@ -164,6 +190,7 @@ class AdminProductServiceTest {
                 () -> adminProductService.rejectProduct(productId, "motivo"));
 
         verify(productRepository, never()).save(any(Product.class));
+        verify(productEventPublisher, never()).publishProductRejected(any());
     }
 
     @Test
@@ -178,6 +205,7 @@ class AdminProductServiceTest {
                 () -> adminProductService.rejectProduct(productId, "motivo"));
 
         verify(productRepository, never()).save(any(Product.class));
+        verify(productEventPublisher, never()).publishProductRejected(any());
     }
 
     // ----------------------------------------------------------------- getAllProducts

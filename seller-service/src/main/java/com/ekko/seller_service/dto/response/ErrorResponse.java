@@ -1,4 +1,4 @@
-package com.ekko.seller_service.exception;
+package com.ekko.seller_service.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

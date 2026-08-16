@@ -22,6 +22,8 @@ import com.ekko.product_service.exception.ProductNotAvailableException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.exception.VariantNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
+import com.ekko.product_service.messaging.ProductEventPublisher;
+import com.ekko.product_service.messaging.dto.ProductDeactivatedEvent;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
@@ -88,6 +90,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductMapper productMapper;
+
+    @Mock
+    private ProductEventPublisher productEventPublisher;
 
     @InjectMocks
     private ProductService productService;
@@ -360,6 +365,14 @@ class ProductServiceTest {
 
         assertNotNull(product.getDeletedAt());
         verify(productRepository).save(product);
+
+        ArgumentCaptor<ProductDeactivatedEvent> captor = ArgumentCaptor.forClass(ProductDeactivatedEvent.class);
+        verify(productEventPublisher).publishProductDeactivated(captor.capture());
+        ProductDeactivatedEvent event = captor.getValue();
+        assertEquals(product.getId(), event.productId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(ProductStatus.ACTIVE, event.previousStatus());
+        assertNotNull(event.deactivatedAt());
     }
 
     @Test
@@ -376,6 +389,7 @@ class ProductServiceTest {
         productService.softDeleteProduct(productId, sellerId);
 
         assertFalse(variant.getIsActive());
+        verify(productEventPublisher, never()).publishProductDeactivated(any());
     }
 
     @Test
@@ -391,6 +405,7 @@ class ProductServiceTest {
                 () -> productService.softDeleteProduct(productId, sellerId));
 
         verify(productRepository, never()).save(any(Product.class));
+        verify(productEventPublisher, never()).publishProductDeactivated(any());
     }
 
     // --------------------------------------------------------------- getMyProducts

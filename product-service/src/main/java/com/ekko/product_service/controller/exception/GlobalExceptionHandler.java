@@ -1,6 +1,7 @@
-package com.ekko.product_service.exception;
+package com.ekko.product_service.controller.exception;
 
 import com.ekko.product_service.dto.response.ErrorResponse;
+import com.ekko.product_service.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;

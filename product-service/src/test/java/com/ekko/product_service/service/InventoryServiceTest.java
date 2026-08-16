@@ -13,10 +13,13 @@ import com.ekko.product_service.exception.InvalidStockOperationException;
 import com.ekko.product_service.exception.InventoryNotFoundException;
 import com.ekko.product_service.exception.InventoryOwnershipException;
 import com.ekko.product_service.exception.ProductNotAvailableException;
+import com.ekko.product_service.messaging.ProductEventPublisher;
+import com.ekko.product_service.messaging.dto.InventoryLowStockEvent;
 import com.ekko.product_service.repository.InventoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,8 +28,11 @@ import java.util.UUID;
 
 import static com.ekko.product_service.util.TestConstants.SELLER_KEYCLOAK_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +45,9 @@ class InventoryServiceTest {
     @Mock
     private ProductService productService;
 
+    @Mock
+    private ProductEventPublisher productEventPublisher;
+
     private InventoryService inventoryService;
 
     private final UUID variantId = UUID.randomUUID();
@@ -46,7 +55,7 @@ class InventoryServiceTest {
 
     @BeforeEach
     void setUp() {
-        inventoryService = new InventoryService(inventoryRepository, productService);
+        inventoryService = new InventoryService(inventoryRepository, productService, productEventPublisher);
     }
 
     // ------------------------------------------------------------- reserveStock
@@ -97,6 +106,35 @@ class InventoryServiceTest {
 
         assertThrows(InsufficientStockException.class,
                 () -> inventoryService.reserveStock(variantId, 7));
+    }
+
+    @Test
+    void reserveStock_stockBajo_publicaEvento() {
+        Product product = product();
+        Inventory inventory = inventory(product, variantId, 3, 0);
+        when(inventoryRepository.findByVariantIdForUpdate(variantId)).thenReturn(Optional.of(inventory));
+
+        inventoryService.reserveStock(variantId, 1);
+
+        ArgumentCaptor<InventoryLowStockEvent> captor = ArgumentCaptor.forClass(InventoryLowStockEvent.class);
+        verify(productEventPublisher).publishInventoryLowStock(captor.capture());
+        InventoryLowStockEvent event = captor.getValue();
+        assertEquals(product.getId(), event.productId());
+        assertEquals(variantId, event.variantId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(3L, event.currentStock());
+        assertEquals(3L, event.minimumStock());
+        assertNotNull(event.checkedAt());
+    }
+
+    @Test
+    void reserveStock_stockNormal_noPublicaEvento() {
+        Inventory inventory = inventory(product(), variantId, 10, 0);
+        when(inventoryRepository.findByVariantIdForUpdate(variantId)).thenReturn(Optional.of(inventory));
+
+        inventoryService.reserveStock(variantId, 2);
+
+        verify(productEventPublisher, never()).publishInventoryLowStock(any());
     }
 
     // ------------------------------------------------------------- confirmStock
@@ -191,6 +229,35 @@ class InventoryServiceTest {
 
         assertThrows(InvalidStockAdjustmentException.class,
                 () -> inventoryService.adjustStock(variantId, 7, sellerId));
+    }
+
+    @Test
+    void adjustStock_stockBajo_publicaEvento() {
+        Product product = product();
+        Inventory inventory = inventory(product, variantId, 5, 0);
+        when(inventoryRepository.findByVariantIdForUpdate(variantId)).thenReturn(Optional.of(inventory));
+
+        inventoryService.adjustStock(variantId, 2, sellerId);
+
+        ArgumentCaptor<InventoryLowStockEvent> captor = ArgumentCaptor.forClass(InventoryLowStockEvent.class);
+        verify(productEventPublisher).publishInventoryLowStock(captor.capture());
+        InventoryLowStockEvent event = captor.getValue();
+        assertEquals(product.getId(), event.productId());
+        assertEquals(variantId, event.variantId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(2L, event.currentStock());
+        assertEquals(3L, event.minimumStock());
+        assertNotNull(event.checkedAt());
+    }
+
+    @Test
+    void adjustStock_stockNormal_noPublicaEvento() {
+        Inventory inventory = inventory(product(), variantId, 10, 8);
+        when(inventoryRepository.findByVariantIdForUpdate(variantId)).thenReturn(Optional.of(inventory));
+
+        inventoryService.adjustStock(variantId, 15, sellerId);
+
+        verify(productEventPublisher, never()).publishInventoryLowStock(any());
     }
 
     // ------------------------------------------------------------- getInventory

@@ -11,6 +11,9 @@ import com.ekko.seller_service.enums.DocumentStatus;
 import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.*;
 import com.ekko.seller_service.mapper.SellerMapper;
+import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.dto.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.SellerStatusChangedEvent;
 import com.ekko.seller_service.repository.*;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,7 @@ public class AdminSellerService {
     private final SellerDocumentRepository sellerDocumentRepository;
     private final SellerMetricsRepository sellerMetricsRepository;
     private final SellerMapper sellerMapper;
+    private final SellerEventPublisher sellerEventPublisher;
 
     public Page<SellerSummaryResponse> getAllSellers(SellerStatus status,
                                                      LocalDateTime from,
@@ -69,7 +73,9 @@ public class AdminSellerService {
         }
 
         seller.setStatus(target);
-        return sellerMapper.toResponse(sellerRepository.save(seller));
+        Seller saved = sellerRepository.save(seller);
+        sellerEventPublisher.publishSellerStatusChanged(toSellerStatusChangedEvent(saved, current, target));
+        return sellerMapper.toResponse(saved);
     }
 
     @Transactional
@@ -85,7 +91,9 @@ public class AdminSellerService {
         document.setNotes(request.notes());
         document.setReviewedAt(LocalDateTime.now());
         document.setReviewedBy(jwt.getSubject());
-        return sellerMapper.toDocumentResponse(sellerDocumentRepository.save(document));
+        SellerDocument reviewed = sellerDocumentRepository.save(document);
+        sellerEventPublisher.publishSellerDocumentReview(toSellerDocumentReviewEvent(reviewed));
+        return sellerMapper.toDocumentResponse(reviewed);
     }
 
     private SellerSummaryResponse toSummaryResponse(Seller s) {
@@ -97,6 +105,30 @@ public class AdminSellerService {
         return new SellerDetailResponse(s.getId(), s.getKeycloakId(), s.getStoreName(),
                 s.getEmail(), s.getPhone(), s.getDescription(), s.getLogoUrl(),
                 s.getStatus(), s.getCreatedAt(), s.getUpdatedAt(), documents, sellerMapper.toMetricsResponse(metrics));
+    }
+
+    private SellerStatusChangedEvent toSellerStatusChangedEvent(
+            Seller seller,
+            SellerStatus previousStatus,
+            SellerStatus newStatus) {
+        return new SellerStatusChangedEvent(
+                seller.getId(),
+                seller.getKeycloakId(),
+                previousStatus,
+                newStatus,
+                LocalDateTime.now()
+        );
+    }
+
+    private SellerDocumentReviewEvent toSellerDocumentReviewEvent(SellerDocument document) {
+        return new SellerDocumentReviewEvent(
+                document.getSeller().getId(),
+                document.getId(),
+                document.getDocumentType(),
+                document.getStatus(),
+                document.getReviewedAt(),
+                document.getNotes()
+        );
     }
 }
 

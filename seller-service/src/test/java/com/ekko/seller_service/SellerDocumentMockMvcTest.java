@@ -129,7 +129,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
     void add_documentoRechazado_noPermiteReSubir_devuelve409() throws Exception {
         String documentId = addDocument();
 
-        mockMvc.perform(put("/sellers/admin/documents/{id}/review", documentId)
+        mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -157,7 +157,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
     }
 
     private void reviewDocument(String documentId) throws Exception {
-        mockMvc.perform(put("/sellers/admin/documents/{id}/review", documentId)
+        mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

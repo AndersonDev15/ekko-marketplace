@@ -15,6 +15,7 @@ import com.ekko.seller_service.enums.DocumentStatus;
 import com.ekko.seller_service.enums.DocumentType;
 import com.ekko.seller_service.enums.SellerStatus;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SellerMapperTest {
 
-    private final SellerMapper sellerMapper = new SellerMapper();
+    private final SellerMapper sellerMapper = Mappers.getMapper(SellerMapper.class);
 
     @Test
     void toResponse_mapeaTodosLosCampos() {
