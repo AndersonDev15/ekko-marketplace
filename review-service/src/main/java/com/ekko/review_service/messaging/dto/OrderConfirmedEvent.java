@@ -4,11 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * PLACEHOLDER event: order-service does NOT publish this yet.
- * Expected shape for the future order.confirmed event; the real contract must be validated
- * against order-service before going live. In particular, the current order.created items
- * carry variantId/productId but NO orderItemId, so order-service must add orderItemId to the
- * confirmed event for this consumer to work.
+ * Consumed from order-service's order.confirmed event.
+ * The real order-service OrderConfirmedEvent carries, per item, orderItemId, productId,
+ * sellerKeycloakId and subtotal; this DTO only declares the fields review-service needs.
  */
 public record OrderConfirmedEvent(
         UUID orderId,
@@ -18,7 +16,8 @@ public record OrderConfirmedEvent(
 
     public record OrderItemConfirmed(
             UUID orderItemId,
-            UUID productId
+            UUID productId,
+            UUID sellerKeycloakId
     ) {
     }
 }

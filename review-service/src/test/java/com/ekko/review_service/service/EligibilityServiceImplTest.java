@@ -100,19 +100,21 @@ class EligibilityServiceImplTest {
         UUID item2 = UUID.randomUUID();
         UUID product1 = UUID.randomUUID();
         UUID product2 = UUID.randomUUID();
+        UUID seller1 = UUID.randomUUID();
+        UUID seller2 = UUID.randomUUID();
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 ORDER_ID,
                 CUSTOMER_ID,
                 List.of(
-                        new OrderConfirmedEvent.OrderItemConfirmed(item1, product1),
-                        new OrderConfirmedEvent.OrderItemConfirmed(item2, product2)));
+                        new OrderConfirmedEvent.OrderItemConfirmed(item1, product1, seller1),
+                        new OrderConfirmedEvent.OrderItemConfirmed(item2, product2, seller2)));
 
         // when
         eligibilityService.registerEligibility(event);
 
         // then
-        verify(eligibleReviewRepository).insertEligibilityIfAbsent(ORDER_ID, item1, product1, CUSTOMER_ID);
-        verify(eligibleReviewRepository).insertEligibilityIfAbsent(ORDER_ID, item2, product2, CUSTOMER_ID);
+        verify(eligibleReviewRepository).insertEligibilityIfAbsent(ORDER_ID, item1, product1, seller1, CUSTOMER_ID);
+        verify(eligibleReviewRepository).insertEligibilityIfAbsent(ORDER_ID, item2, product2, seller2, CUSTOMER_ID);
     }
 
     @Test
@@ -125,8 +127,8 @@ class EligibilityServiceImplTest {
         eligibilityService.registerEligibility(event);
 
         // then
-        verify(eligibleReviewRepository, never()).insertEligibilityIfAbsent(any(), any(), any(), any());
-        verify(eligibleReviewRepository, never()).insertEligibilityIfAbsent(eq(ORDER_ID), any(), any(), eq(CUSTOMER_ID));
+        verify(eligibleReviewRepository, never()).insertEligibilityIfAbsent(any(), any(), any(), any(), any());
+        verify(eligibleReviewRepository, never()).insertEligibilityIfAbsent(eq(ORDER_ID), any(), any(), any(), eq(CUSTOMER_ID));
     }
 
     private EligibleReview eligibleReview(UUID orderId, UUID orderItemId, UUID productId) {

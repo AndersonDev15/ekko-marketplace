@@ -1,7 +1,7 @@
 package com.ekko.order_service.application.service;
 
-import com.ekko.order_service.domain.exception.OrderAccessDeniedException;
-import com.ekko.order_service.domain.exception.OrderNotFoundException;
+import com.ekko.order_service.application.exception.OrderAccessDeniedException;
+import com.ekko.order_service.application.exception.OrderNotFoundException;
 import com.ekko.order_service.domain.model.Order;
 import com.ekko.order_service.domain.policy.OrderOwnershipPolicy;
 import com.ekko.order_service.domain.port.out.OrderRepositoryPort;

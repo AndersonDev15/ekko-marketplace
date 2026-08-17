@@ -1,10 +1,10 @@
 package com.ekko.payment_service.application.service;
 
 import com.ekko.payment_service.config.AbstractPostgresIntegrationTest;
-import com.ekko.payment_service.domain.model.HandlePaymentSucceededCommand;
+import com.ekko.payment_service.domain.command.HandlePaymentSucceededCommand;
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentCompletedEvent;
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.event.PaymentCompletedEvent;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 import com.ekko.payment_service.domain.port.in.HandlePaymentSucceededUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;

@@ -6,13 +6,14 @@ import com.ekko.review_service.exception.NotEligibleToReviewException;
 import com.ekko.review_service.exception.ReviewAlreadyExistsException;
 import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.messaging.dto.ProductRatingUpdatedEvent;
+import com.ekko.review_service.messaging.dto.ReviewCreatedEvent;
 import com.ekko.review_service.repository.EligibleReviewRepository;
 import com.ekko.review_service.repository.ReviewImageRepository;
 import com.ekko.review_service.repository.ReviewRepository;
-import com.ekko.review_service.web.dto.AdminUpdateContentRequest;
-import com.ekko.review_service.web.dto.CreateReviewRequest;
-import com.ekko.review_service.web.dto.ReviewResponse;
-import com.ekko.review_service.web.dto.UpdateReviewRequest;
+import com.ekko.review_service.dto.request.AdminUpdateContentRequest;
+import com.ekko.review_service.dto.request.CreateReviewRequest;
+import com.ekko.review_service.dto.response.ReviewResponse;
+import com.ekko.review_service.dto.request.UpdateReviewRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,6 +34,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
     private static final String CUSTOMER_ID = "customer-1";
     private static final String ANOTHER_CUSTOMER_ID = "customer-2";
     private static final String ADMIN_ID = "admin-1";
+    private static final UUID SELLER_KEYCLOAK_ID = UUID.randomUUID();
 
     @Autowired
     private ReviewCommandService reviewCommandService;
@@ -80,6 +82,20 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         assertThat(captor.getValue().productId()).isEqualTo(productId);
         assertThat(captor.getValue().averageRating()).isEqualByComparingTo(new BigDecimal("5.0"));
         assertThat(captor.getValue().reviewCount()).isEqualTo(1L);
+
+        ArgumentCaptor<ReviewCreatedEvent> createdCaptor = ArgumentCaptor.forClass(ReviewCreatedEvent.class);
+        verify(reviewEventPublisher).publishReviewCreated(createdCaptor.capture());
+        ReviewCreatedEvent created = createdCaptor.getValue();
+        assertThat(created.reviewId()).isEqualTo(response.id());
+        assertThat(created.productId()).isEqualTo(productId);
+        assertThat(created.orderId()).isEqualTo(orderId);
+        assertThat(created.orderItemId()).isEqualTo(orderItemId);
+        assertThat(created.sellerKeycloakId()).isEqualTo(SELLER_KEYCLOAK_ID);
+        assertThat(created.customerId()).isEqualTo(CUSTOMER_ID);
+        assertThat(created.rating()).isEqualTo(5);
+        assertThat(created.title()).isEqualTo("Great");
+        assertThat(created.comment()).isEqualTo("Nice");
+        assertThat(created.createdAt()).isNotNull();
     }
 
     @Test
@@ -341,8 +357,8 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
 
     private void insertEligibility(UUID orderId, UUID orderItemId, UUID productId) {
         jdbcTemplate.update("""
-                INSERT INTO eligible_reviews (order_id, order_item_id, product_id, customer_id)
-                VALUES (?, ?, ?, ?)
-                """, orderId, orderItemId, productId, CUSTOMER_ID);
+                INSERT INTO eligible_reviews (order_id, order_item_id, product_id, seller_keycloak_id, customer_id)
+                VALUES (?, ?, ?, ?, ?)
+                """, orderId, orderItemId, productId, SELLER_KEYCLOAK_ID, CUSTOMER_ID);
     }
 }

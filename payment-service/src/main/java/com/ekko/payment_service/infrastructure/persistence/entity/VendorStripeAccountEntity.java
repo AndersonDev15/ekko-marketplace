@@ -1,5 +1,6 @@
 package com.ekko.payment_service.infrastructure.persistence.entity;
 
+import com.ekko.payment_service.infrastructure.persistence.enums.VendorAccountStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

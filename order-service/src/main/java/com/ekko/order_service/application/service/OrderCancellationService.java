@@ -1,10 +1,10 @@
 package com.ekko.order_service.application.service;
 
-import com.ekko.order_service.domain.exception.OrderNotFoundException;
+import com.ekko.order_service.application.exception.OrderNotFoundException;
 import com.ekko.order_service.domain.model.Order;
-import com.ekko.order_service.domain.model.OrderCancelledEvent;
-import com.ekko.order_service.domain.model.OrderChangeSource;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.event.OrderCancelledEvent;
+import com.ekko.order_service.domain.enums.OrderChangeSource;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.policy.OrderCancellationPolicy;
 import com.ekko.order_service.domain.policy.OrderOwnershipPolicy;
 import com.ekko.order_service.domain.port.in.CancelOrderUseCase;
@@ -45,6 +45,25 @@ public class OrderCancellationService implements CancelOrderUseCase {
         String notes = "Order cancelled" + (isAdmin ? " by admin" : "");
 
         Order saved = orderTransactionService.cancelOrder(order, source, changedBy, notes);
+
+        orderEventPublisherPort.publishOrderCancelled(toEvent(saved, previousStatus));
+
+        return saved;
+    }
+
+    public Order cancelBySystem(String orderNumber) {
+        Order order = findOrder(orderNumber);
+
+        orderCancellationPolicy.assertCancellable(order);
+
+        OrderStatus previousStatus = order.getStatus();
+        order.cancel();
+
+        Order saved = orderTransactionService.cancelOrder(
+                order,
+                OrderChangeSource.SYSTEM,
+                null,
+                "Order cancelled after payment failure");
 
         orderEventPublisherPort.publishOrderCancelled(toEvent(saved, previousStatus));
 

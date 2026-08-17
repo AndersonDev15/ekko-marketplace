@@ -1,6 +1,6 @@
 package com.ekko.order_service.domain.exception;
 
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 
 public class OrderCancellationNotAllowedException extends RuntimeException {
 

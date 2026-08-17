@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -21,6 +22,7 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestJwtDecoderConfig.class)
+@TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
 public abstract class AbstractPostgresIntegrationTest {
 
     protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
@@ -60,7 +62,8 @@ public abstract class AbstractPostgresIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         jdbcTemplate.execute("""
-                TRUNCATE TABLE seller_documents,
+                TRUNCATE TABLE order_confirmations,
+                               seller_documents,
                                seller_bank_accounts,
                                seller_addresses,
                                seller_metrics,

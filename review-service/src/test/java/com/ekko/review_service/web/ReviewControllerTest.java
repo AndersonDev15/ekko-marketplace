@@ -1,14 +1,16 @@
 package com.ekko.review_service.web;
 
 import com.ekko.review_service.config.SecurityConfig;
+import com.ekko.review_service.controller.ReviewController;
+import com.ekko.review_service.dto.request.CreateReviewRequest;
 import com.ekko.review_service.exception.HelpfulVoteAlreadyExistsException;
 import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.exception.SelfHelpfulVoteException;
 import com.ekko.review_service.service.HelpfulVoteService;
 import com.ekko.review_service.service.ReviewCommandService;
 import com.ekko.review_service.service.ReviewQueryService;
-import com.ekko.review_service.web.dto.EligibleToReviewResponse;
-import com.ekko.review_service.web.dto.ReviewResponse;
+import com.ekko.review_service.dto.response.EligibleToReviewResponse;
+import com.ekko.review_service.dto.response.ReviewResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -92,8 +94,8 @@ class ReviewControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(REVIEW_ID.toString()));
 
-        ArgumentCaptor<com.ekko.review_service.web.dto.CreateReviewRequest> captor =
-                ArgumentCaptor.forClass(com.ekko.review_service.web.dto.CreateReviewRequest.class);
+        ArgumentCaptor<CreateReviewRequest> captor =
+                ArgumentCaptor.forClass(CreateReviewRequest.class);
         verify(reviewCommandService).createReview(captor.capture(), eq(CUSTOMER_ID.toString()));
         assertThat(captor.getValue().rating()).isEqualTo(5);
     }

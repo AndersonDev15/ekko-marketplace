@@ -1,8 +1,8 @@
 package com.ekko.payment_service.application.service;
 
-import com.ekko.payment_service.domain.exception.VendorAccountNotFoundException;
-import com.ekko.payment_service.domain.model.HandleAccountUpdatedCommand;
-import com.ekko.payment_service.domain.model.VendorAccountStatus;
+import com.ekko.payment_service.application.exception.VendorAccountNotFoundException;
+import com.ekko.payment_service.domain.command.HandleAccountUpdatedCommand;
+import com.ekko.payment_service.domain.enums.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
 import com.ekko.payment_service.domain.port.out.VendorStripeAccountRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;

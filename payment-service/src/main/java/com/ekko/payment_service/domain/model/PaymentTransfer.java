@@ -1,5 +1,7 @@
 package com.ekko.payment_service.domain.model;
 
+import com.ekko.payment_service.domain.enums.TransferStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;

@@ -32,6 +32,13 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Order> findById(UUID id) {
+        return orderJpaRepository.findById(id)
+                .map(orderPersistenceMapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Order> findByOrderNumber(String orderNumber) {
         return orderJpaRepository.findByOrderNumber(orderNumber)
                 .map(orderPersistenceMapper::toDomain);

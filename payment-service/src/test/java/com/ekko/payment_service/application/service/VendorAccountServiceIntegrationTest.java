@@ -2,12 +2,12 @@ package com.ekko.payment_service.application.service;
 
 import com.ekko.payment_service.config.AbstractPostgresIntegrationTest;
 import com.ekko.payment_service.domain.exception.VendorAccountAlreadyExistsException;
-import com.ekko.payment_service.domain.model.CreateVendorAccountCommand;
+import com.ekko.payment_service.domain.command.CreateVendorAccountCommand;
 import com.ekko.payment_service.domain.model.VendorAccountResult;
 import com.ekko.payment_service.domain.port.in.CreateVendorAccountUseCase;
 import com.ekko.payment_service.domain.port.in.RefreshOnboardingLinkUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
-import com.ekko.payment_service.infrastructure.persistence.entity.VendorAccountStatus;
+import com.ekko.payment_service.infrastructure.persistence.enums.VendorAccountStatus;
 import com.ekko.payment_service.infrastructure.persistence.entity.VendorStripeAccountEntity;
 import com.ekko.payment_service.infrastructure.persistence.repository.VendorStripeAccountJpaRepository;
 import org.junit.jupiter.api.AfterEach;

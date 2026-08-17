@@ -2,8 +2,8 @@ package com.ekko.review_service.mapper;
 
 import com.ekko.review_service.entity.Review;
 import com.ekko.review_service.entity.ReviewImage;
-import com.ekko.review_service.web.dto.CreateReviewRequest;
-import com.ekko.review_service.web.dto.ReviewResponse;
+import com.ekko.review_service.dto.request.CreateReviewRequest;
+import com.ekko.review_service.dto.response.ReviewResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

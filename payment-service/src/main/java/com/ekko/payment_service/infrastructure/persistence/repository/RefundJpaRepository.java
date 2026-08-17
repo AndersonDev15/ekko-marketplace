@@ -1,6 +1,6 @@
 package com.ekko.payment_service.infrastructure.persistence.repository;
 
-import com.ekko.payment_service.domain.model.RefundStatus;
+import com.ekko.payment_service.domain.enums.RefundStatus;
 import com.ekko.payment_service.infrastructure.persistence.entity.RefundEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

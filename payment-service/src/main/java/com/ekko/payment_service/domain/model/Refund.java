@@ -1,5 +1,8 @@
 package com.ekko.payment_service.domain.model;
 
+import com.ekko.payment_service.domain.enums.RefundReason;
+import com.ekko.payment_service.domain.enums.RefundStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;

@@ -1,7 +1,7 @@
 package com.ekko.order_service.infrastructure.persistence.adapter.out.product;
 
 import com.ekko.order_service.domain.exception.InsufficientStockException;
-import com.ekko.order_service.domain.exception.StockReservationException;
+import com.ekko.order_service.application.exception.StockReservationException;
 import com.ekko.order_service.domain.model.ProductVariant;
 import com.ekko.order_service.domain.model.StockItem;
 import com.ekko.order_service.domain.port.out.ProductServicePort;

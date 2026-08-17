@@ -1,5 +1,6 @@
 package com.ekko.order_service.domain.model;
 
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.exception.InvalidOrderStatusTransitionException;
 import com.ekko.order_service.domain.policy.OrderStatusTransitionPolicy;
 import lombok.AllArgsConstructor;
@@ -37,6 +38,11 @@ public class Order {
 
     public void cancel() {
         this.status = OrderStatus.CANCELLED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void confirm() {
+        this.status = OrderStatus.CONFIRMED;
         this.updatedAt = LocalDateTime.now();
     }
 

@@ -1,10 +1,10 @@
 package com.ekko.order_service.application.service;
 
 import com.ekko.order_service.domain.exception.InvalidOrderStatusTransitionException;
-import com.ekko.order_service.domain.exception.OrderNotFoundException;
+import com.ekko.order_service.application.exception.OrderNotFoundException;
 import com.ekko.order_service.domain.model.Order;
-import com.ekko.order_service.domain.model.OrderStatus;
-import com.ekko.order_service.domain.model.OrderStatusChangedEvent;
+import com.ekko.order_service.domain.enums.OrderStatus;
+import com.ekko.order_service.domain.event.OrderStatusChangedEvent;
 import com.ekko.order_service.domain.policy.OrderStatusTransitionPolicy;
 import com.ekko.order_service.domain.port.out.OrderEventPublisherPort;
 import com.ekko.order_service.domain.port.out.OrderRepositoryPort;

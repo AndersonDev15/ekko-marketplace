@@ -1,9 +1,8 @@
 package com.ekko.order_service.infrastructure.persistence.adapter.out;
 
-import com.ekko.order_service.builder.OrderTestDataBuilder;
 import com.ekko.order_service.config.AbstractPostgresIntegrationTest;
 import com.ekko.order_service.domain.model.Order;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.port.out.OrderRepositoryPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

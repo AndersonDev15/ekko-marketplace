@@ -25,6 +25,7 @@ public class RabbitMQConfig {
     public static final String REVIEW_DLX = "review.dlx";
     public static final String ORDER_CONFIRMED_DLQ = "review.order.confirmed.dlq";
     public static final String REVIEW_EXCHANGE = "review.exchange";
+    public static final String REVIEW_CREATED_ROUTING_KEY = "review.created";
     public static final String REVIEW_PRODUCT_RATING_UPDATED_ROUTING_KEY = "review.product-rating-updated";
 
     @Bean

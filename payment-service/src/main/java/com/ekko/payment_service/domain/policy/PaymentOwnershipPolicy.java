@@ -1,6 +1,6 @@
 package com.ekko.payment_service.domain.policy;
 
-import com.ekko.payment_service.domain.exception.PaymentAccessDeniedException;
+import com.ekko.payment_service.application.exception.PaymentAccessDeniedException;
 import com.ekko.payment_service.domain.model.Payment;
 import org.springframework.stereotype.Component;
 

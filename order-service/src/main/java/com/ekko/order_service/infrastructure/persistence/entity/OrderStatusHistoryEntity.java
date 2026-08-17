@@ -1,6 +1,7 @@
 package com.ekko.order_service.infrastructure.persistence.entity;
 
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
+import com.ekko.order_service.infrastructure.persistence.enums.ChangedByType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

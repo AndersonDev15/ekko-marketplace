@@ -1,6 +1,6 @@
 package com.ekko.payment_service.infrastructure.persistence.mapper;
 
-import com.ekko.payment_service.domain.model.VendorAccountStatus;
+import com.ekko.payment_service.domain.enums.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
 import com.ekko.payment_service.infrastructure.persistence.entity.VendorStripeAccountEntity;
 import org.mapstruct.Mapper;

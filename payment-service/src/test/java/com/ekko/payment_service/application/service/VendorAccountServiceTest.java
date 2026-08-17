@@ -2,10 +2,10 @@ package com.ekko.payment_service.application.service;
 
 import com.ekko.payment_service.domain.exception.VendorAccountAlreadyActiveException;
 import com.ekko.payment_service.domain.exception.VendorAccountAlreadyExistsException;
-import com.ekko.payment_service.domain.exception.VendorAccountNotFoundException;
-import com.ekko.payment_service.domain.model.CreateVendorAccountCommand;
+import com.ekko.payment_service.application.exception.VendorAccountNotFoundException;
+import com.ekko.payment_service.domain.command.CreateVendorAccountCommand;
 import com.ekko.payment_service.domain.model.VendorAccountResult;
-import com.ekko.payment_service.domain.model.VendorAccountStatus;
+import com.ekko.payment_service.domain.enums.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
 import com.ekko.payment_service.domain.port.out.VendorStripeAccountRepositoryPort;

@@ -1,6 +1,6 @@
 package com.ekko.payment_service.application.service;
 
-import com.ekko.payment_service.domain.exception.PaymentNotFoundException;
+import com.ekko.payment_service.application.exception.PaymentNotFoundException;
 import com.ekko.payment_service.domain.model.Payment;
 import com.ekko.payment_service.domain.model.PaymentTransaction;
 import com.ekko.payment_service.domain.policy.PaymentOwnershipPolicy;

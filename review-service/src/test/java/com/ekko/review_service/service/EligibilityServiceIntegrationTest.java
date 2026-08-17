@@ -35,12 +35,14 @@ class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest 
         UUID item2 = UUID.randomUUID();
         UUID product1 = UUID.randomUUID();
         UUID product2 = UUID.randomUUID();
+        UUID seller1 = UUID.randomUUID();
+        UUID seller2 = UUID.randomUUID();
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 orderId,
                 CUSTOMER_ID,
                 List.of(
-                        new OrderConfirmedEvent.OrderItemConfirmed(item1, product1),
-                        new OrderConfirmedEvent.OrderItemConfirmed(item2, product2)));
+                        new OrderConfirmedEvent.OrderItemConfirmed(item1, product1, seller1),
+                        new OrderConfirmedEvent.OrderItemConfirmed(item2, product2, seller2)));
 
         // when
         eligibilityService.registerEligibility(event);
@@ -51,6 +53,9 @@ class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest 
         assertThat(eligible)
                 .extracting(EligibleReview::getOrderItemId)
                 .containsExactlyInAnyOrder(item1, item2);
+        assertThat(eligible)
+                .extracting(EligibleReview::getSellerKeycloakId)
+                .containsExactlyInAnyOrder(seller1, seller2);
     }
 
     @Test
@@ -60,10 +65,11 @@ class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest 
         UUID orderId = UUID.randomUUID();
         UUID orderItemId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
+        UUID seller = UUID.randomUUID();
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 orderId,
                 CUSTOMER_ID,
-                List.of(new OrderConfirmedEvent.OrderItemConfirmed(orderItemId, productId)));
+                List.of(new OrderConfirmedEvent.OrderItemConfirmed(orderItemId, productId, seller)));
 
         // when
         eligibilityService.registerEligibility(event);
@@ -137,8 +143,8 @@ class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest 
 
     private void insertEligibility(UUID orderId, UUID orderItemId, UUID productId) {
         jdbcTemplate.update("""
-                INSERT INTO eligible_reviews (order_id, order_item_id, product_id, customer_id)
-                VALUES (?, ?, ?, ?)
-                """, orderId, orderItemId, productId, CUSTOMER_ID);
+                INSERT INTO eligible_reviews (order_id, order_item_id, product_id, seller_keycloak_id, customer_id)
+                VALUES (?, ?, ?, ?, ?)
+                """, orderId, orderItemId, productId, UUID.randomUUID(), CUSTOMER_ID);
     }
 }

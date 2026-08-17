@@ -1,6 +1,6 @@
 package com.ekko.order_service.domain.policy;
 
-import com.ekko.order_service.domain.exception.OrderAccessDeniedException;
+import com.ekko.order_service.application.exception.OrderAccessDeniedException;
 import com.ekko.order_service.domain.model.Order;
 import org.springframework.stereotype.Component;
 

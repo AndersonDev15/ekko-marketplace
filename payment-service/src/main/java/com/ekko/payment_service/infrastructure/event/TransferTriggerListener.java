@@ -1,6 +1,6 @@
 package com.ekko.payment_service.infrastructure.event;
 
-import com.ekko.payment_service.domain.model.PaymentSucceededInternalEvent;
+import com.ekko.payment_service.domain.event.PaymentSucceededInternalEvent;
 import com.ekko.payment_service.domain.port.in.ProcessTransfersUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;

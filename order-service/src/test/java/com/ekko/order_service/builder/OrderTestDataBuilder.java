@@ -3,7 +3,7 @@ package com.ekko.order_service.builder;
 import com.ekko.order_service.domain.model.Order;
 import com.ekko.order_service.domain.model.OrderAddress;
 import com.ekko.order_service.domain.model.OrderItem;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.model.ProductVariant;
 
 import java.math.BigDecimal;

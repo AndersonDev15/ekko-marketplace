@@ -1,7 +1,7 @@
 package com.ekko.payment_service.infrastructure.messaging;
 
 import com.ekko.payment_service.config.AbstractRabbitMqIntegrationTest;
-import com.ekko.payment_service.domain.model.InitiatePaymentCommand;
+import com.ekko.payment_service.domain.command.InitiatePaymentCommand;
 import com.ekko.payment_service.domain.model.Payment;
 import com.ekko.payment_service.domain.port.in.InitiatePaymentUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;

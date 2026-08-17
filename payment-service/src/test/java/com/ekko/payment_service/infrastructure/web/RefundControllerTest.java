@@ -2,12 +2,13 @@ package com.ekko.payment_service.infrastructure.web;
 
 import com.ekko.payment_service.domain.exception.RefundAmountExceededException;
 import com.ekko.payment_service.domain.exception.RefundNotAllowedException;
-import com.ekko.payment_service.domain.model.CreateRefundCommand;
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.command.CreateRefundCommand;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 import com.ekko.payment_service.domain.model.Refund;
-import com.ekko.payment_service.domain.model.RefundReason;
+import com.ekko.payment_service.domain.enums.RefundReason;
 import com.ekko.payment_service.domain.port.in.CreateRefundUseCase;
 import com.ekko.payment_service.infrastructure.config.SecurityConfig;
+import com.ekko.payment_service.infrastructure.persistence.adapter.in.web.RefundController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -22,7 +23,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.ekko.payment_service.util.JwtTestUtils.adminAuth;

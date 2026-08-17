@@ -1,6 +1,6 @@
 package com.ekko.payment_service.domain.exception;
 
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 
 import java.util.UUID;
 

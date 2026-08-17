@@ -1,9 +1,10 @@
 package com.ekko.order_service.infrastructure.messaging.rabbit;
 
-import com.ekko.order_service.domain.model.OrderCancelledEvent;
-import com.ekko.order_service.domain.model.OrderCreatedEvent;
-import com.ekko.order_service.domain.model.OrderStatus;
-import com.ekko.order_service.domain.model.OrderStatusChangedEvent;
+import com.ekko.order_service.domain.event.OrderCancelledEvent;
+import com.ekko.order_service.domain.event.OrderConfirmedEvent;
+import com.ekko.order_service.domain.event.OrderCreatedEvent;
+import com.ekko.order_service.domain.enums.OrderStatus;
+import com.ekko.order_service.domain.event.OrderStatusChangedEvent;
 import com.ekko.order_service.infrastructure.config.RabbitMQConfig;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -134,6 +135,25 @@ class RabbitMQOrderEventPublisherTest {
         verify(rabbitTemplate).convertAndSend(
                 RabbitMQConfig.ORDER_EXCHANGE,
                 RabbitMQConfig.ORDER_CANCELLED_ROUTING_KEY,
+                event);
+    }
+
+    @Test
+    void routesOrderConfirmedEventToConfiguredExchangeAndKey() {
+        UUID itemId = UUID.randomUUID();
+        OrderConfirmedEvent event = new OrderConfirmedEvent(
+                UUID.randomUUID(),
+                "EKK-20250809-AB12",
+                UUID.randomUUID().toString(),
+                List.of(new OrderConfirmedEvent.OrderItemConfirmed(itemId, PRODUCT_ID, SELLER_KEYCLOAK_ID,
+                        new BigDecimal("200.00"))),
+                LocalDateTime.of(2025, 8, 9, 13, 0));
+
+        publisher.publishOrderConfirmed(event);
+
+        verify(rabbitTemplate).convertAndSend(
+                RabbitMQConfig.ORDER_EXCHANGE,
+                RabbitMQConfig.ORDER_CONFIRMED_ROUTING_KEY,
                 event);
     }
 

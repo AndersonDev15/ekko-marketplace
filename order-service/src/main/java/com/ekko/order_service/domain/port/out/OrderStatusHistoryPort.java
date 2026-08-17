@@ -1,7 +1,7 @@
 package com.ekko.order_service.domain.port.out;
 
-import com.ekko.order_service.domain.model.OrderChangeSource;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderChangeSource;
+import com.ekko.order_service.domain.enums.OrderStatus;
 
 import java.util.UUID;
 

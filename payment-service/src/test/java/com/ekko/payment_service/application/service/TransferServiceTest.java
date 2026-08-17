@@ -1,12 +1,14 @@
 package com.ekko.payment_service.application.service;
 
+import com.ekko.payment_service.domain.enums.PaymentStatus;
+import com.ekko.payment_service.domain.enums.TransferStatus;
+import com.ekko.payment_service.domain.enums.VendorAccountStatus;
+import com.ekko.payment_service.domain.event.TransferFailedEvent;
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentStatus;
 import com.ekko.payment_service.domain.model.PaymentTransfer;
-import com.ekko.payment_service.domain.model.TransferStatus;
-import com.ekko.payment_service.domain.model.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorAllocation;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
+import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;
 import com.ekko.payment_service.domain.port.out.PaymentTransferRepositoryPort;
@@ -50,6 +52,8 @@ class TransferServiceTest {
     private VendorStripeAccountRepositoryPort vendorStripeAccountRepositoryPort;
     @Mock
     private PaymentGatewayPort paymentGatewayPort;
+    @Mock
+    private PaymentEventPublisherPort paymentEventPublisherPort;
 
     private TransferService service;
 
@@ -59,7 +63,8 @@ class TransferServiceTest {
                 paymentTransferRepositoryPort,
                 paymentRepositoryPort,
                 vendorStripeAccountRepositoryPort,
-                paymentGatewayPort);
+                paymentGatewayPort,
+                paymentEventPublisherPort);
     }
 
     @Test
@@ -74,6 +79,8 @@ class TransferServiceTest {
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any()))
                 .thenReturn("tr_1")
                 .thenReturn("tr_2");
+        when(paymentTransferRepositoryPort.save(any(PaymentTransfer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.execute(PAYMENT_ID);
 
@@ -89,6 +96,7 @@ class TransferServiceTest {
 
         verify(paymentGatewayPort).createTransfer(NET_AMOUNT_ONE, "USD", "acct_1", PAYMENT_ID.toString());
         verify(paymentGatewayPort).createTransfer(NET_AMOUNT_TWO, "USD", "acct_2", PAYMENT_ID.toString());
+        verifyNoInteractions(paymentEventPublisherPort);
     }
 
     @Test
@@ -101,6 +109,8 @@ class TransferServiceTest {
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
                 .thenReturn(Optional.empty());
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any())).thenReturn("tr_1");
+        when(paymentTransferRepositoryPort.save(any(PaymentTransfer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.execute(PAYMENT_ID);
 
@@ -113,6 +123,58 @@ class TransferServiceTest {
     }
 
     @Test
+    void publishesTransferFailedWhenVendorHasNoStripeAccount() {
+        Payment payment = paymentWith(VENDOR_ONE, VENDOR_TWO);
+        when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
+        when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
+        when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ONE))
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ONE, "acct_1", true)));
+        when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
+                .thenReturn(Optional.empty());
+        when(paymentGatewayPort.createTransfer(any(), any(), any(), any())).thenReturn("tr_1");
+        when(paymentTransferRepositoryPort.save(any(PaymentTransfer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.execute(PAYMENT_ID);
+
+        ArgumentCaptor<TransferFailedEvent> eventCaptor = ArgumentCaptor.forClass(TransferFailedEvent.class);
+        verify(paymentEventPublisherPort, org.mockito.Mockito.times(1)).publishTransferFailed(eventCaptor.capture());
+        TransferFailedEvent event = eventCaptor.getValue();
+        assertEquals(PAYMENT_ID, event.paymentId());
+        assertEquals(payment.getOrderId(), event.orderId());
+        assertEquals(VENDOR_TWO, event.vendorId());
+        assertEquals(NET_AMOUNT_TWO, event.amount());
+        assertEquals("USD", event.currency());
+    }
+
+    @Test
+    void publishesTransferFailedWhenGatewayThrows() {
+        Payment payment = paymentWith(VENDOR_ONE, VENDOR_TWO);
+        when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
+        when(paymentRepositoryPort.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
+        when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_ONE))
+                .thenReturn(Optional.of(vendorAccount(VENDOR_ONE, "acct_1", true)));
+        when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
+                .thenReturn(Optional.of(vendorAccount(VENDOR_TWO, "acct_2", true)));
+        when(paymentGatewayPort.createTransfer(any(), any(), any(), any()))
+                .thenThrow(new PaymentGatewayException("boom"))
+                .thenReturn("tr_2");
+        when(paymentTransferRepositoryPort.save(any(PaymentTransfer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.execute(PAYMENT_ID);
+
+        ArgumentCaptor<TransferFailedEvent> eventCaptor = ArgumentCaptor.forClass(TransferFailedEvent.class);
+        verify(paymentEventPublisherPort, org.mockito.Mockito.times(1)).publishTransferFailed(eventCaptor.capture());
+        TransferFailedEvent event = eventCaptor.getValue();
+        assertEquals(PAYMENT_ID, event.paymentId());
+        assertEquals(payment.getOrderId(), event.orderId());
+        assertEquals(VENDOR_ONE, event.vendorId());
+        assertEquals(NET_AMOUNT_ONE, event.amount());
+        assertEquals("USD", event.currency());
+    }
+
+    @Test
     void marksTransferFailedWhenVendorAccountDoesNotHaveChargesEnabled() {
         Payment payment = paymentWith(VENDOR_ONE, VENDOR_TWO);
         when(paymentTransferRepositoryPort.findByPaymentId(PAYMENT_ID)).thenReturn(List.of());
@@ -122,6 +184,8 @@ class TransferServiceTest {
         when(vendorStripeAccountRepositoryPort.findByVendorId(VENDOR_TWO))
                 .thenReturn(Optional.of(vendorAccount(VENDOR_TWO, "acct_2", true)));
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any())).thenReturn("tr_2");
+        when(paymentTransferRepositoryPort.save(any(PaymentTransfer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.execute(PAYMENT_ID);
 
@@ -145,6 +209,8 @@ class TransferServiceTest {
         when(paymentGatewayPort.createTransfer(any(), any(), any(), any()))
                 .thenThrow(new PaymentGatewayException("boom"))
                 .thenReturn("tr_2");
+        when(paymentTransferRepositoryPort.save(any(PaymentTransfer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.execute(PAYMENT_ID);
 
@@ -172,6 +238,7 @@ class TransferServiceTest {
 
         verifyNoInteractions(paymentRepositoryPort);
         verifyNoInteractions(paymentGatewayPort);
+        verifyNoInteractions(paymentEventPublisherPort);
     }
 
     @Test

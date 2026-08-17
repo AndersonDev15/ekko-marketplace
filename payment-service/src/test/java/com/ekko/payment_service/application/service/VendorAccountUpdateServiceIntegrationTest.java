@@ -1,9 +1,9 @@
 package com.ekko.payment_service.application.service;
 
 import com.ekko.payment_service.config.AbstractPostgresIntegrationTest;
-import com.ekko.payment_service.domain.model.HandleAccountUpdatedCommand;
+import com.ekko.payment_service.domain.command.HandleAccountUpdatedCommand;
 import com.ekko.payment_service.domain.port.in.HandleAccountUpdatedUseCase;
-import com.ekko.payment_service.infrastructure.persistence.entity.VendorAccountStatus;
+import com.ekko.payment_service.infrastructure.persistence.enums.VendorAccountStatus;
 import com.ekko.payment_service.infrastructure.persistence.entity.VendorStripeAccountEntity;
 import com.ekko.payment_service.infrastructure.persistence.repository.VendorStripeAccountJpaRepository;
 import org.junit.jupiter.api.AfterEach;

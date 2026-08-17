@@ -1,15 +1,15 @@
 package com.ekko.payment_service.application.service;
 
-import com.ekko.payment_service.domain.exception.PaymentNotFoundException;
-import com.ekko.payment_service.domain.exception.RefundNotFoundException;
-import com.ekko.payment_service.domain.model.HandleRefundSucceededCommand;
+import com.ekko.payment_service.application.exception.PaymentNotFoundException;
+import com.ekko.payment_service.application.exception.RefundNotFoundException;
+import com.ekko.payment_service.domain.command.HandleRefundSucceededCommand;
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentRefundedEvent;
+import com.ekko.payment_service.domain.event.PaymentRefundedEvent;
 import com.ekko.payment_service.domain.model.PaymentTransaction;
 import com.ekko.payment_service.domain.model.Refund;
-import com.ekko.payment_service.domain.model.RefundStatus;
-import com.ekko.payment_service.domain.model.TransactionStatus;
-import com.ekko.payment_service.domain.model.TransactionType;
+import com.ekko.payment_service.domain.enums.RefundStatus;
+import com.ekko.payment_service.domain.enums.TransactionStatus;
+import com.ekko.payment_service.domain.enums.TransactionType;
 import com.ekko.payment_service.domain.port.in.HandleRefundSucceededUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;

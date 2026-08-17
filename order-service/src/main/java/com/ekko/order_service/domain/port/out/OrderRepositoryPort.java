@@ -11,6 +11,8 @@ public interface OrderRepositoryPort {
 
     Order save(Order order);
 
+    Optional<Order> findById(UUID id);
+
     Optional<Order> findByOrderNumber(String orderNumber);
 
     Page<Order> findAllByCustomerId(UUID customerId, Pageable pageable);

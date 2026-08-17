@@ -1,7 +1,7 @@
 package com.ekko.payment_service.infrastructure.persistence.entity;
 
-import com.ekko.payment_service.domain.model.TransactionStatus;
-import com.ekko.payment_service.domain.model.TransactionType;
+import com.ekko.payment_service.domain.enums.TransactionStatus;
+import com.ekko.payment_service.domain.enums.TransactionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

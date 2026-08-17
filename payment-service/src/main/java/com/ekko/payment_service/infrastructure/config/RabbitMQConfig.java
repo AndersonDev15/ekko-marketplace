@@ -24,6 +24,7 @@ public class RabbitMQConfig {
     public static final String PAYMENT_CANCELLED_ROUTING_KEY = "payment.cancelled";
     public static final String PAYMENT_REFUNDED_ROUTING_KEY = "payment.refunded";
     public static final String PAYMENT_REFUND_FAILED_ROUTING_KEY = "payment.refund_failed";
+    public static final String TRANSFER_FAILED_ROUTING_KEY = "transfer.failed";
 
     public static final String ORDER_EXCHANGE = "order.exchange";
     public static final String ORDER_CREATED_ROUTING_KEY = "order.created";

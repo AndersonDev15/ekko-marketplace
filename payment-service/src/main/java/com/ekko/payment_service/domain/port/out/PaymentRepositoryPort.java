@@ -1,7 +1,7 @@
 package com.ekko.payment_service.domain.port.out;
 
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 
 import java.util.Optional;
 import java.util.UUID;

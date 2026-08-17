@@ -1,8 +1,8 @@
 package com.ekko.payment_service.infrastructure.messaging;
 
 import com.ekko.payment_service.domain.exception.VendorAccountNotActiveException;
-import com.ekko.payment_service.domain.exception.VendorAccountNotFoundException;
-import com.ekko.payment_service.domain.model.InitiatePaymentCommand;
+import com.ekko.payment_service.application.exception.VendorAccountNotFoundException;
+import com.ekko.payment_service.domain.command.InitiatePaymentCommand;
 import com.ekko.payment_service.domain.port.in.InitiatePaymentUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;
 import com.ekko.payment_service.infrastructure.config.RabbitMQConfig;

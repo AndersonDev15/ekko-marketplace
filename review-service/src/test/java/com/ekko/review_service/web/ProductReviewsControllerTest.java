@@ -1,10 +1,11 @@
 package com.ekko.review_service.web;
 
 import com.ekko.review_service.config.SecurityConfig;
+import com.ekko.review_service.controller.ProductReviewsController;
 import com.ekko.review_service.enums.ReviewStatus;
 import com.ekko.review_service.service.ReviewQueryService;
-import com.ekko.review_service.web.dto.ProductReviewsResponse;
-import com.ekko.review_service.web.dto.ReviewResponse;
+import com.ekko.review_service.dto.response.ProductReviewsResponse;
+import com.ekko.review_service.dto.response.ReviewResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

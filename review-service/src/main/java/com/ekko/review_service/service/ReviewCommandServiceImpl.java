@@ -1,5 +1,6 @@
 package com.ekko.review_service.service;
 
+import com.ekko.review_service.entity.EligibleReview;
 import com.ekko.review_service.entity.Review;
 import com.ekko.review_service.entity.ReviewImage;
 import com.ekko.review_service.enums.ReviewStatus;
@@ -9,12 +10,14 @@ import com.ekko.review_service.exception.ReviewEditWindowExpiredException;
 import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.exception.ReviewOwnershipException;
 import com.ekko.review_service.mapper.ReviewMapper;
+import com.ekko.review_service.messaging.ReviewEventPublisher;
+import com.ekko.review_service.messaging.dto.ReviewCreatedEvent;
 import com.ekko.review_service.repository.ReviewImageRepository;
 import com.ekko.review_service.repository.ReviewRepository;
-import com.ekko.review_service.web.dto.AdminUpdateContentRequest;
-import com.ekko.review_service.web.dto.CreateReviewRequest;
-import com.ekko.review_service.web.dto.ReviewResponse;
-import com.ekko.review_service.web.dto.UpdateReviewRequest;
+import com.ekko.review_service.dto.request.AdminUpdateContentRequest;
+import com.ekko.review_service.dto.request.CreateReviewRequest;
+import com.ekko.review_service.dto.response.ReviewResponse;
+import com.ekko.review_service.dto.request.UpdateReviewRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -37,11 +40,13 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
     private final ReviewImageRepository reviewImageRepository;
     private final ReviewMapper reviewMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ReviewEventPublisher reviewEventPublisher;
 
     @Override
     @Transactional
     public ReviewResponse createReview(CreateReviewRequest request, String customerId) {
-        eligibilityService.assertEligible(customerId, request.orderItemId(), request.orderId(), request.productId());
+        EligibleReview eligible = eligibilityService.assertEligible(
+                customerId, request.orderItemId(), request.orderId(), request.productId());
 
         reviewRepository.findByOrderItemIdAndCustomerId(request.orderItemId(), customerId)
                 .ifPresent(review -> {
@@ -52,6 +57,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         List<ReviewImage> images = replaceImages(saved, request.imageUrls());
 
         applicationEventPublisher.publishEvent(new RatingRecalculationRequestedEvent(saved.getProductId()));
+        reviewEventPublisher.publishReviewCreated(toCreatedEvent(saved, eligible.getSellerKeycloakId()));
 
         return reviewMapper.toResponse(saved, images);
     }
@@ -178,5 +184,19 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
     private ReviewResponse toResponse(Review review) {
         List<ReviewImage> images = reviewImageRepository.findByReviewIdOrderBySortOrderAsc(review.getId());
         return reviewMapper.toResponse(review, images);
+    }
+
+    private ReviewCreatedEvent toCreatedEvent(Review review, UUID sellerKeycloakId) {
+        return new ReviewCreatedEvent(
+                review.getId(),
+                review.getProductId(),
+                review.getOrderId(),
+                review.getOrderItemId(),
+                sellerKeycloakId,
+                review.getCustomerId(),
+                review.getRating(),
+                review.getTitle(),
+                review.getComment(),
+                review.getCreatedAt());
     }
 }

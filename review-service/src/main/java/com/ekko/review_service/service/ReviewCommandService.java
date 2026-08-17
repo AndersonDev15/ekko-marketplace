@@ -1,10 +1,10 @@
 package com.ekko.review_service.service;
 
 import com.ekko.review_service.enums.ReviewStatus;
-import com.ekko.review_service.web.dto.AdminUpdateContentRequest;
-import com.ekko.review_service.web.dto.CreateReviewRequest;
-import com.ekko.review_service.web.dto.ReviewResponse;
-import com.ekko.review_service.web.dto.UpdateReviewRequest;
+import com.ekko.review_service.dto.request.AdminUpdateContentRequest;
+import com.ekko.review_service.dto.request.CreateReviewRequest;
+import com.ekko.review_service.dto.response.ReviewResponse;
+import com.ekko.review_service.dto.request.UpdateReviewRequest;
 
 import java.util.UUID;
 

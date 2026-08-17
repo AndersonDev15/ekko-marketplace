@@ -1,7 +1,7 @@
 package com.ekko.payment_service.infrastructure.persistence.entity;
 
-import com.ekko.payment_service.domain.model.RefundReason;
-import com.ekko.payment_service.domain.model.RefundStatus;
+import com.ekko.payment_service.domain.enums.RefundReason;
+import com.ekko.payment_service.domain.enums.RefundStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

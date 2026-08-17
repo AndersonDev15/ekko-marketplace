@@ -1,8 +1,8 @@
 package com.ekko.payment_service.application.service;
 
-import com.ekko.payment_service.infrastructure.web.webhook.PaymentIntentHandler;
-import com.ekko.payment_service.infrastructure.web.webhook.RefundHandler;
-import com.ekko.payment_service.infrastructure.web.webhook.VendorAccountHandler;
+import com.ekko.payment_service.infrastructure.persistence.adapter.in.web.webhook.PaymentIntentHandler;
+import com.ekko.payment_service.infrastructure.persistence.adapter.in.web.webhook.RefundHandler;
+import com.ekko.payment_service.infrastructure.persistence.adapter.in.web.webhook.VendorAccountHandler;
 import com.stripe.model.Account;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;

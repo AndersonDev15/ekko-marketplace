@@ -1,10 +1,10 @@
 package com.ekko.order_service.infrastructure.persistence.adapter.out;
 
-import com.ekko.order_service.domain.exception.OrderNotFoundException;
-import com.ekko.order_service.domain.model.OrderChangeSource;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.application.exception.OrderNotFoundException;
+import com.ekko.order_service.domain.enums.OrderChangeSource;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.port.out.OrderStatusHistoryPort;
-import com.ekko.order_service.infrastructure.persistence.entity.ChangedByType;
+import com.ekko.order_service.infrastructure.persistence.enums.ChangedByType;
 import com.ekko.order_service.infrastructure.persistence.entity.OrderEntity;
 import com.ekko.order_service.infrastructure.persistence.entity.OrderStatusHistoryEntity;
 import com.ekko.order_service.infrastructure.persistence.repository.OrderJpaRepository;

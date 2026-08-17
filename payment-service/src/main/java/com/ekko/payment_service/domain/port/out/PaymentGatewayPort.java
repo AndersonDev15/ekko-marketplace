@@ -1,6 +1,6 @@
 package com.ekko.payment_service.domain.port.out;
 
-import com.ekko.payment_service.domain.model.RefundReason;
+import com.ekko.payment_service.domain.enums.RefundReason;
 
 import java.math.BigDecimal;
 

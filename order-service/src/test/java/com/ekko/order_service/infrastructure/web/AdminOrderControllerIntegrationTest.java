@@ -2,11 +2,11 @@ package com.ekko.order_service.infrastructure.web;
 
 import com.ekko.order_service.builder.OrderTestDataBuilder;
 import com.ekko.order_service.config.AbstractPostgresIntegrationTest;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.model.ProductVariant;
 import com.ekko.order_service.domain.port.out.OrderEventPublisherPort;
 import com.ekko.order_service.domain.port.out.ProductServicePort;
-import com.ekko.order_service.infrastructure.persistence.entity.ChangedByType;
+import com.ekko.order_service.infrastructure.persistence.enums.ChangedByType;
 import com.ekko.order_service.infrastructure.persistence.entity.OrderEntity;
 import com.ekko.order_service.infrastructure.persistence.entity.OrderStatusHistoryEntity;
 import com.ekko.order_service.infrastructure.persistence.repository.OrderJpaRepository;

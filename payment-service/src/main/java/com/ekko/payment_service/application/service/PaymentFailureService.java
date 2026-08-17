@@ -1,13 +1,13 @@
 package com.ekko.payment_service.application.service;
 
-import com.ekko.payment_service.domain.exception.PaymentNotFoundException;
-import com.ekko.payment_service.domain.model.HandlePaymentFailedCommand;
+import com.ekko.payment_service.application.exception.PaymentNotFoundException;
+import com.ekko.payment_service.domain.command.HandlePaymentFailedCommand;
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentFailedEvent;
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.event.PaymentFailedEvent;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 import com.ekko.payment_service.domain.model.PaymentTransaction;
-import com.ekko.payment_service.domain.model.TransactionStatus;
-import com.ekko.payment_service.domain.model.TransactionType;
+import com.ekko.payment_service.domain.enums.TransactionStatus;
+import com.ekko.payment_service.domain.enums.TransactionType;
 import com.ekko.payment_service.domain.port.in.HandlePaymentFailedUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;

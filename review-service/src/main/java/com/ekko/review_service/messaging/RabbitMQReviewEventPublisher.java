@@ -2,6 +2,7 @@ package com.ekko.review_service.messaging;
 
 import com.ekko.review_service.config.RabbitMQConfig;
 import com.ekko.review_service.messaging.dto.ProductRatingUpdatedEvent;
+import com.ekko.review_service.messaging.dto.ReviewCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,15 @@ public class RabbitMQReviewEventPublisher implements ReviewEventPublisher {
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.REVIEW_EXCHANGE,
                 RabbitMQConfig.REVIEW_PRODUCT_RATING_UPDATED_ROUTING_KEY,
+                event
+        );
+    }
+
+    @Override
+    public void publishReviewCreated(ReviewCreatedEvent event) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.REVIEW_EXCHANGE,
+                RabbitMQConfig.REVIEW_CREATED_ROUTING_KEY,
                 event
         );
     }

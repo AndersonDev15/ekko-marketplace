@@ -1,17 +1,19 @@
 package com.ekko.payment_service.application.service;
 
 import com.ekko.payment_service.config.AbstractPostgresIntegrationTest;
+import com.ekko.payment_service.domain.event.TransferFailedEvent;
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentStatus;
 import com.ekko.payment_service.domain.model.VendorAllocation;
 import com.ekko.payment_service.domain.port.in.ProcessTransfersUseCase;
+import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;
-import com.ekko.payment_service.infrastructure.persistence.entity.VendorAccountStatus;
+import com.ekko.payment_service.infrastructure.persistence.enums.VendorAccountStatus;
 import com.ekko.payment_service.infrastructure.persistence.entity.VendorStripeAccountEntity;
 import com.ekko.payment_service.infrastructure.persistence.repository.VendorStripeAccountJpaRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +53,9 @@ class TransferServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @MockitoBean
     private PaymentGatewayPort paymentGatewayPort;
+
+    @MockitoBean
+    private PaymentEventPublisherPort paymentEventPublisherPort;
 
     @AfterEach
     void cleanDatabase() {
@@ -95,6 +101,16 @@ class TransferServiceIntegrationTest extends AbstractPostgresIntegrationTest {
                 .createTransfer(any(BigDecimal.class), any(String.class), any(String.class), any(String.class));
         verify(paymentGatewayPort).createTransfer(new BigDecimal("45.00"), "USD", "acct_1", payment.getId().toString());
         verify(paymentGatewayPort).createTransfer(new BigDecimal("36.00"), "USD", "acct_2", payment.getId().toString());
+
+        ArgumentCaptor<TransferFailedEvent> eventCaptor = ArgumentCaptor.forClass(TransferFailedEvent.class);
+        verify(paymentEventPublisherPort, times(1)).publishTransferFailed(eventCaptor.capture());
+        TransferFailedEvent event = eventCaptor.getValue();
+        assertNotNull(event.transferId());
+        assertEquals(payment.getId(), event.paymentId());
+        assertEquals(payment.getOrderId(), event.orderId());
+        assertEquals(VENDOR_THREE, event.vendorId());
+        assertEquals(0, new BigDecimal("27.00").compareTo(event.amount()));
+        assertEquals("USD", event.currency());
     }
 
     @Test
@@ -116,6 +132,7 @@ class TransferServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         assertEquals(3, transfers.size());
         verify(paymentGatewayPort, times(2))
                 .createTransfer(any(BigDecimal.class), any(String.class), any(String.class), any(String.class));
+        verify(paymentEventPublisherPort, times(1)).publishTransferFailed(any(TransferFailedEvent.class));
     }
 
     private Payment saveSucceededPaymentWithThreeAllocations() {

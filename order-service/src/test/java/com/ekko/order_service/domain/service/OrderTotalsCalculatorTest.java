@@ -1,6 +1,7 @@
 package com.ekko.order_service.domain.service;
 
 import com.ekko.order_service.domain.model.OrderItem;
+import com.ekko.order_service.domain.model.OrderTotals;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

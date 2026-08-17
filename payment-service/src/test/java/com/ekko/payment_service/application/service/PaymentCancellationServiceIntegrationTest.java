@@ -1,13 +1,13 @@
 package com.ekko.payment_service.application.service;
 
 import com.ekko.payment_service.config.AbstractPostgresIntegrationTest;
-import com.ekko.payment_service.domain.model.HandlePaymentCancelledCommand;
+import com.ekko.payment_service.domain.command.HandlePaymentCancelledCommand;
 import com.ekko.payment_service.domain.model.Payment;
-import com.ekko.payment_service.domain.model.PaymentCancelledEvent;
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.event.PaymentCancelledEvent;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 import com.ekko.payment_service.domain.model.PaymentTransaction;
-import com.ekko.payment_service.domain.model.TransactionStatus;
-import com.ekko.payment_service.domain.model.TransactionType;
+import com.ekko.payment_service.domain.enums.TransactionStatus;
+import com.ekko.payment_service.domain.enums.TransactionType;
 import com.ekko.payment_service.domain.port.in.HandlePaymentCancelledUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;

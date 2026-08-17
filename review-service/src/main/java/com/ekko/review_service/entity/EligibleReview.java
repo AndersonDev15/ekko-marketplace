@@ -37,6 +37,9 @@ public class EligibleReview {
     @Column(name = "product_id", nullable = false)
     private UUID productId;
 
+    @Column(name = "seller_keycloak_id", nullable = false)
+    private UUID sellerKeycloakId;
+
     @Column(name = "customer_id", nullable = false, length = 36)
     private String customerId;
 

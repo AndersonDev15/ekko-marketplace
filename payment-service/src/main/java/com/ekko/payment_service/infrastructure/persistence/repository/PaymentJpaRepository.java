@@ -1,6 +1,6 @@
 package com.ekko.payment_service.infrastructure.persistence.repository;
 
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 import com.ekko.payment_service.infrastructure.persistence.entity.PaymentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 

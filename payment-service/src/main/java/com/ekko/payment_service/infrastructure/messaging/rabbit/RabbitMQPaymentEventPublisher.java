@@ -1,11 +1,12 @@
 package com.ekko.payment_service.infrastructure.messaging.rabbit;
 
-import com.ekko.payment_service.domain.model.PaymentCancelledEvent;
-import com.ekko.payment_service.domain.model.PaymentCompletedEvent;
-import com.ekko.payment_service.domain.model.PaymentFailedEvent;
-import com.ekko.payment_service.domain.model.PaymentInitiatedEvent;
-import com.ekko.payment_service.domain.model.PaymentRefundFailedEvent;
-import com.ekko.payment_service.domain.model.PaymentRefundedEvent;
+import com.ekko.payment_service.domain.event.PaymentCancelledEvent;
+import com.ekko.payment_service.domain.event.PaymentCompletedEvent;
+import com.ekko.payment_service.domain.event.PaymentFailedEvent;
+import com.ekko.payment_service.domain.event.PaymentInitiatedEvent;
+import com.ekko.payment_service.domain.event.PaymentRefundFailedEvent;
+import com.ekko.payment_service.domain.event.PaymentRefundedEvent;
+import com.ekko.payment_service.domain.event.TransferFailedEvent;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.infrastructure.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +69,15 @@ public class RabbitMQPaymentEventPublisher implements PaymentEventPublisherPort 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.PAYMENT_EXCHANGE,
                 RabbitMQConfig.PAYMENT_REFUND_FAILED_ROUTING_KEY,
+                event
+        );
+    }
+
+    @Override
+    public void publishTransferFailed(TransferFailedEvent event) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.PAYMENT_EXCHANGE,
+                RabbitMQConfig.TRANSFER_FAILED_ROUTING_KEY,
                 event
         );
     }

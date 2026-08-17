@@ -1,6 +1,6 @@
 package com.ekko.payment_service.infrastructure.gateway;
 
-import com.ekko.payment_service.domain.model.RefundReason;
+import com.ekko.payment_service.domain.enums.RefundReason;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Account;

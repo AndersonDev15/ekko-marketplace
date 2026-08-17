@@ -1,7 +1,7 @@
 package com.ekko.order_service.domain.policy;
 
 import com.ekko.order_service.domain.exception.InvalidOrderStatusTransitionException;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

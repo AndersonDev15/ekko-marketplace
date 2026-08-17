@@ -1,5 +1,6 @@
 package com.ekko.review_service.service;
 
+import com.ekko.review_service.entity.EligibleReview;
 import com.ekko.review_service.entity.Review;
 import com.ekko.review_service.entity.ReviewImage;
 import com.ekko.review_service.enums.ReviewStatus;
@@ -10,12 +11,14 @@ import com.ekko.review_service.exception.ReviewEditWindowExpiredException;
 import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.exception.ReviewOwnershipException;
 import com.ekko.review_service.mapper.ReviewMapper;
+import com.ekko.review_service.messaging.ReviewEventPublisher;
+import com.ekko.review_service.messaging.dto.ReviewCreatedEvent;
 import com.ekko.review_service.repository.ReviewImageRepository;
 import com.ekko.review_service.repository.ReviewRepository;
-import com.ekko.review_service.web.dto.AdminUpdateContentRequest;
-import com.ekko.review_service.web.dto.CreateReviewRequest;
-import com.ekko.review_service.web.dto.ReviewResponse;
-import com.ekko.review_service.web.dto.UpdateReviewRequest;
+import com.ekko.review_service.dto.request.AdminUpdateContentRequest;
+import com.ekko.review_service.dto.request.CreateReviewRequest;
+import com.ekko.review_service.dto.response.ReviewResponse;
+import com.ekko.review_service.dto.request.UpdateReviewRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +56,7 @@ class ReviewCommandServiceImplTest {
     private static final UUID PRODUCT_ID = UUID.randomUUID();
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID ORDER_ITEM_ID = UUID.randomUUID();
+    private static final UUID SELLER_KEYCLOAK_ID = UUID.randomUUID();
 
     @Mock
     private EligibilityService eligibilityService;
@@ -68,6 +72,9 @@ class ReviewCommandServiceImplTest {
 
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
+
+    @Mock
+    private ReviewEventPublisher reviewEventPublisher;
 
     @InjectMocks
     private ReviewCommandServiceImpl reviewCommandService;
@@ -94,6 +101,8 @@ class ReviewCommandServiceImplTest {
                 .withCustomerId(CUSTOMER_ID)
                 .build();
         ReviewResponse response = response(saved);
+        when(eligibilityService.assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID))
+                .thenReturn(eligibleReview());
         when(reviewMapper.toEntity(request, CUSTOMER_ID)).thenReturn(review);
         when(reviewRepository.findByOrderItemIdAndCustomerId(ORDER_ITEM_ID, CUSTOMER_ID))
                 .thenReturn(Optional.empty());
@@ -112,6 +121,70 @@ class ReviewCommandServiceImplTest {
                 ArgumentCaptor.forClass(RatingRecalculationRequestedEvent.class);
         verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().productId()).isEqualTo(PRODUCT_ID);
+    }
+
+    @Test
+    @DisplayName("createReview publica el evento review.created con los datos de la review guardada")
+    void createReview_shouldPublishReviewCreatedEventWithSavedReviewDetails() {
+        // given
+        CreateReviewRequest request = new CreateReviewRequest(
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of());
+        Review review = aReview()
+                .withProductId(PRODUCT_ID)
+                .withOrderId(ORDER_ID)
+                .withOrderItemId(ORDER_ITEM_ID)
+                .withCustomerId(CUSTOMER_ID)
+                .build();
+        Review saved = aReview()
+                .withId(REVIEW_ID)
+                .withProductId(PRODUCT_ID)
+                .withOrderId(ORDER_ID)
+                .withOrderItemId(ORDER_ITEM_ID)
+                .withCustomerId(CUSTOMER_ID)
+                .build();
+        when(eligibilityService.assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID))
+                .thenReturn(eligibleReview());
+        when(reviewMapper.toEntity(request, CUSTOMER_ID)).thenReturn(review);
+        when(reviewRepository.findByOrderItemIdAndCustomerId(ORDER_ITEM_ID, CUSTOMER_ID))
+                .thenReturn(Optional.empty());
+        when(reviewRepository.save(review)).thenReturn(saved);
+        when(reviewMapper.toResponse(eq(saved), anyList())).thenReturn(response(saved));
+
+        // when
+        reviewCommandService.createReview(request, CUSTOMER_ID);
+
+        // then
+        ArgumentCaptor<ReviewCreatedEvent> eventCaptor = ArgumentCaptor.forClass(ReviewCreatedEvent.class);
+        verify(reviewEventPublisher).publishReviewCreated(eventCaptor.capture());
+        ReviewCreatedEvent event = eventCaptor.getValue();
+        assertThat(event.reviewId()).isEqualTo(REVIEW_ID);
+        assertThat(event.productId()).isEqualTo(PRODUCT_ID);
+        assertThat(event.orderId()).isEqualTo(ORDER_ID);
+        assertThat(event.orderItemId()).isEqualTo(ORDER_ITEM_ID);
+        assertThat(event.sellerKeycloakId()).isEqualTo(SELLER_KEYCLOAK_ID);
+        assertThat(event.customerId()).isEqualTo(CUSTOMER_ID);
+        assertThat(event.rating()).isEqualTo(saved.getRating());
+        assertThat(event.title()).isEqualTo(saved.getTitle());
+        assertThat(event.comment()).isEqualTo(saved.getComment());
+        assertThat(event.createdAt()).isEqualTo(saved.getCreatedAt());
+    }
+
+    @Test
+    @DisplayName("createReview no publica el evento review.created cuando el customer no es elegible")
+    void createReview_shouldNotPublishCreatedEventWhenCustomerNotEligible() {
+        // given
+        CreateReviewRequest request = new CreateReviewRequest(
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of());
+        doThrow(new NotEligibleToReviewException())
+                .when(eligibilityService).assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID);
+
+        // when
+        // then
+        assertThatThrownBy(() -> reviewCommandService.createReview(request, CUSTOMER_ID))
+                .isInstanceOf(NotEligibleToReviewException.class);
+        verify(reviewRepository, never()).save(any(Review.class));
+        verify(applicationEventPublisher, never()).publishEvent(any());
+        verify(reviewEventPublisher, never()).publishReviewCreated(any());
     }
 
     @Test
@@ -155,6 +228,8 @@ class ReviewCommandServiceImplTest {
                 PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of("url-1", "url-2"));
         Review review = aReview().withOrderItemId(ORDER_ITEM_ID).build();
         Review saved = aReview().withId(REVIEW_ID).withOrderItemId(ORDER_ITEM_ID).build();
+        when(eligibilityService.assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID))
+                .thenReturn(eligibleReview());
         when(reviewMapper.toEntity(request, CUSTOMER_ID)).thenReturn(review);
         when(reviewRepository.findByOrderItemIdAndCustomerId(ORDER_ITEM_ID, CUSTOMER_ID))
                 .thenReturn(Optional.empty());
@@ -670,5 +745,15 @@ class ReviewCommandServiceImplTest {
                 review.getCreatedAt(),
                 review.getUpdatedAt(),
                 0L);
+    }
+
+    private EligibleReview eligibleReview() {
+        return EligibleReview.builder()
+                .orderId(ORDER_ID)
+                .orderItemId(ORDER_ITEM_ID)
+                .productId(PRODUCT_ID)
+                .sellerKeycloakId(SELLER_KEYCLOAK_ID)
+                .customerId(CUSTOMER_ID)
+                .build();
     }
 }

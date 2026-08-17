@@ -1,8 +1,10 @@
 package com.ekko.order_service.application.service;
 
 import com.ekko.order_service.domain.model.Order;
-import com.ekko.order_service.domain.model.OrderChangeSource;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderChangeSource;
+import com.ekko.order_service.domain.enums.OrderStatus;
+import com.ekko.order_service.domain.model.PaymentData;
+import com.ekko.order_service.domain.port.out.OrderPaymentPort;
 import com.ekko.order_service.domain.port.out.OrderRepositoryPort;
 import com.ekko.order_service.domain.port.out.OrderStatusHistoryPort;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,8 @@ class OrderTransactionServiceTest {
     private OrderRepositoryPort orderRepositoryPort;
     @Mock
     private OrderStatusHistoryPort orderStatusHistoryPort;
+    @Mock
+    private OrderPaymentPort orderPaymentPort;
 
     @InjectMocks
     private OrderTransactionService service;
@@ -121,6 +125,42 @@ class OrderTransactionServiceTest {
                 OrderChangeSource.ADMIN,
                 changedBy,
                 "manual update");
+    }
+
+    @Test
+    void confirmsOrderPersistsPaymentAndRecordsSystemHistory() {
+        Order order = anOrderBuilderWithStatus(OrderStatus.PENDING);
+        UUID savedId = UUID.randomUUID();
+        Order saved = anOrderBuilderWithId(savedId, OrderStatus.CONFIRMED);
+        PaymentData paymentData = new PaymentData(
+                UUID.randomUUID(), new java.math.BigDecimal("200.00"), "USD", null);
+        when(orderRepositoryPort.save(order)).thenReturn(saved);
+
+        Order result = service.confirmOrder(order, paymentData);
+
+        assertSame(saved, result);
+        InOrder inOrder = inOrder(orderRepositoryPort, orderPaymentPort, orderStatusHistoryPort);
+        inOrder.verify(orderRepositoryPort).save(order);
+        inOrder.verify(orderPaymentPort).recordCompletedPayment(savedId, paymentData);
+        inOrder.verify(orderStatusHistoryPort).recordStatusChange(
+                savedId,
+                OrderStatus.CONFIRMED,
+                OrderChangeSource.SYSTEM,
+                null,
+                "Order confirmed after payment");
+    }
+
+    @Test
+    void doesNotPersistPaymentWhenOrderSaveFails() {
+        when(orderRepositoryPort.save(any(Order.class)))
+                .thenThrow(new RuntimeException("db failure"));
+
+        assertThrows(RuntimeException.class, () -> service.confirmOrder(
+                anOrder(), new PaymentData(UUID.randomUUID(), null, null, null)));
+
+        verify(orderPaymentPort, never()).recordCompletedPayment(any(), any());
+        verify(orderStatusHistoryPort, never()).recordStatusChange(
+                any(), any(), any(), isNull(), eq("Order confirmed after payment"));
     }
 
     private static Order anOrderBuilderWithStatus(OrderStatus status) {

@@ -1,6 +1,6 @@
 package com.ekko.payment_service.infrastructure.persistence.entity;
 
-import com.ekko.payment_service.domain.model.PaymentStatus;
+import com.ekko.payment_service.domain.enums.PaymentStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

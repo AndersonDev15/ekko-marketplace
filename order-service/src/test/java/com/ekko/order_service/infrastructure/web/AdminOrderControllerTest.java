@@ -1,14 +1,15 @@
 package com.ekko.order_service.infrastructure.web;
 
-import com.ekko.order_service.application.mapper.OrderMapper;
+import com.ekko.order_service.application.mapper.OrderMapperImpl;
 import com.ekko.order_service.domain.exception.InvalidOrderStatusTransitionException;
 import com.ekko.order_service.domain.model.Order;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.port.in.CancelOrderUseCase;
 import com.ekko.order_service.domain.port.in.GetAllOrdersUseCase;
 import com.ekko.order_service.domain.port.in.GetOrderByOrderNumberForAdminUseCase;
 import com.ekko.order_service.domain.port.in.UpdateOrderStatusUseCase;
 import com.ekko.order_service.infrastructure.config.SecurityConfig;
+import com.ekko.order_service.infrastructure.persistence.adapter.in.web.controller.AdminOrderController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AdminOrderController.class)
-@Import({SecurityConfig.class, OrderMapper.class})
+@Import({SecurityConfig.class, OrderMapperImpl.class})
 class AdminOrderControllerTest {
 
     private static final String ORDER_NUMBER = "EKK-20250809-AB12";

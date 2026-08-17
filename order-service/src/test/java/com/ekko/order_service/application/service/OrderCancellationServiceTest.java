@@ -1,11 +1,12 @@
 package com.ekko.order_service.application.service;
 
-import com.ekko.order_service.domain.exception.OrderAccessDeniedException;
+import com.ekko.order_service.application.exception.OrderAccessDeniedException;
 import com.ekko.order_service.domain.exception.OrderCancellationNotAllowedException;
-import com.ekko.order_service.domain.exception.OrderNotFoundException;
+import com.ekko.order_service.application.exception.OrderNotFoundException;
 import com.ekko.order_service.domain.model.Order;
-import com.ekko.order_service.domain.model.OrderCancelledEvent;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.event.OrderCancelledEvent;
+import com.ekko.order_service.domain.enums.OrderChangeSource;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.policy.OrderCancellationPolicy;
 import com.ekko.order_service.domain.policy.OrderOwnershipPolicy;
 import com.ekko.order_service.domain.port.out.OrderEventPublisherPort;
@@ -30,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -206,6 +209,52 @@ class OrderCancellationServiceTest {
         assertThrows(RuntimeException.class,
                 () -> service.execute(order.getOrderNumber(), CUSTOMER_KEYCLOAK_ID, null, false));
 
+        verify(orderEventPublisherPort, never()).publishOrderCancelled(any(OrderCancelledEvent.class));
+    }
+
+    @Test
+    void systemCancellationRecordsSystemSourceAndPublishesAfterSave() {
+        Order order = anOrderBuilder().status(OrderStatus.PENDING).build();
+        when(orderRepositoryPort.findByOrderNumber(order.getOrderNumber()))
+                .thenReturn(Optional.of(order));
+        when(orderTransactionService.cancelOrder(any(Order.class), any(), any(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Order result = service.cancelBySystem(order.getOrderNumber());
+
+        assertEquals(OrderStatus.CANCELLED, result.getStatus());
+
+        InOrder inOrder = inOrder(orderTransactionService, orderEventPublisherPort);
+        inOrder.verify(orderTransactionService).cancelOrder(
+                argThat(cancelled -> cancelled.getStatus() == OrderStatus.CANCELLED),
+                eq(OrderChangeSource.SYSTEM),
+                isNull(),
+                eq("Order cancelled after payment failure"));
+        inOrder.verify(orderEventPublisherPort).publishOrderCancelled(any(OrderCancelledEvent.class));
+    }
+
+    @Test
+    void systemCancellationRejectsNonCancellableOrder() {
+        Order order = anOrderBuilder().status(OrderStatus.SHIPPED).build();
+        when(orderRepositoryPort.findByOrderNumber(order.getOrderNumber()))
+                .thenReturn(Optional.of(order));
+
+        assertThrows(OrderCancellationNotAllowedException.class,
+                () -> service.cancelBySystem(order.getOrderNumber()));
+
+        verify(orderTransactionService, never()).cancelOrder(any(), any(), any(), anyString());
+        verify(orderEventPublisherPort, never()).publishOrderCancelled(any(OrderCancelledEvent.class));
+    }
+
+    @Test
+    void systemCancellationThrowsOrderNotFoundWhenOrderMissing() {
+        when(orderRepositoryPort.findByOrderNumber("EKK-00000000-XXXX"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(OrderNotFoundException.class,
+                () -> service.cancelBySystem("EKK-00000000-XXXX"));
+
+        verify(orderTransactionService, never()).cancelOrder(any(), any(), any(), anyString());
         verify(orderEventPublisherPort, never()).publishOrderCancelled(any(OrderCancelledEvent.class));
     }
 }

@@ -1,5 +1,6 @@
 package com.ekko.order_service.domain.model;
 
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.exception.InvalidOrderStatusTransitionException;
 import com.ekko.order_service.domain.policy.OrderStatusTransitionPolicy;
 import org.junit.jupiter.api.Test;

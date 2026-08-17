@@ -5,9 +5,9 @@ import com.ekko.review_service.entity.Review;
 import com.ekko.review_service.enums.ReviewStatus;
 import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.repository.ReviewRepository;
-import com.ekko.review_service.web.dto.EligibleToReviewResponse;
-import com.ekko.review_service.web.dto.ProductReviewsResponse;
-import com.ekko.review_service.web.dto.ReviewResponse;
+import com.ekko.review_service.dto.response.EligibleToReviewResponse;
+import com.ekko.review_service.dto.response.ProductReviewsResponse;
+import com.ekko.review_service.dto.response.ReviewResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -250,8 +250,8 @@ class ReviewQueryServiceIntegrationTest extends AbstractPostgresIntegrationTest 
 
     private void insertEligibility(UUID orderId, UUID orderItemId, UUID productId) {
         jdbcTemplate.update("""
-                INSERT INTO eligible_reviews (order_id, order_item_id, product_id, customer_id)
-                VALUES (?, ?, ?, ?)
-                """, orderId, orderItemId, productId, CUSTOMER_ID);
+                INSERT INTO eligible_reviews (order_id, order_item_id, product_id, seller_keycloak_id, customer_id)
+                VALUES (?, ?, ?, ?, ?)
+                """, orderId, orderItemId, productId, UUID.randomUUID(), CUSTOMER_ID);
     }
 }

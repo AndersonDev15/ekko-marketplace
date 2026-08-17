@@ -26,13 +26,14 @@ public interface EligibleReviewRepository extends JpaRepository<EligibleReview, 
 
     @Modifying
     @Query(value = """
-            INSERT INTO eligible_reviews (order_id, order_item_id, product_id, customer_id)
-            VALUES (:orderId, :orderItemId, :productId, :customerId)
+            INSERT INTO eligible_reviews (order_id, order_item_id, product_id, seller_keycloak_id, customer_id)
+            VALUES (:orderId, :orderItemId, :productId, :sellerKeycloakId, :customerId)
             ON CONFLICT (order_item_id, customer_id) DO NOTHING
             """, nativeQuery = true)
     void insertEligibilityIfAbsent(
             @Param("orderId") UUID orderId,
             @Param("orderItemId") UUID orderItemId,
             @Param("productId") UUID productId,
+            @Param("sellerKeycloakId") UUID sellerKeycloakId,
             @Param("customerId") String customerId);
 }

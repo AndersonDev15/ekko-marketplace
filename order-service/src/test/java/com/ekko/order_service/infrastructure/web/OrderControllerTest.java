@@ -1,17 +1,18 @@
 package com.ekko.order_service.infrastructure.web;
 
-import com.ekko.order_service.application.mapper.OrderMapper;
-import com.ekko.order_service.domain.exception.OrderAccessDeniedException;
+import com.ekko.order_service.application.mapper.OrderMapperImpl;
+import com.ekko.order_service.application.exception.OrderAccessDeniedException;
 import com.ekko.order_service.domain.exception.OrderCancellationNotAllowedException;
 import com.ekko.order_service.domain.exception.InvalidGuestEmailException;
 import com.ekko.order_service.domain.model.Order;
 import com.ekko.order_service.domain.model.OrderDraft;
-import com.ekko.order_service.domain.model.OrderStatus;
+import com.ekko.order_service.domain.enums.OrderStatus;
 import com.ekko.order_service.domain.port.in.CancelOrderUseCase;
 import com.ekko.order_service.domain.port.in.CreateOrderUseCase;
 import com.ekko.order_service.domain.port.in.GetMyOrdersUseCase;
 import com.ekko.order_service.domain.port.in.GetOrderByOrderNumberUseCase;
 import com.ekko.order_service.infrastructure.config.SecurityConfig;
+import com.ekko.order_service.infrastructure.persistence.adapter.in.web.controller.OrderController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.UUID;
 
 import static com.ekko.order_service.builder.OrderTestDataBuilder.anOrder;
 import static com.ekko.order_service.util.JwtTestUtils.customerAuth;
@@ -50,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(OrderController.class)
-@Import({SecurityConfig.class, OrderMapper.class})
+@Import({SecurityConfig.class, OrderMapperImpl.class})
 class OrderControllerTest {
 
     private static final String ORDER_NUMBER = "EKK-20250809-AB12";

@@ -17,7 +17,7 @@ public class EligibilityServiceImpl implements EligibilityService {
     private final EligibleReviewRepository eligibleReviewRepository;
 
     @Override
-    public void assertEligible(String customerId, UUID orderItemId, UUID orderId, UUID productId) {
+    public EligibleReview assertEligible(String customerId, UUID orderItemId, UUID orderId, UUID productId) {
         EligibleReview eligible = eligibleReviewRepository
                 .findByOrderItemIdAndCustomerId(orderItemId, customerId)
                 .orElseThrow(NotEligibleToReviewException::new);
@@ -25,6 +25,8 @@ public class EligibilityServiceImpl implements EligibilityService {
         if (!eligible.getOrderId().equals(orderId) || !eligible.getProductId().equals(productId)) {
             throw new NotEligibleToReviewException();
         }
+
+        return eligible;
     }
 
     @Override
@@ -32,7 +34,7 @@ public class EligibilityServiceImpl implements EligibilityService {
     public void registerEligibility(OrderConfirmedEvent event) {
         for (OrderConfirmedEvent.OrderItemConfirmed item : event.items()) {
             eligibleReviewRepository.insertEligibilityIfAbsent(
-                    event.orderId(), item.orderItemId(), item.productId(), event.customerId());
+                    event.orderId(), item.orderItemId(), item.productId(), item.sellerKeycloakId(), event.customerId());
         }
     }
 }

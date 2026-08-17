@@ -1,9 +1,9 @@
 package com.ekko.review_service.service;
 
 import com.ekko.review_service.enums.ReviewStatus;
-import com.ekko.review_service.web.dto.EligibleToReviewResponse;
-import com.ekko.review_service.web.dto.ProductReviewsResponse;
-import com.ekko.review_service.web.dto.ReviewResponse;
+import com.ekko.review_service.dto.response.EligibleToReviewResponse;
+import com.ekko.review_service.dto.response.ProductReviewsResponse;
+import com.ekko.review_service.dto.response.ReviewResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
