@@ -4,6 +4,8 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -29,6 +31,8 @@ public class RabbitMQConfig {
     public static final String ORDER_EXCHANGE = "order.exchange";
     public static final String ORDER_CREATED_ROUTING_KEY = "order.created";
     public static final String ORDER_CREATED_QUEUE = "payment-service.order.created.queue";
+    public static final String PAYMENT_DLX = "payment.dlx";
+    public static final String ORDER_CREATED_DLQ = "payment-service.order.created.dlq";
 
     @Bean
     public DirectExchange paymentExchange() {
@@ -41,8 +45,21 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public DirectExchange paymentDlx() {
+        // Exclusive DLX owned by payment-service.
+        return new DirectExchange(PAYMENT_DLX, true, false);
+    }
+
+    @Bean
     public Queue orderCreatedQueue() {
-        return new Queue(ORDER_CREATED_QUEUE, true);
+        return QueueBuilder.durable(ORDER_CREATED_QUEUE)
+                .withArgument("x-dead-letter-exchange", PAYMENT_DLX)
+                .build();
+    }
+
+    @Bean
+    public Queue orderCreatedDlq() {
+        return QueueBuilder.durable(ORDER_CREATED_DLQ).build();
     }
 
     @Bean
@@ -50,6 +67,16 @@ public class RabbitMQConfig {
         return BindingBuilder
                 .bind(orderCreatedQueue)
                 .to(orderExchange)
+                .with(ORDER_CREATED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding orderCreatedDlqBinding(Queue orderCreatedDlq, DirectExchange paymentDlx) {
+        // Dead-lettered messages keep their original routing key (order.created), so the DLQ
+        // binds to payment.dlx with that same key.
+        return BindingBuilder
+                .bind(orderCreatedDlq)
+                .to(paymentDlx)
                 .with(ORDER_CREATED_ROUTING_KEY);
     }
 
@@ -77,6 +104,13 @@ public class RabbitMQConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         configurer.configure(factory, connectionFactory);
         factory.setMessageConverter(messageConverter);
+        // Bounded retries then reject without requeue, so the native dead-lettering sends the
+        // message to payment.dlx. This avoids the infinite requeue that used to happen here.
+        factory.setDefaultRequeueRejected(false);
+        factory.setAdviceChain(RetryInterceptorBuilder.stateless()
+                .maxRetries(2)
+                .backOffOptions(1000, 2.0, 10000)
+                .build());
         return factory;
     }
 }

@@ -91,6 +91,13 @@ public class OrderCancellationService implements CancelOrderUseCase {
                 saved.getGuestEmail(),
                 previousStatus,
                 previousStatus == OrderStatus.CONFIRMED,
+                saved.getItems().stream()
+                        .map(item -> new OrderCancelledEvent.OrderItemCancelled(
+                                item.id(),
+                                item.productId(),
+                                item.variantId(),
+                                item.quantity()))
+                        .toList(),
                 saved.getUpdatedAt());
     }
 }

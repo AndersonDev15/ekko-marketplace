@@ -2,12 +2,16 @@ package com.ekko.product_service.repository;
 
 import com.ekko.product_service.entity.Product;
 import com.ekko.product_service.enums.ProductStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +33,10 @@ public interface ProductRepository
     Optional<Product> findBySlugAndStatusAndDeletedAtIsNull(String slug, ProductStatus status);
 
     boolean existsByCategoryIdAndStatusAndDeletedAtIsNull(UUID categoryId, ProductStatus status);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.id = :productId")
+    Optional<Product> findByIdForUpdate(@Param("productId") UUID productId);
 
     @Override
     @EntityGraph(attributePaths = {"variants.inventory", "brand", "category"})

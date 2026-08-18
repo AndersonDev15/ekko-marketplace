@@ -128,6 +128,7 @@ class RabbitMQOrderEventPublisherTest {
                 null,
                 OrderStatus.CONFIRMED,
                 true,
+                List.of(),
                 LocalDateTime.of(2025, 8, 9, 14, 30));
 
         publisher.publishOrderCancelled(event);
@@ -141,12 +142,13 @@ class RabbitMQOrderEventPublisherTest {
     @Test
     void routesOrderConfirmedEventToConfiguredExchangeAndKey() {
         UUID itemId = UUID.randomUUID();
+        UUID variantId = UUID.randomUUID();
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 UUID.randomUUID(),
                 "EKK-20250809-AB12",
                 UUID.randomUUID().toString(),
-                List.of(new OrderConfirmedEvent.OrderItemConfirmed(itemId, PRODUCT_ID, SELLER_KEYCLOAK_ID,
-                        new BigDecimal("200.00"))),
+                List.of(new OrderConfirmedEvent.OrderItemConfirmed(itemId, PRODUCT_ID, variantId, 2,
+                        SELLER_KEYCLOAK_ID, new BigDecimal("200.00"))),
                 LocalDateTime.of(2025, 8, 9, 13, 0));
 
         publisher.publishOrderConfirmed(event);

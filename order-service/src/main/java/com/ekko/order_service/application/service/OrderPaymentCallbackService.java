@@ -65,6 +65,8 @@ public class OrderPaymentCallbackService implements PaymentCallbackUseCase {
                         .map(item -> new OrderConfirmedEvent.OrderItemConfirmed(
                                 item.id(),
                                 item.productId(),
+                                item.variantId(),
+                                item.quantity(),
                                 item.sellerKeycloakId(),
                                 item.subtotal()))
                         .toList(),

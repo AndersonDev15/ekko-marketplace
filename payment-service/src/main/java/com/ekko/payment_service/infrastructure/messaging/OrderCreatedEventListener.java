@@ -53,10 +53,10 @@ public class OrderCreatedEventListener {
             log.error("Dropping order.created for orderId {}: vendor {} has no active Stripe account",
                     payload.orderId(), e.getVendorId());
         }
-        // Known limitation: unexpected/infrastructure exceptions (e.g. wrapped StripeException, DB errors)
-        // propagate to RabbitMQ and, without a configured dead-letter-queue, the default container factory
-        // requeues them indefinitely. Business failures above are dropped on purpose so a single misconfigured
-        // vendor does not block the queue.
+        // Business failures above are dropped on purpose so a single misconfigured
+        // vendor does not block the queue. Unexpected/infrastructure exceptions propagate
+        // to RabbitMQ and, after bounded retries (3 attempts with backoff), are
+        // dead-lettered to payment.dlx via the configured container factory.
     }
 
     private List<InitiatePaymentCommand.VendorGrossAmount> groupVendorGrossAmounts(

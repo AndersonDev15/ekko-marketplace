@@ -110,6 +110,8 @@ class OrderPaymentCallbackServiceIntegrationTest extends AbstractPostgresIntegra
         assertNotNull(event.items().get(0).orderItemId());
         assertEquals(PRODUCT_ID, event.items().get(0).productId());
         assertEquals(SELLER_KEYCLOAK_ID, event.items().get(0).sellerKeycloakId());
+        assertEquals(VARIANT_ID, event.items().get(0).variantId());
+        assertEquals(2, event.items().get(0).quantity());
         assertEquals(0, new BigDecimal("200.00").compareTo(event.items().get(0).subtotal()));
     }
 

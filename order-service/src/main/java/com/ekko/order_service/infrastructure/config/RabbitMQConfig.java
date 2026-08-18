@@ -4,11 +4,15 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.amqp.autoconfigure.RabbitTemplateConfigurer;
+import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,6 +30,9 @@ public class RabbitMQConfig {
     public static final String PAYMENT_FAILED_ROUTING_KEY = "payment.failed";
     public static final String PAYMENT_COMPLETED_QUEUE = "order-service.payment.completed.queue";
     public static final String PAYMENT_FAILED_QUEUE = "order-service.payment.failed.queue";
+    public static final String ORDER_DLX = "order.dlx";
+    public static final String PAYMENT_COMPLETED_DLQ = "order-service.payment.completed.dlq";
+    public static final String PAYMENT_FAILED_DLQ = "order-service.payment.failed.dlq";
 
     @Bean
     public DirectExchange orderExchange() {
@@ -42,13 +49,33 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public DirectExchange orderDlx() {
+        // Exclusive DLX owned by order-service.
+        return new DirectExchange(ORDER_DLX, true, false);
+    }
+
+    @Bean
     public Queue paymentCompletedQueue() {
-        return new Queue(PAYMENT_COMPLETED_QUEUE, true);
+        return QueueBuilder.durable(PAYMENT_COMPLETED_QUEUE)
+                .withArgument("x-dead-letter-exchange", ORDER_DLX)
+                .build();
+    }
+
+    @Bean
+    public Queue paymentCompletedDlq() {
+        return QueueBuilder.durable(PAYMENT_COMPLETED_DLQ).build();
     }
 
     @Bean
     public Queue paymentFailedQueue() {
-        return new Queue(PAYMENT_FAILED_QUEUE, true);
+        return QueueBuilder.durable(PAYMENT_FAILED_QUEUE)
+                .withArgument("x-dead-letter-exchange", ORDER_DLX)
+                .build();
+    }
+
+    @Bean
+    public Queue paymentFailedDlq() {
+        return QueueBuilder.durable(PAYMENT_FAILED_DLQ).build();
     }
 
     @Bean
@@ -68,6 +95,24 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Binding paymentCompletedDlqBinding(Queue paymentCompletedDlq, DirectExchange orderDlx) {
+        // Dead-lettered messages keep their original routing key (payment.completed), so the DLQ
+        // binds to order.dlx with that same key.
+        return BindingBuilder
+                .bind(paymentCompletedDlq)
+                .to(orderDlx)
+                .with(PAYMENT_COMPLETED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding paymentFailedDlqBinding(Queue paymentFailedDlq, DirectExchange orderDlx) {
+        return BindingBuilder
+                .bind(paymentFailedDlq)
+                .to(orderDlx)
+                .with(PAYMENT_FAILED_ROUTING_KEY);
+    }
+
+    @Bean
     public MessageConverter messageConverter() {
         return new JacksonJsonMessageConverter();
     }
@@ -81,5 +126,24 @@ public class RabbitMQConfig {
         configurer.configure(rabbitTemplate, connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter);
         return rabbitTemplate;
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            SimpleRabbitListenerContainerFactoryConfigurer configurer,
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        configurer.configure(factory, connectionFactory);
+        factory.setMessageConverter(messageConverter);
+        // Bounded retries then reject without requeue, so the native dead-lettering sends the
+        // message to order.dlx. This avoids the infinite requeue documented in payment-service's
+        // OrderCreatedEventListener (no DLQ there) — a pattern payment-service should adopt later.
+        factory.setDefaultRequeueRejected(false);
+        factory.setAdviceChain(RetryInterceptorBuilder.stateless()
+                .maxRetries(2)
+                .backOffOptions(1000, 2.0, 10000)
+                .build());
+        return factory;
     }
 }

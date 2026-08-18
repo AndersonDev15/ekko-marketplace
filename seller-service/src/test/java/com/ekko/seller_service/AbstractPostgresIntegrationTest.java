@@ -63,6 +63,8 @@ public abstract class AbstractPostgresIntegrationTest {
     void cleanDatabase() {
         jdbcTemplate.execute("""
                 TRUNCATE TABLE order_confirmations,
+                               product_events,
+                               review_confirmations,
                                seller_documents,
                                seller_bank_accounts,
                                seller_addresses,

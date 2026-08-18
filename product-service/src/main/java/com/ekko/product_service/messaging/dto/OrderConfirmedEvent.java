@@ -1,10 +1,14 @@
-package com.ekko.order_service.domain.event;
+package com.ekko.product_service.messaging.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Consumed from order-service's order.confirmed event. Product-service needs the
+ * per-item variantId and quantity to confirm stock of the reserved inventory.
+ */
 public record OrderConfirmedEvent(
         UUID orderId,
         String orderNumber,
