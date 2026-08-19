@@ -7,8 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.util.List;
 
@@ -52,6 +55,17 @@ public class GlobalExceptionHandler {
             SellerDocumentNotFoundException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), request.getRequestURI()));
+    }
+
+    // -------------------------------------------------------------------------
+    // 502 BAD GATEWAY — fallo al subir/borrar documento en MinIO
+    // -------------------------------------------------------------------------
+
+    @ExceptionHandler(MinioUploadException.class)
+    public ResponseEntity<ErrorResponse> handleMinioUpload(
+            MinioUploadException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorResponse.of(502, "Bad Gateway", ex.getMessage(), request.getRequestURI()));
     }
 
     // -------------------------------------------------------------------------
@@ -109,6 +123,17 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Bad Request", "Validation failed", request.getRequestURI(), fieldErrors));
+    }
+
+    @ExceptionHandler({
+            MissingServletRequestPartException.class,
+            MissingServletRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class
+    })
+    public ResponseEntity<ErrorResponse> handleMalformedRequest(
+            Exception ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, "Bad Request", "Malformed request", request.getRequestURI()));
     }
 
     // -------------------------------------------------------------------------

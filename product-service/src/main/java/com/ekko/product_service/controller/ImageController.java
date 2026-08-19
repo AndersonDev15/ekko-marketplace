@@ -1,12 +1,12 @@
 package com.ekko.product_service.controller;
 
-import com.ekko.product_service.dto.request.CreateImageRequest;
 import com.ekko.product_service.dto.request.ReorderImagesRequest;
 import com.ekko.product_service.dto.response.ProductImageResponse;
 import com.ekko.product_service.service.ImageService;
 import com.ekko.product_service.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,7 +17,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -29,12 +32,14 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    @PostMapping
-    public ResponseEntity<ProductImageResponse> addImage(
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductImageResponse> uploadImage(
             @PathVariable UUID id,
-            @RequestBody CreateImageRequest request,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "isPrimary", required = false) Boolean isPrimary,
             @AuthenticationPrincipal Jwt jwt) {
-        ProductImageResponse response = imageService.addImage(id, request, JwtUtils.keycloakId(jwt));
+        ProductImageResponse response =
+                imageService.uploadImage(id, file, isPrimary, JwtUtils.keycloakId(jwt));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

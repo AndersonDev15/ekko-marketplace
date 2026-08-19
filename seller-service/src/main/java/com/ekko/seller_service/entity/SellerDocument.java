@@ -32,8 +32,8 @@ public class SellerDocument {
     @Column(name = "document_type", nullable = false, length = 50)
     private DocumentType documentType;
 
-    @Column(name = "document_url", nullable = false, length = 500)
-    private String documentUrl;
+    @Column(name = "object_key", nullable = false, length = 500)
+    private String objectKey;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

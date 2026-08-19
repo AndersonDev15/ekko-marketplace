@@ -6,11 +6,12 @@ import com.ekko.seller_service.support.SellerTestDataBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -188,13 +189,11 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
     }
 
     private String addDocument() throws Exception {
-        var result = mockMvc.perform(post("/sellers/documents")
+        var result = mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"documentType": "ID_CARD",
-                                 "documentUrl": "https://cdn.ekko.test/id_card.pdf"}
-                                """))
+                        .file(new MockMultipartFile(
+                                "file", "id_card.pdf", "application/pdf", "pdf-content".getBytes()))
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isOk())
                 .andReturn();
 

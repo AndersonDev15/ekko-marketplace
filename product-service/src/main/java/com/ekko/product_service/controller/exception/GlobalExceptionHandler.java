@@ -98,6 +98,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
+    @ExceptionHandler(ImageUploadException.class)
+    public ResponseEntity<Void> handleImageUpload(ImageUploadException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+    }
+
     @ExceptionHandler({
             InvalidProductStatusException.class,
             ProductAlreadyDeletedException.class,

@@ -259,7 +259,6 @@ class AdminSellerServiceTest {
         return new SellerDocumentResponse(
                 document.getId(),
                 document.getDocumentType(),
-                document.getDocumentUrl(),
                 document.getStatus(),
                 document.getUploadedAt(),
                 document.getReviewedAt(),

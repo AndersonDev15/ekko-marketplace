@@ -38,6 +38,9 @@ public class ProductImage {
     @Column(name = "url", nullable = false, length = 500)
     private String url;
 
+    @Column(name = "public_id")
+    private String publicId;
+
     @Column(name = "is_primary", nullable = false)
     private Boolean isPrimary;
 

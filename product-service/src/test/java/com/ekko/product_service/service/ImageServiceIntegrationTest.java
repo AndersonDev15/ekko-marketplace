@@ -18,6 +18,8 @@ import com.ekko.product_service.repository.ProductImageRepository;
 import com.ekko.product_service.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @Transactional
 class ImageServiceIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -51,6 +54,29 @@ class ImageServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
     private final UUID sellerId = SELLER_KEYCLOAK_ID;
     private final UUID otherSellerId = UUID.fromString("00000000-0000-0000-0000-0000000000bb");
+
+    @MockitoBean
+    private CloudinaryService cloudinaryService;
+
+    // ------------------------------------------------------------ uploadImage
+
+    @Test
+    void uploadImage_subeACloudinaryYPersisteUrlYPublicId() {
+        Product product = persistProduct(sellerId);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "iphone-16.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        CloudinaryService.UploadResult upload = new CloudinaryService.UploadResult(
+                "products/iphone-16",
+                "https://res.cloudinary.com/gqrn3sdp/image/upload/v1/products/iphone-16.jpg");
+        when(cloudinaryService.upload(file)).thenReturn(upload);
+
+        ProductImageResponse response = imageService.uploadImage(product.getId(), file, false, sellerId);
+
+        ProductImage saved = imageRepository.findById(response.id()).orElseThrow();
+        assertEquals("https://res.cloudinary.com/gqrn3sdp/image/upload/v1/products/iphone-16.jpg", saved.getUrl());
+        assertEquals("products/iphone-16", saved.getPublicId());
+        assertEquals(true, saved.getIsPrimary());
+    }
 
     // ---------------------------------------------------------------- addImage
 

@@ -10,6 +10,7 @@ import com.ekko.product_service.repository.ProductImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -22,9 +23,24 @@ public class ImageService {
 
     private final ProductImageRepository imageRepository;
     private final ActiveProductOwnershipValidator activeProductOwnershipValidator;
+    private final CloudinaryService cloudinaryService;
+
+    @Transactional
+    public ProductImageResponse uploadImage(UUID productId, MultipartFile file, Boolean isPrimary,
+                                            UUID sellerKeycloakId) {
+        CloudinaryService.UploadResult upload = cloudinaryService.upload(file);
+        return addImage(productId, new CreateImageRequest(upload.url(), isPrimary), sellerKeycloakId,
+                upload.publicId());
+    }
 
     @Transactional
     public ProductImageResponse addImage(UUID productId, CreateImageRequest request, UUID sellerKeycloakId) {
+        return addImage(productId, request, sellerKeycloakId, null);
+    }
+
+    @Transactional
+    public ProductImageResponse addImage(UUID productId, CreateImageRequest request, UUID sellerKeycloakId,
+                                         String publicId) {
         Product product = activeProductOwnershipValidator.validate(productId, sellerKeycloakId);
 
         List<ProductImage> images = imageRepository.findByProductIdOrderBySortOrderAsc(productId);
@@ -44,6 +60,7 @@ public class ImageService {
         ProductImage image = ProductImage.builder()
                 .product(product)
                 .url(request.url())
+                .publicId(publicId)
                 .isPrimary(isPrimary)
                 .sortOrder(sortOrder)
                 .createdAt(LocalDateTime.now())
@@ -58,6 +75,11 @@ public class ImageService {
         activeProductOwnershipValidator.validate(productId, sellerKeycloakId);
 
         ProductImage image = findOwnedImage(productId, imageId);
+
+        if (image.getPublicId() != null) {
+            cloudinaryService.delete(image.getPublicId());
+        }
+
         boolean wasPrimary = Boolean.TRUE.equals(image.getIsPrimary());
 
         imageRepository.delete(image);

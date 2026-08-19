@@ -14,6 +14,7 @@ public class ProductImageTestDataBuilder {
     private UUID id = IMAGE_ID;
     private Product product = null;
     private String url = IMAGE_URL;
+    private String publicId = null;
     private Boolean isPrimary = true;
     private Integer sortOrder = 0;
     private LocalDateTime createdAt = LocalDateTime.of(2025, 1, 1, 0, 0);
@@ -40,6 +41,11 @@ public class ProductImageTestDataBuilder {
         return this;
     }
 
+    public ProductImageTestDataBuilder withPublicId(String publicId) {
+        this.publicId = publicId;
+        return this;
+    }
+
     public ProductImageTestDataBuilder withIsPrimary(Boolean isPrimary) {
         this.isPrimary = isPrimary;
         return this;
@@ -60,6 +66,7 @@ public class ProductImageTestDataBuilder {
         image.setId(id);
         image.setProduct(product);
         image.setUrl(url);
+        image.setPublicId(publicId);
         image.setIsPrimary(isPrimary);
         image.setSortOrder(sortOrder);
         image.setCreatedAt(createdAt);

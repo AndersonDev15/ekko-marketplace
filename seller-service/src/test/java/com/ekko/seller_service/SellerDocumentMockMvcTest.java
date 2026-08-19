@@ -1,25 +1,29 @@
 package com.ekko.seller_service;
 
+import com.ekko.seller_service.entity.Seller;
+import com.ekko.seller_service.exception.MinioUploadException;
 import com.ekko.seller_service.support.JwtTestUtils;
+import com.ekko.seller_service.support.SellerTestDataBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
-    private static final String DOCUMENT_JSON = """
-            {
-              "documentType": "ID_CARD",
-              "documentUrl": "https://cdn.ekko.test/id_card.pdf"
-            }
-            """;
+    private static final MockMultipartFile DOCUMENT_FILE = new MockMultipartFile(
+            "file", "id_card.pdf", "application/pdf", "pdf-content".getBytes());
 
     @BeforeEach
     void seedSeller() {
@@ -30,18 +34,18 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_sinToken_devuelve401() throws Exception {
-        mockMvc.perform(post("/sellers/documents")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+        mockMvc.perform(multipart("/sellers/documents")
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void add_jwtInvalido_devuelve401() throws Exception {
-        mockMvc.perform(post("/sellers/documents")
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.malformedToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -49,10 +53,10 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_rolIncorrecto_devuelve403() throws Exception {
-        mockMvc.perform(post("/sellers/documents")
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.error").value("Forbidden"));
@@ -61,24 +65,31 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
     // ── 400 Bad Request ─────────────────────────────────────────────────────
 
     @Test
-    void add_dtoInvalido_devuelve400() throws Exception {
-        mockMvc.perform(post("/sellers/documents")
+    void add_sinDocumentType_devuelve400() throws Exception {
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                        .file(DOCUMENT_FILE))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors[?(@.field == 'documentType')]").exists())
-                .andExpect(jsonPath("$.message").value("Validation failed"));
+                .andExpect(jsonPath("$.message").value("Malformed request"));
+    }
+
+    @Test
+    void add_sinArchivo_devuelve400() throws Exception {
+        mockMvc.perform(multipart("/sellers/documents")
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
+                        .param("documentType", "ID_CARD"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Malformed request"));
     }
 
     // ── 200 OK ──────────────────────────────────────────────────────────────
 
     @Test
     void add_tokenValido_devuelve200() throws Exception {
-        mockMvc.perform(post("/sellers/documents")
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.documentType").value("ID_CARD"))
                 .andExpect(jsonPath("$.status").value("PENDING"));
@@ -95,16 +106,71 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$[0].status").value("PENDING"));
     }
 
+    // ── Download (presigned URL) ────────────────────────────────────────────
+
+    @Test
+    void download_sinToken_devuelve401() throws Exception {
+        mockMvc.perform(get("/sellers/documents/{id}/download", UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void download_documentoPropio_devuelve200() throws Exception {
+        String documentId = addDocument();
+
+        mockMvc.perform(get("/sellers/documents/{id}/download", documentId)
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.documentId").value(documentId))
+                .andExpect(jsonPath("$.downloadUrl").isNotEmpty())
+                .andExpect(jsonPath("$.expiresAt").isNotEmpty());
+    }
+
+    @Test
+    void download_documentoDeOtroVendedor_devuelve404() throws Exception {
+        Seller otherSeller = insertSeller(SellerTestDataBuilder.aSeller()
+                .withKeycloakId("8f14e45f-ceea-4a2a-b1e0-2f1a1c3f0999")
+                .withEmail("other@ekko.test")
+                .active());
+        UUID otherDocumentId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO seller_documents
+                    (id, seller_id, document_type, object_key, status, uploaded_at)
+                VALUES (CAST(? AS uuid), CAST(? AS uuid), 'ID_CARD', 'documents/other/doc.pdf', 'PENDING', now())
+                """, otherDocumentId.toString(), otherSeller.getId().toString());
+
+        mockMvc.perform(get("/sellers/documents/{id}/download", otherDocumentId)
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    // ── 502 Bad Gateway (fallo en MinIO) ────────────────────────────────────
+
+    @Test
+    void add_falloMinIO_devuelve502() throws Exception {
+        when(minioService.upload(any(MultipartFile.class)))
+                .thenThrow(new MinioUploadException("MinIO is down"));
+
+        mockMvc.perform(multipart("/sellers/documents")
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.status").value(502))
+                .andExpect(jsonPath("$.error").value("Bad Gateway"));
+    }
+
     // ── 409 Conflict ────────────────────────────────────────────────────────
 
     @Test
     void add_duplicadoPendiente_devuelve409() throws Exception {
         addDocument();
 
-        mockMvc.perform(post("/sellers/documents")
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"));
@@ -115,10 +181,10 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
         String documentId = addDocument();
         reviewDocument(documentId);
 
-        mockMvc.perform(post("/sellers/documents")
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("Conflict"));
     }
@@ -131,25 +197,25 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
         mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content("""
                                 {"status": "REJECTED", "notes": "Documento ilegible"}
                                 """))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/sellers/documents")
+        mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("Conflict"));
     }
 
     private String addDocument() throws Exception {
-        MvcResult result = mockMvc.perform(post("/sellers/documents")
+        MvcResult result = mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(DOCUMENT_JSON))
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -159,7 +225,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
     private void reviewDocument(String documentId) throws Exception {
         mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content("""
                                 {"status": "APPROVED", "notes": "ok"}
                                 """))

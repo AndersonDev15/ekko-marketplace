@@ -1,10 +1,10 @@
 package com.ekko.product_service.controller;
 
 import com.ekko.product_service.config.SecurityConfig;
-import com.ekko.product_service.dto.request.CreateImageRequest;
 import com.ekko.product_service.dto.response.ProductImageResponse;
 import com.ekko.product_service.exception.ForbiddenProductAccessException;
 import com.ekko.product_service.exception.ImageNotFoundException;
+import com.ekko.product_service.exception.ImageUploadException;
 import com.ekko.product_service.exception.InvalidImageOrderException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.service.ImageService;
@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -27,14 +28,15 @@ import java.util.UUID;
 import static com.ekko.product_service.util.TestConstants.SELLER_KEYCLOAK_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,91 +57,88 @@ class ImageControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
-    // ------------------------------------------------------ POST /seller/products/{id}/images
+    // ------------------------------------------------------ POST /seller/products/{id}/images (multipart)
 
     @Test
-    void postImage_devuelve201YProductImageResponse() throws Exception {
+    void postImageMultipart_devuelve201YProductImageResponse() throws Exception {
         ProductImageResponse response = productImageResponse(true, 0);
-        when(imageService.addImage(eq(PRODUCT_ID), any(CreateImageRequest.class), eq(SELLER_ID)))
+        when(imageService.uploadImage(eq(PRODUCT_ID), any(), eq(true), eq(SELLER_ID)))
                 .thenReturn(response);
 
-        mockMvc.perform(post(baseUrl())
-                        .with(sellerAuth())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "url": "https://cdn.example.com/images/iphone-16.jpg",
-                                  "isPrimary": true
-                                }
-                                """))
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1, 2, 3}))
+                        .param("isPrimary", "true")
+                        .with(sellerAuth()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(IMAGE_ID.toString()))
                 .andExpect(jsonPath("$.url").value("https://cdn.example.com/images/iphone-16.jpg"))
                 .andExpect(jsonPath("$.isPrimary").value(true))
                 .andExpect(jsonPath("$.sortOrder").value(0));
 
-        verify(imageService).addImage(eq(PRODUCT_ID), any(CreateImageRequest.class), eq(SELLER_ID));
+        verify(imageService).uploadImage(eq(PRODUCT_ID), any(), eq(true), eq(SELLER_ID));
     }
 
     @Test
-    void postImage_devuelve401SinJWT() throws Exception {
-        mockMvc.perform(post(baseUrl())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "url": "https://cdn.example.com/images/iphone-16.jpg",
-                                  "isPrimary": true
-                                }
-                                """))
+    void postImageMultipart_sinIsPrimaryEnviaNullAlService() throws Exception {
+        when(imageService.uploadImage(eq(PRODUCT_ID), any(), isNull(), eq(SELLER_ID)))
+                .thenReturn(productImageResponse(false, 0));
+
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1}))
+                        .with(sellerAuth()))
+                .andExpect(status().isCreated());
+
+        verify(imageService).uploadImage(eq(PRODUCT_ID), any(), isNull(), eq(SELLER_ID));
+    }
+
+    @Test
+    void postImageMultipart_devuelve401SinJWT() throws Exception {
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1})))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void postImage_devuelve403ConRolIncorrecto() throws Exception {
-        mockMvc.perform(post(baseUrl())
-                        .with(customerAuth())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "url": "https://cdn.example.com/images/iphone-16.jpg",
-                                  "isPrimary": true
-                                }
-                                """))
+    void postImageMultipart_devuelve403ConRolIncorrecto() throws Exception {
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1}))
+                        .with(customerAuth()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void postImage_imageServiceLanzaProductNotFoundExceptionDevuelve404() throws Exception {
-        when(imageService.addImage(eq(PRODUCT_ID), any(CreateImageRequest.class), eq(SELLER_ID)))
+    void postImageMultipart_imageServiceLanzaProductNotFoundExceptionDevuelve404() throws Exception {
+        when(imageService.uploadImage(eq(PRODUCT_ID), any(), any(), eq(SELLER_ID)))
                 .thenThrow(ProductNotFoundException.class);
 
-        mockMvc.perform(post(baseUrl())
-                        .with(sellerAuth())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "url": "https://cdn.example.com/images/iphone-16.jpg",
-                                  "isPrimary": true
-                                }
-                                """))
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1}))
+                        .with(sellerAuth()))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void postImage_imageServiceLanzaForbiddenProductAccessExceptionDevuelve403() throws Exception {
-        when(imageService.addImage(eq(PRODUCT_ID), any(CreateImageRequest.class), eq(SELLER_ID)))
+    void postImageMultipart_imageServiceLanzaForbiddenProductAccessExceptionDevuelve403() throws Exception {
+        when(imageService.uploadImage(eq(PRODUCT_ID), any(), any(), eq(SELLER_ID)))
                 .thenThrow(ForbiddenProductAccessException.class);
 
-        mockMvc.perform(post(baseUrl())
-                        .with(sellerAuth())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "url": "https://cdn.example.com/images/iphone-16.jpg",
-                                  "isPrimary": true
-                                }
-                                """))
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1}))
+                        .with(sellerAuth()))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void postImageMultipart_imageServiceLanzaImageUploadExceptionDevuelve502() throws Exception {
+        when(imageService.uploadImage(eq(PRODUCT_ID), any(), any(), eq(SELLER_ID)))
+                .thenThrow(ImageUploadException.class);
+
+        mockMvc.perform(multipart(baseUrl())
+                        .file(new MockMultipartFile("file", "iphone-16.jpg", "image/jpeg", new byte[]{1}))
+                        .with(sellerAuth()))
+                .andExpect(status().isBadGateway());
+
+        verify(imageService, never()).addImage(any(), any(), any());
     }
 
     // ------------------------------------------------------ DELETE /seller/products/{id}/images/{imageId}

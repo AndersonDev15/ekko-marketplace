@@ -2,6 +2,7 @@ package com.ekko.seller_service;
 
 import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.repository.SellerRepository;
+import com.ekko.seller_service.service.MinioService;
 import com.ekko.seller_service.support.SellerTestDataBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,8 +17,15 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import java.time.Instant;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,6 +67,9 @@ public abstract class AbstractPostgresIntegrationTest {
     @MockitoBean
     protected RabbitTemplate rabbitTemplate;
 
+    @MockitoBean
+    protected MinioService minioService;
+
     @BeforeEach
     void cleanDatabase() {
         jdbcTemplate.execute("""
@@ -72,6 +83,12 @@ public abstract class AbstractPostgresIntegrationTest {
                                sellers
                 RESTART IDENTITY CASCADE
                 """);
+        when(minioService.upload(any(MultipartFile.class)))
+                .thenReturn("documents/abc-123/id_card.pdf");
+        when(minioService.generatePresignedUrl(anyString()))
+                .thenReturn(new MinioService.PresignedUrl(
+                        "http://localhost:9000/ekko-documents/documents/abc-123/id_card.pdf?X-Amz-Signature=test",
+                        Instant.now().plusSeconds(900)));
     }
 
     protected Seller insertSeller(SellerTestDataBuilder builder) {

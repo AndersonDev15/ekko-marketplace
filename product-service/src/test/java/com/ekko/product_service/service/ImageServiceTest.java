@@ -8,6 +8,7 @@ import com.ekko.product_service.entity.Product;
 import com.ekko.product_service.entity.ProductImage;
 import com.ekko.product_service.exception.ForbiddenProductAccessException;
 import com.ekko.product_service.exception.ImageNotFoundException;
+import com.ekko.product_service.exception.ImageUploadException;
 import com.ekko.product_service.exception.InvalidImageOrderException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.repository.ProductImageRepository;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +44,9 @@ class ImageServiceTest {
     @Mock
     private ActiveProductOwnershipValidator activeProductOwnershipValidator;
 
+    @Mock
+    private CloudinaryService cloudinaryService;
+
     private ImageService imageService;
 
     private final UUID productId = UUID.randomUUID();
@@ -50,7 +55,7 @@ class ImageServiceTest {
 
     @BeforeEach
     void setUp() {
-        imageService = new ImageService(imageRepository, activeProductOwnershipValidator);
+        imageService = new ImageService(imageRepository, activeProductOwnershipValidator, cloudinaryService);
     }
 
     // ---------------------------------------------------------------- ownership
@@ -241,6 +246,67 @@ class ImageServiceTest {
         assertEquals(0, response.sortOrder());
     }
 
+    @Test
+    void addImage_persisteElPublicIdDeCloudinary() {
+        when(activeProductOwnershipValidator.validate(productId, sellerId)).thenReturn(ownedProduct());
+        when(imageRepository.findByProductIdOrderBySortOrderAsc(productId)).thenReturn(List.of());
+
+        imageService.addImage(productId, imageRequest(false), sellerId, "products/iphone-16");
+
+        ArgumentCaptor<ProductImage> imageCaptor = ArgumentCaptor.forClass(ProductImage.class);
+        verify(imageRepository).save(imageCaptor.capture());
+        assertEquals("products/iphone-16", imageCaptor.getValue().getPublicId());
+    }
+
+    @Test
+    void addImage_sinPublicIdPersisteNull() {
+        when(activeProductOwnershipValidator.validate(productId, sellerId)).thenReturn(ownedProduct());
+        when(imageRepository.findByProductIdOrderBySortOrderAsc(productId)).thenReturn(List.of());
+
+        imageService.addImage(productId, imageRequest(false), sellerId);
+
+        ArgumentCaptor<ProductImage> imageCaptor = ArgumentCaptor.forClass(ProductImage.class);
+        verify(imageRepository).save(imageCaptor.capture());
+        assertEquals(null, imageCaptor.getValue().getPublicId());
+    }
+
+    // ------------------------------------------------------------ uploadImage
+
+    @Test
+    void uploadImage_llamaACloudinaryYPersisteLaImagen() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "iphone-16.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        CloudinaryService.UploadResult upload = new CloudinaryService.UploadResult(
+                "products/iphone-16",
+                "https://res.cloudinary.com/gqrn3sdp/image/upload/v1/products/iphone-16.jpg");
+        when(cloudinaryService.upload(file)).thenReturn(upload);
+        when(activeProductOwnershipValidator.validate(productId, sellerId)).thenReturn(ownedProduct());
+        when(imageRepository.findByProductIdOrderBySortOrderAsc(productId)).thenReturn(List.of());
+
+        imageService.uploadImage(productId, file, false, sellerId);
+
+        verify(cloudinaryService).upload(file);
+        ArgumentCaptor<ProductImage> imageCaptor = ArgumentCaptor.forClass(ProductImage.class);
+        verify(imageRepository).save(imageCaptor.capture());
+        ProductImage saved = imageCaptor.getValue();
+        assertEquals("https://res.cloudinary.com/gqrn3sdp/image/upload/v1/products/iphone-16.jpg", saved.getUrl());
+        assertEquals("products/iphone-16", saved.getPublicId());
+        assertEquals(true, saved.getIsPrimary());
+    }
+
+    @Test
+    void uploadImage_propagaErrorDeCloudinarySinPersistir() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "iphone-16.jpg", "image/jpeg", new byte[]{1});
+        when(cloudinaryService.upload(file)).thenThrow(ImageUploadException.class);
+
+        assertThrows(ImageUploadException.class,
+                () -> imageService.uploadImage(productId, file, false, sellerId));
+
+        verify(activeProductOwnershipValidator, never()).validate(any(), any());
+        verify(imageRepository, never()).save(any());
+    }
+
     // ------------------------------------------------------------- deleteImage
 
     @Test
@@ -251,6 +317,31 @@ class ImageServiceTest {
 
         imageService.deleteImage(productId, imageId, sellerId);
 
+        verify(imageRepository).delete(image);
+    }
+
+    @Test
+    void deleteImage_conPublicIdBorraLaImagenDeCloudinary() {
+        ProductImage image = ownedImage(imageId, false, 1);
+        image.setPublicId("products/iphone-16");
+        when(activeProductOwnershipValidator.validate(productId, sellerId)).thenReturn(ownedProduct());
+        when(imageRepository.findById(imageId)).thenReturn(Optional.of(image));
+
+        imageService.deleteImage(productId, imageId, sellerId);
+
+        verify(cloudinaryService).delete("products/iphone-16");
+        verify(imageRepository).delete(image);
+    }
+
+    @Test
+    void deleteImage_sinPublicIdNoLlamaACloudinary() {
+        ProductImage image = ownedImage(imageId, false, 1);
+        when(activeProductOwnershipValidator.validate(productId, sellerId)).thenReturn(ownedProduct());
+        when(imageRepository.findById(imageId)).thenReturn(Optional.of(image));
+
+        imageService.deleteImage(productId, imageId, sellerId);
+
+        verify(cloudinaryService, never()).delete(any());
         verify(imageRepository).delete(image);
     }
 

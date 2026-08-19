@@ -121,7 +121,7 @@ class SellerDocumentRepositoryTest extends AbstractPostgresRepositoryTest {
         return SellerDocument.builder()
                 .seller(seller)
                 .documentType(type)
-                .documentUrl("https://storage.ekko.test/docs/" + UUID.randomUUID())
+                .objectKey("documents/" + UUID.randomUUID() + "/doc.pdf")
                 .status(status)
                 .build();
     }

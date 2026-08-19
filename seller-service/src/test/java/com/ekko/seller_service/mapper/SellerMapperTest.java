@@ -131,7 +131,6 @@ class SellerMapperTest {
 
         assertEquals(id, response.id());
         assertEquals(DocumentType.RUT, response.documentType());
-        assertEquals(document.getDocumentUrl(), response.documentUrl());
         assertEquals(DocumentStatus.APPROVED, response.status());
         assertEquals(uploadedAt, response.uploadedAt());
         assertEquals(reviewedAt, response.reviewedAt());

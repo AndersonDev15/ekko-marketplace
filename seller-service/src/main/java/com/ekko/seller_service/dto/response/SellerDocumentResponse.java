@@ -9,7 +9,6 @@ import java.util.UUID;
 public record SellerDocumentResponse(
         UUID id,
         DocumentType documentType,
-        String documentUrl,
         DocumentStatus status,
         LocalDateTime uploadedAt,
         LocalDateTime reviewedAt,

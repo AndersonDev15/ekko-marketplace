@@ -13,7 +13,7 @@ public final class DocumentTestDataBuilder {
     private UUID id = UUID.randomUUID();
     private Seller seller;
     private DocumentType documentType = DocumentType.ID_CARD;
-    private String documentUrl = "https://storage.ekko.test/docs/" + UUID.randomUUID();
+    private String objectKey = "documents/" + UUID.randomUUID() + "/doc.pdf";
     private DocumentStatus status = DocumentStatus.PENDING;
     private LocalDateTime uploadedAt = LocalDateTime.now();
     private LocalDateTime reviewedAt;
@@ -42,8 +42,8 @@ public final class DocumentTestDataBuilder {
         return this;
     }
 
-    public DocumentTestDataBuilder withDocumentUrl(String documentUrl) {
-        this.documentUrl = documentUrl;
+    public DocumentTestDataBuilder withObjectKey(String objectKey) {
+        this.objectKey = objectKey;
         return this;
     }
 
@@ -89,7 +89,7 @@ public final class DocumentTestDataBuilder {
                 .id(id)
                 .seller(seller)
                 .documentType(documentType)
-                .documentUrl(documentUrl)
+                .objectKey(objectKey)
                 .status(status)
                 .uploadedAt(uploadedAt)
                 .reviewedAt(reviewedAt)

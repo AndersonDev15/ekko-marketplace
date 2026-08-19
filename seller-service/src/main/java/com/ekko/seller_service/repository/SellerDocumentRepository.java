@@ -6,11 +6,14 @@ import com.ekko.seller_service.enums.DocumentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface SellerDocumentRepository extends JpaRepository<SellerDocument, UUID> {
 
     List<SellerDocument> findBySellerId(UUID sellerId);
+
+    Optional<SellerDocument> findByIdAndSellerId(UUID id, UUID sellerId);
 
     boolean existsBySellerIdAndDocumentTypeAndStatus(
             UUID sellerId,
