@@ -93,7 +93,7 @@ class OrderPaymentCallbackServiceTest {
 
         verify(orderEventPublisherPort).publishOrderConfirmed(argThat(
                 event -> event.orderId().equals(ORDER_ID)
-                        && event.customerId().equals(CUSTOMER_KEYCLOAK_ID.toString())
+                        && event.customerId().equals(CUSTOMER_KEYCLOAK_ID)
                         && event.items().size() == 1
                         && event.items().get(0).orderItemId().equals(ITEM_ID)
                         && event.items().get(0).productId().equals(PRODUCT_ID)));

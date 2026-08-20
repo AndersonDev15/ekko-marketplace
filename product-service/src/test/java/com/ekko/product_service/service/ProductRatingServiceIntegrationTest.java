@@ -7,7 +7,7 @@ import com.ekko.product_service.config.AbstractPostgresIntegrationTest;
 import com.ekko.product_service.entity.Brand;
 import com.ekko.product_service.entity.Category;
 import com.ekko.product_service.entity.Product;
-import com.ekko.product_service.messaging.dto.ReviewCreatedEvent;
+import com.ekko.product_service.messaging.dto.consume.ReviewCreatedEvent;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductRepository;

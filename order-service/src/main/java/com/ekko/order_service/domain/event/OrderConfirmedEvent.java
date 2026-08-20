@@ -8,11 +8,11 @@ import java.util.UUID;
 public record OrderConfirmedEvent(
         UUID orderId,
         String orderNumber,
-        String customerId,
+        UUID customerId,
+        String guestEmail,
         List<OrderItemConfirmed> items,
         LocalDateTime confirmedAt
 ) {
-
     public record OrderItemConfirmed(
             UUID orderItemId,
             UUID productId,

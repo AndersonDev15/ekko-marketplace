@@ -1,8 +1,8 @@
 package com.ekko.seller_service.messaging;
 
-import com.ekko.seller_service.messaging.dto.SellerCreatedEvent;
-import com.ekko.seller_service.messaging.dto.SellerDocumentReviewEvent;
-import com.ekko.seller_service.messaging.dto.SellerStatusChangedEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
 
 public interface SellerEventPublisher {
 

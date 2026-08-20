@@ -11,8 +11,8 @@ import com.ekko.product_service.entity.Category;
 import com.ekko.product_service.entity.Inventory;
 import com.ekko.product_service.entity.Product;
 import com.ekko.product_service.enums.ProductStatus;
-import com.ekko.product_service.messaging.dto.OrderCancelledEvent;
-import com.ekko.product_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.product_service.messaging.dto.consume.OrderCancelledEvent;
+import com.ekko.product_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.InventoryRepository;
@@ -110,7 +110,7 @@ class OrderInventoryServiceIntegrationTest extends AbstractPostgresIntegrationTe
 
     private static OrderConfirmedEvent confirmedEvent(UUID orderId, UUID variantId, int quantity) {
         return new OrderConfirmedEvent(
-                orderId, "EKK-001", "customer-1",
+                orderId, "EKK-001", UUID.randomUUID(), "guest@ekko.test",
                 List.of(new OrderConfirmedEvent.OrderItemConfirmed(
                         UUID.randomUUID(), UUID.randomUUID(), variantId, quantity,
                         SELLER_KEYCLOAK_ID, new BigDecimal("100.00"))),

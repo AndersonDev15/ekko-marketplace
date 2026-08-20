@@ -14,7 +14,7 @@ import com.ekko.product_service.exception.InventoryNotFoundException;
 import com.ekko.product_service.exception.InventoryOwnershipException;
 import com.ekko.product_service.exception.ProductNotAvailableException;
 import com.ekko.product_service.messaging.ProductEventPublisher;
-import com.ekko.product_service.messaging.dto.InventoryLowStockEvent;
+import com.ekko.product_service.messaging.dto.publish.InventoryLowStockEvent;
 import com.ekko.product_service.repository.InventoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,7 +121,7 @@ class InventoryServiceTest {
         InventoryLowStockEvent event = captor.getValue();
         assertEquals(product.getId(), event.productId());
         assertEquals(variantId, event.variantId());
-        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerKeycloakId());
         assertEquals(3L, event.currentStock());
         assertEquals(3L, event.minimumStock());
         assertNotNull(event.checkedAt());
@@ -244,7 +244,7 @@ class InventoryServiceTest {
         InventoryLowStockEvent event = captor.getValue();
         assertEquals(product.getId(), event.productId());
         assertEquals(variantId, event.variantId());
-        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerKeycloakId());
         assertEquals(2L, event.currentStock());
         assertEquals(3L, event.minimumStock());
         assertNotNull(event.checkedAt());

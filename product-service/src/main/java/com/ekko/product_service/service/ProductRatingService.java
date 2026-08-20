@@ -1,7 +1,7 @@
 package com.ekko.product_service.service;
 
 import com.ekko.product_service.entity.Product;
-import com.ekko.product_service.messaging.dto.ReviewCreatedEvent;
+import com.ekko.product_service.messaging.dto.consume.ReviewCreatedEvent;
 import com.ekko.product_service.repository.ProductRepository;
 import com.ekko.product_service.repository.ReviewEventRepository;
 import lombok.RequiredArgsConstructor;

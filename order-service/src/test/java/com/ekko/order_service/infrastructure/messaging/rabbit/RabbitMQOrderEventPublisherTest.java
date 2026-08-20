@@ -146,7 +146,8 @@ class RabbitMQOrderEventPublisherTest {
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 UUID.randomUUID(),
                 "EKK-20250809-AB12",
-                UUID.randomUUID().toString(),
+                UUID.randomUUID(),
+                "guest@ekko.test",
                 List.of(new OrderConfirmedEvent.OrderItemConfirmed(itemId, PRODUCT_ID, variantId, 2,
                         SELLER_KEYCLOAK_ID, new BigDecimal("200.00"))),
                 LocalDateTime.of(2025, 8, 9, 13, 0));
@@ -164,6 +165,8 @@ class RabbitMQOrderEventPublisherTest {
         OrderStatusChangedEvent event = new OrderStatusChangedEvent(
                 UUID.randomUUID(),
                 "EKK-20250809-AB12",
+                UUID.randomUUID(),
+                "guest@ekko.test",
                 OrderStatus.CONFIRMED,
                 OrderStatus.SHIPPED,
                 LocalDateTime.of(2025, 8, 9, 14, 30));

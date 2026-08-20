@@ -105,7 +105,7 @@ class OrderPaymentCallbackServiceIntegrationTest extends AbstractPostgresIntegra
         verify(orderEventPublisherPort, times(1)).publishOrderConfirmed(captor.capture());
         OrderConfirmedEvent event = captor.getValue();
         assertEquals(created.getId(), event.orderId());
-        assertEquals(CUSTOMER_KEYCLOAK_ID.toString(), event.customerId());
+        assertEquals(CUSTOMER_KEYCLOAK_ID, event.customerId());
         assertEquals(1, event.items().size());
         assertNotNull(event.items().get(0).orderItemId());
         assertEquals(PRODUCT_ID, event.items().get(0).productId());

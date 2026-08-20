@@ -1,7 +1,7 @@
 package com.ekko.review_service.service;
 
 import com.ekko.review_service.entity.EligibleReview;
-import com.ekko.review_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.review_service.messaging.dto.consume.OrderConfirmedEvent;
 
 import java.util.UUID;
 

@@ -1,7 +1,7 @@
 package com.ekko.product_service.messaging;
 
 import com.ekko.product_service.config.RabbitMQConfig;
-import com.ekko.product_service.messaging.dto.ReviewCreatedEvent;
+import com.ekko.product_service.messaging.dto.consume.ReviewCreatedEvent;
 import com.ekko.product_service.service.ProductRatingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

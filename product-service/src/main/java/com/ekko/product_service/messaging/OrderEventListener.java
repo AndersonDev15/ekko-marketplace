@@ -1,8 +1,8 @@
 package com.ekko.product_service.messaging;
 
 import com.ekko.product_service.config.RabbitMQConfig;
-import com.ekko.product_service.messaging.dto.OrderCancelledEvent;
-import com.ekko.product_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.product_service.messaging.dto.consume.OrderCancelledEvent;
+import com.ekko.product_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.product_service.service.OrderInventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

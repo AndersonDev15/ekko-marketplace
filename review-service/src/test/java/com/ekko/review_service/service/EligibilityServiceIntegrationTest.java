@@ -3,12 +3,14 @@ package com.ekko.review_service.service;
 import com.ekko.review_service.config.AbstractPostgresIntegrationTest;
 import com.ekko.review_service.entity.EligibleReview;
 import com.ekko.review_service.exception.NotEligibleToReviewException;
-import com.ekko.review_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.review_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.review_service.repository.EligibleReviewRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,7 +20,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
-    private static final String CUSTOMER_ID = "customer-1";
+    private static final UUID CUSTOMER_KEYCLOAK_ID = UUID.randomUUID();
+    private static final String CUSTOMER_ID = CUSTOMER_KEYCLOAK_ID.toString();
 
     @Autowired
     private EligibilityService eligibilityService;
@@ -39,10 +42,15 @@ class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest 
         UUID seller2 = UUID.randomUUID();
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 orderId,
-                CUSTOMER_ID,
+                "EKK-20250809-AB12",
+                CUSTOMER_KEYCLOAK_ID,
+                "guest@ekko.test",
                 List.of(
-                        new OrderConfirmedEvent.OrderItemConfirmed(item1, product1, seller1),
-                        new OrderConfirmedEvent.OrderItemConfirmed(item2, product2, seller2)));
+                        new OrderConfirmedEvent.OrderItemConfirmed(
+                                item1, product1, UUID.randomUUID(), 2, seller1, new BigDecimal("100.00")),
+                        new OrderConfirmedEvent.OrderItemConfirmed(
+                                item2, product2, UUID.randomUUID(), 1, seller2, new BigDecimal("50.00"))),
+                LocalDateTime.of(2025, 8, 9, 13, 0));
 
         // when
         eligibilityService.registerEligibility(event);
@@ -68,8 +76,12 @@ class EligibilityServiceIntegrationTest extends AbstractPostgresIntegrationTest 
         UUID seller = UUID.randomUUID();
         OrderConfirmedEvent event = new OrderConfirmedEvent(
                 orderId,
-                CUSTOMER_ID,
-                List.of(new OrderConfirmedEvent.OrderItemConfirmed(orderItemId, productId, seller)));
+                "EKK-20250809-AB12",
+                CUSTOMER_KEYCLOAK_ID,
+                "guest@ekko.test",
+                List.of(new OrderConfirmedEvent.OrderItemConfirmed(
+                        orderItemId, productId, UUID.randomUUID(), 1, seller, new BigDecimal("100.00"))),
+                LocalDateTime.of(2025, 8, 9, 13, 0));
 
         // when
         eligibilityService.registerEligibility(event);

@@ -1,7 +1,7 @@
 package com.ekko.product_service.service;
 
-import com.ekko.product_service.messaging.dto.OrderCancelledEvent;
-import com.ekko.product_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.product_service.messaging.dto.consume.OrderCancelledEvent;
+import com.ekko.product_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.product_service.repository.OrderEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

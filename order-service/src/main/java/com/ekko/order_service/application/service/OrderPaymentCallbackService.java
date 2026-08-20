@@ -60,7 +60,8 @@ public class OrderPaymentCallbackService implements PaymentCallbackUseCase {
         return new OrderConfirmedEvent(
                 saved.getId(),
                 saved.getOrderNumber(),
-                saved.getCustomerId() != null ? saved.getCustomerId().toString() : null,
+                saved.getCustomerId(),
+                saved.getGuestEmail(),
                 saved.getItems().stream()
                         .map(item -> new OrderConfirmedEvent.OrderItemConfirmed(
                                 item.id(),
@@ -70,6 +71,7 @@ public class OrderPaymentCallbackService implements PaymentCallbackUseCase {
                                 item.sellerKeycloakId(),
                                 item.subtotal()))
                         .toList(),
-                saved.getUpdatedAt());
+                saved.getUpdatedAt()
+        );
     }
 }

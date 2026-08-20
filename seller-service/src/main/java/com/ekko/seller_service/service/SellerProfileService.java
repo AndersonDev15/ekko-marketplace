@@ -9,7 +9,7 @@ import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
 import com.ekko.seller_service.messaging.SellerEventPublisher;
-import com.ekko.seller_service.messaging.dto.SellerCreatedEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;

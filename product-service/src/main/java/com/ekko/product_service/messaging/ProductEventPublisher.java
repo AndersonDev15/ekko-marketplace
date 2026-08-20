@@ -1,9 +1,9 @@
 package com.ekko.product_service.messaging;
 
-import com.ekko.product_service.messaging.dto.InventoryLowStockEvent;
-import com.ekko.product_service.messaging.dto.ProductDeactivatedEvent;
-import com.ekko.product_service.messaging.dto.ProductPublishedEvent;
-import com.ekko.product_service.messaging.dto.ProductRejectedEvent;
+import com.ekko.product_service.messaging.dto.publish.InventoryLowStockEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductDeactivatedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductPublishedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductRejectedEvent;
 
 public interface ProductEventPublisher {
 

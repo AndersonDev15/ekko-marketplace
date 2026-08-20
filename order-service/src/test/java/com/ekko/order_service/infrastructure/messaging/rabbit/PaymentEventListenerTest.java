@@ -53,7 +53,7 @@ class PaymentEventListenerTest {
     void delegatesPaymentFailedToUseCase() {
         UUID orderId = UUID.randomUUID();
         PaymentFailedEventPayload payload = new PaymentFailedEventPayload(
-                UUID.randomUUID(), orderId, UUID.randomUUID(), "CARD_DECLINED", LocalDateTime.now());
+                UUID.randomUUID(), orderId, UUID.randomUUID(), "guest@ekko.test", "CARD_DECLINED", LocalDateTime.now());
 
         listener.onPaymentFailed(payload);
 

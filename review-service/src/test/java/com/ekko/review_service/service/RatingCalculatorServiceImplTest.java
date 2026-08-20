@@ -1,7 +1,7 @@
 package com.ekko.review_service.service;
 
 import com.ekko.review_service.messaging.ReviewEventPublisher;
-import com.ekko.review_service.messaging.dto.ProductRatingUpdatedEvent;
+import com.ekko.review_service.messaging.dto.publish.ProductRatingUpdatedEvent;
 import com.ekko.review_service.repository.ReviewRatingAggregateProjection;
 import com.ekko.review_service.repository.ReviewRepository;
 import org.junit.jupiter.api.DisplayName;

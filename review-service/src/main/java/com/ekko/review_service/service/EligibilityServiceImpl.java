@@ -2,7 +2,7 @@ package com.ekko.review_service.service;
 
 import com.ekko.review_service.entity.EligibleReview;
 import com.ekko.review_service.exception.NotEligibleToReviewException;
-import com.ekko.review_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.review_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.review_service.repository.EligibleReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class EligibilityServiceImpl implements EligibilityService {
     public void registerEligibility(OrderConfirmedEvent event) {
         for (OrderConfirmedEvent.OrderItemConfirmed item : event.items()) {
             eligibleReviewRepository.insertEligibilityIfAbsent(
-                    event.orderId(), item.orderItemId(), item.productId(), item.sellerKeycloakId(), event.customerId());
+                    event.orderId(), item.orderItemId(), item.productId(), item.sellerKeycloakId(), event.customerId().toString());
         }
     }
 }

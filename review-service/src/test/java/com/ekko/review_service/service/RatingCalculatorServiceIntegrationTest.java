@@ -1,8 +1,7 @@
 package com.ekko.review_service.service;
 
 import com.ekko.review_service.config.AbstractPostgresIntegrationTest;
-import com.ekko.review_service.entity.Review;
-import com.ekko.review_service.messaging.dto.ProductRatingUpdatedEvent;
+import com.ekko.review_service.messaging.dto.publish.ProductRatingUpdatedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

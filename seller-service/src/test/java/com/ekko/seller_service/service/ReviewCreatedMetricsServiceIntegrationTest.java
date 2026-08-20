@@ -3,7 +3,7 @@ package com.ekko.seller_service.service;
 import com.ekko.seller_service.AbstractPostgresIntegrationTest;
 import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.entity.SellerMetrics;
-import com.ekko.seller_service.messaging.dto.ReviewCreatedEvent;
+import com.ekko.seller_service.messaging.dto.consume.ReviewCreatedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

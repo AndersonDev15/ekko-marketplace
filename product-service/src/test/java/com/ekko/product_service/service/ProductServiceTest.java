@@ -23,7 +23,7 @@ import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.exception.VariantNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.messaging.ProductEventPublisher;
-import com.ekko.product_service.messaging.dto.ProductDeactivatedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductDeactivatedEvent;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
@@ -370,7 +370,7 @@ class ProductServiceTest {
         verify(productEventPublisher).publishProductDeactivated(captor.capture());
         ProductDeactivatedEvent event = captor.getValue();
         assertEquals(product.getId(), event.productId());
-        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerKeycloakId());
         assertEquals(ProductStatus.ACTIVE, event.previousStatus());
         assertNotNull(event.deactivatedAt());
     }

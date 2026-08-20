@@ -8,8 +8,8 @@ import com.ekko.product_service.exception.InvalidProductStatusException;
 import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.messaging.ProductEventPublisher;
-import com.ekko.product_service.messaging.dto.ProductPublishedEvent;
-import com.ekko.product_service.messaging.dto.ProductRejectedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductPublishedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductRejectedEvent;
 import com.ekko.product_service.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.ekko.product_service.util.TestConstants.PRODUCT_NAME;
 import static com.ekko.product_service.util.TestConstants.SELLER_KEYCLOAK_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -77,7 +76,7 @@ class AdminProductServiceTest {
         verify(productEventPublisher).publishProductPublished(captor.capture());
         ProductPublishedEvent event = captor.getValue();
         assertEquals(product.getId(), event.productId());
-        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerKeycloakId());
         assertEquals(product.getName(), event.name());
         assertEquals(product.getCategory().getName(), event.category());
         assertNotNull(event.publishedAt());
@@ -153,7 +152,7 @@ class AdminProductServiceTest {
         verify(productEventPublisher).publishProductRejected(captor.capture());
         ProductRejectedEvent event = captor.getValue();
         assertEquals(product.getId(), event.productId());
-        assertEquals(product.getSellerKeycloakId(), event.sellerId());
+        assertEquals(product.getSellerKeycloakId(), event.sellerKeycloakId());
         assertEquals(product.getName(), event.name());
         assertEquals("marca prohibida", event.reason());
         assertNotNull(event.rejectedAt());

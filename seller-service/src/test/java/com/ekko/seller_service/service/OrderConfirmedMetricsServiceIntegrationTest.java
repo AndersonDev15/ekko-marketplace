@@ -3,7 +3,7 @@ package com.ekko.seller_service.service;
 import com.ekko.seller_service.AbstractPostgresIntegrationTest;
 import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.entity.SellerMetrics;
-import com.ekko.seller_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.seller_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +83,7 @@ class OrderConfirmedMetricsServiceIntegrationTest extends AbstractPostgresIntegr
     }
 
     private static OrderConfirmedEvent event(OrderConfirmedEvent.OrderItemConfirmed... items) {
-        return new OrderConfirmedEvent(UUID.randomUUID(), "ORD-001", "customer-1", List.of(items), null);
+        return new OrderConfirmedEvent(UUID.randomUUID(), "ORD-001", UUID.randomUUID(), "guest@ekko.test", List.of(items), null);
     }
 
     private static OrderConfirmedEvent.OrderItemConfirmed item(UUID sellerKeycloakId, String subtotal) {

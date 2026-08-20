@@ -10,7 +10,7 @@ import com.ekko.product_service.exception.InvalidStockOperationException;
 import com.ekko.product_service.exception.InventoryNotFoundException;
 import com.ekko.product_service.exception.InventoryOwnershipException;
 import com.ekko.product_service.messaging.ProductEventPublisher;
-import com.ekko.product_service.messaging.dto.InventoryLowStockEvent;
+import com.ekko.product_service.messaging.dto.publish.InventoryLowStockEvent;
 import com.ekko.product_service.repository.InventoryRepository;
 import com.ekko.product_service.util.StockCalculator;
 import lombok.RequiredArgsConstructor;

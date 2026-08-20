@@ -1,10 +1,10 @@
 package com.ekko.product_service.messaging;
 
 import com.ekko.product_service.config.RabbitMQConfig;
-import com.ekko.product_service.messaging.dto.InventoryLowStockEvent;
-import com.ekko.product_service.messaging.dto.ProductDeactivatedEvent;
-import com.ekko.product_service.messaging.dto.ProductPublishedEvent;
-import com.ekko.product_service.messaging.dto.ProductRejectedEvent;
+import com.ekko.product_service.messaging.dto.publish.InventoryLowStockEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductDeactivatedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductPublishedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductRejectedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;

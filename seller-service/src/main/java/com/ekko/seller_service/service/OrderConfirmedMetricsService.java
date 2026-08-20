@@ -2,7 +2,7 @@ package com.ekko.seller_service.service;
 
 import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.entity.SellerMetrics;
-import com.ekko.seller_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.seller_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.seller_service.repository.OrderConfirmationRepository;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;

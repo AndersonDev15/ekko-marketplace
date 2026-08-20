@@ -4,9 +4,9 @@ import com.ekko.seller_service.config.RabbitMQConfig;
 import com.ekko.seller_service.enums.DocumentStatus;
 import com.ekko.seller_service.enums.DocumentType;
 import com.ekko.seller_service.enums.SellerStatus;
-import com.ekko.seller_service.messaging.dto.SellerCreatedEvent;
-import com.ekko.seller_service.messaging.dto.SellerDocumentReviewEvent;
-import com.ekko.seller_service.messaging.dto.SellerStatusChangedEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -46,6 +46,7 @@ class RabbitMQSellerEventPublisherTest {
         SellerStatusChangedEvent event = new SellerStatusChangedEvent(
                 UUID.randomUUID(),
                 "kc-test-0001",
+                "seller@ekko.test",
                 SellerStatus.PENDING_REVIEW,
                 SellerStatus.ACTIVE,
                 LocalDateTime.of(2026, 1, 1, 10, 0));
@@ -62,6 +63,7 @@ class RabbitMQSellerEventPublisherTest {
     void routesSellerDocumentReviewEventToConfiguredExchangeAndKey() {
         SellerDocumentReviewEvent event = new SellerDocumentReviewEvent(
                 UUID.randomUUID(),
+                "seller@ekko.test",
                 UUID.randomUUID(),
                 DocumentType.ID_CARD,
                 DocumentStatus.APPROVED,

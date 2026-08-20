@@ -1,6 +1,6 @@
 package com.ekko.seller_service.messaging;
 
-import com.ekko.seller_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.seller_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.seller_service.service.OrderConfirmedMetricsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ class OrderConfirmedEventListenerTest {
     @Test
     void onOrderConfirmed_delegaAlServicio() {
         OrderConfirmedEvent event = new OrderConfirmedEvent(
-                UUID.randomUUID(), "ORD-001", "customer-1",
+                UUID.randomUUID(), "ORD-001", UUID.randomUUID(), "guest@ekko.test",
                 List.of(new OrderConfirmedEvent.OrderItemConfirmed(
                         UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), BigDecimal.TEN)),
                 null);

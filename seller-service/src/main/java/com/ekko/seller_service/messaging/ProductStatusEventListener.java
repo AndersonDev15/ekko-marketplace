@@ -1,8 +1,8 @@
 package com.ekko.seller_service.messaging;
 
 import com.ekko.seller_service.config.RabbitMQConfig;
-import com.ekko.seller_service.messaging.dto.ProductDeactivatedEvent;
-import com.ekko.seller_service.messaging.dto.ProductPublishedEvent;
+import com.ekko.seller_service.messaging.dto.consume.ProductDeactivatedEvent;
+import com.ekko.seller_service.messaging.dto.consume.ProductPublishedEvent;
 import com.ekko.seller_service.service.ProductStatusMetricsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

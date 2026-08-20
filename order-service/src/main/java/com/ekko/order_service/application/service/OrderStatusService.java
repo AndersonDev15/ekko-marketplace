@@ -58,6 +58,8 @@ public class OrderStatusService implements UpdateOrderStatusUseCase {
         return new OrderStatusChangedEvent(
                 saved.getId(),
                 saved.getOrderNumber(),
+                saved.getCustomerId(),
+                saved.getGuestEmail(),
                 previousStatus,
                 saved.getStatus(),
                 saved.getUpdatedAt());

@@ -1,7 +1,7 @@
 package com.ekko.review_service.messaging;
 
 import com.ekko.review_service.config.RabbitMQConfig;
-import com.ekko.review_service.messaging.dto.OrderConfirmedEvent;
+import com.ekko.review_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.review_service.service.EligibilityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

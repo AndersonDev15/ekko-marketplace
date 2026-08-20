@@ -21,7 +21,7 @@ import com.ekko.product_service.exception.ProductNotFoundException;
 import com.ekko.product_service.exception.VariantNotFoundException;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.messaging.ProductEventPublisher;
-import com.ekko.product_service.messaging.dto.ProductDeactivatedEvent;
+import com.ekko.product_service.messaging.dto.publish.ProductDeactivatedEvent;
 import com.ekko.product_service.repository.BrandRepository;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
@@ -57,7 +57,7 @@ public class ProductService {
     public ProductResponse createProduct(CreateProductRequest request, UUID sellerKeycloakId) {
         String slug = slugService.generateUnique(request.name(), sellerKeycloakId);
 
-        // TODO: obtener sellerSlug desde seller-service
+
         String sellerSlug = "pending";
 
         Product product = Product.builder()

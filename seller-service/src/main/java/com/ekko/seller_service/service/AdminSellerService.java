@@ -12,8 +12,8 @@ import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.*;
 import com.ekko.seller_service.mapper.SellerMapper;
 import com.ekko.seller_service.messaging.SellerEventPublisher;
-import com.ekko.seller_service.messaging.dto.SellerDocumentReviewEvent;
-import com.ekko.seller_service.messaging.dto.SellerStatusChangedEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
 import com.ekko.seller_service.repository.*;
 
 import lombok.RequiredArgsConstructor;
@@ -114,6 +114,7 @@ public class AdminSellerService {
         return new SellerStatusChangedEvent(
                 seller.getId(),
                 seller.getKeycloakId(),
+                seller.getEmail(),
                 previousStatus,
                 newStatus,
                 LocalDateTime.now()
@@ -123,6 +124,7 @@ public class AdminSellerService {
     private SellerDocumentReviewEvent toSellerDocumentReviewEvent(SellerDocument document) {
         return new SellerDocumentReviewEvent(
                 document.getSeller().getId(),
+                document.getSeller().getEmail(),
                 document.getId(),
                 document.getDocumentType(),
                 document.getStatus(),

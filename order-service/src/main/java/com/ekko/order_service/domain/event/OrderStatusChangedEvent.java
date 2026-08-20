@@ -8,6 +8,8 @@ import java.util.UUID;
 public record OrderStatusChangedEvent(
         UUID orderId,
         String orderNumber,
+        UUID customerId,
+        String guestEmail,
         OrderStatus previousStatus,
         OrderStatus newStatus,
         LocalDateTime changedAt

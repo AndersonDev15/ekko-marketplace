@@ -1,9 +1,8 @@
 package com.ekko.seller_service.service;
 
-import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.entity.SellerMetrics;
-import com.ekko.seller_service.messaging.dto.ProductDeactivatedEvent;
-import com.ekko.seller_service.messaging.dto.ProductPublishedEvent;
+import com.ekko.seller_service.messaging.dto.consume.ProductDeactivatedEvent;
+import com.ekko.seller_service.messaging.dto.consume.ProductPublishedEvent;
 import com.ekko.seller_service.repository.ProductEventRepository;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
@@ -31,7 +30,7 @@ public class ProductStatusMetricsService {
         if (productEventRepository.insertIfAbsent(event.productId(), EVENT_PUBLISHED) == 0) {
             return;
         }
-        adjustActiveProducts(event.sellerId(), 1, event.productId());
+        adjustActiveProducts(event.sellerKeycloakId(), 1, event.productId());
     }
 
     @Transactional
@@ -39,7 +38,7 @@ public class ProductStatusMetricsService {
         if (productEventRepository.insertIfAbsent(event.productId(), EVENT_DEACTIVATED) == 0) {
             return;
         }
-        adjustActiveProducts(event.sellerId(), -1, event.productId());
+        adjustActiveProducts(event.sellerKeycloakId(), -1, event.productId());
     }
 
     private void adjustActiveProducts(UUID sellerKeycloakId, long delta, UUID productId) {

@@ -11,7 +11,7 @@ import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.exception.ReviewOwnershipException;
 import com.ekko.review_service.mapper.ReviewMapper;
 import com.ekko.review_service.messaging.ReviewEventPublisher;
-import com.ekko.review_service.messaging.dto.ReviewCreatedEvent;
+import com.ekko.review_service.messaging.dto.publish.ReviewCreatedEvent;
 import com.ekko.review_service.repository.ReviewImageRepository;
 import com.ekko.review_service.repository.ReviewRepository;
 import com.ekko.review_service.dto.request.AdminUpdateContentRequest;

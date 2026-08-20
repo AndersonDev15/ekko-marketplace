@@ -67,6 +67,7 @@ public class PaymentFailureService implements HandlePaymentFailedUseCase {
                 saved.getId(),
                 saved.getOrderId(),
                 saved.getCustomerId(),
+                saved.getGuestEmail(),
                 command.reason(),
                 LocalDateTime.now());
     }
