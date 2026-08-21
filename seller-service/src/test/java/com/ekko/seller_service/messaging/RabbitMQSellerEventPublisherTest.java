@@ -64,6 +64,7 @@ class RabbitMQSellerEventPublisherTest {
         SellerDocumentReviewEvent event = new SellerDocumentReviewEvent(
                 UUID.randomUUID(),
                 "seller@ekko.test",
+                "kc-test-0001",
                 UUID.randomUUID(),
                 DocumentType.ID_CARD,
                 DocumentStatus.APPROVED,

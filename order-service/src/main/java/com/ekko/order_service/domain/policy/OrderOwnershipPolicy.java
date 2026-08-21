@@ -17,8 +17,8 @@ public class OrderOwnershipPolicy {
     }
 
     public void assertGuestOwns(Order order, String guestEmail) {
-        if (order.getGuestEmail() == null ||
-                !order.getGuestEmail().equals(guestEmail)) {
+        if (order.getCustomerEmail() == null ||
+                !order.getCustomerEmail().equals(guestEmail)) {
             throw new OrderAccessDeniedException();
         }
     }

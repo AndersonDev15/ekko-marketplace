@@ -16,8 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +30,6 @@ import static com.ekko.product_service.util.TestConstants.SELLER_KEYCLOAK_ID;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,6 +43,9 @@ class AdminProductControllerIntegrationTest extends AbstractPostgresIntegrationT
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @Autowired
     private ProductRepository productRepository;
@@ -375,18 +376,15 @@ class AdminProductControllerIntegrationTest extends AbstractPostgresIntegrationT
     // ------------------------------------------------------------------- helpers
 
     private RequestPostProcessor adminAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.adminJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+        return JwtTestUtils.adminAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor sellerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.sellerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SELLER"))));
+        return JwtTestUtils.sellerAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor customerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.customerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+        return JwtTestUtils.customerAuth(jwtAuthenticationConverter);
     }
 
     private Brand persistBrand() {

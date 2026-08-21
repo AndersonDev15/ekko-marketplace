@@ -61,7 +61,7 @@ public class OrderPaymentCallbackService implements PaymentCallbackUseCase {
                 saved.getId(),
                 saved.getOrderNumber(),
                 saved.getCustomerId(),
-                saved.getGuestEmail(),
+                saved.getCustomerEmail(),
                 saved.getItems().stream()
                         .map(item -> new OrderConfirmedEvent.OrderItemConfirmed(
                                 item.id(),

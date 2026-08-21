@@ -69,7 +69,6 @@ class OrderCreatedEventListenerIntegrationTest extends AbstractRabbitMqIntegrati
         InitiatePaymentCommand command = captor.getValue();
         assertEquals(ORDER_ID, command.orderId());
         assertNull(command.customerId());
-        assertEquals("guest@example.com", command.guestEmail());
         assertEquals("guest@example.com", command.customerEmail());
         assertEquals(0, new BigDecimal("250.00").compareTo(command.amount()));
         assertEquals("USD", command.currency());
@@ -111,7 +110,6 @@ class OrderCreatedEventListenerIntegrationTest extends AbstractRabbitMqIntegrati
 
         InitiatePaymentCommand command = captor.getValue();
         assertEquals(customerId, command.customerId());
-        assertNull(command.guestEmail());
         assertEquals("customer@example.com", command.customerEmail());
     }
 

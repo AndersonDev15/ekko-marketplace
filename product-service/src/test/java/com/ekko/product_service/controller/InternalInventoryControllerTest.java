@@ -11,20 +11,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,6 +33,9 @@ class InternalInventoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @MockitoBean
     private InventoryService inventoryService;
@@ -103,8 +103,7 @@ class InternalInventoryControllerTest {
     @Test
     void reserve_rolIncorrectoDevuelve403() throws Exception {
         mockMvc.perform(post("/internal/inventory/reserve")
-                        .with(authentication(new JwtAuthenticationToken(JwtTestUtils.sellerJwt(),
-                                List.of(new SimpleGrantedAuthority("ROLE_SELLER")))))
+                        .with(JwtTestUtils.sellerAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(batchBody(3)))
                 .andExpect(status().isForbidden());
@@ -124,7 +123,6 @@ class InternalInventoryControllerTest {
     }
 
     private RequestPostProcessor serviceOrderAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.adminJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SERVICE_ORDER"))));
+        return JwtTestUtils.serviceOrderAuth(jwtAuthenticationConverter);
     }
 }

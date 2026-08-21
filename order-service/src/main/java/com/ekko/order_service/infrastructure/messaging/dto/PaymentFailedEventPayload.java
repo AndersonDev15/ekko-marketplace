@@ -7,7 +7,7 @@ public record PaymentFailedEventPayload(
         UUID paymentId,
         UUID orderId,
         UUID customerId,
-        String guestEmail,
+        String customerEmail,
         String reason,
         LocalDateTime failedAt
 ) {

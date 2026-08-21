@@ -38,7 +38,6 @@ public class OrderCreatedEventListener {
         InitiatePaymentCommand command = new InitiatePaymentCommand(
                 payload.orderId(),
                 payload.customerId(),
-                payload.customerId() == null ? payload.customerEmail() : null,
                 payload.customerEmail(),
                 payload.total(),
                 CURRENCY,

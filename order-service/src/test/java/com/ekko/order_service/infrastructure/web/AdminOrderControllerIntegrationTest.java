@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -53,6 +54,9 @@ class AdminOrderControllerIntegrationTest extends AbstractPostgresIntegrationTes
     private MockMvc mockMvc;
 
     @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
@@ -79,7 +83,7 @@ class AdminOrderControllerIntegrationTest extends AbstractPostgresIntegrationTes
         forceConfirmed(orderNumber);
 
         mockMvc.perform(patch("/admin/orders/{orderNumber}/status", orderNumber)
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "newStatus": "SHIPPED" }
@@ -108,7 +112,7 @@ class AdminOrderControllerIntegrationTest extends AbstractPostgresIntegrationTes
         forceConfirmed(orderNumber);
 
         mockMvc.perform(patch("/admin/orders/{orderNumber}/status", orderNumber)
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "newStatus": "PENDING" }
@@ -122,7 +126,7 @@ class AdminOrderControllerIntegrationTest extends AbstractPostgresIntegrationTes
 
     private String createCustomerOrder() throws Exception {
         MockHttpServletRequestBuilder builder = post("/orders")
-                .with(customerAuth())
+                .with(customerAuth(jwtAuthenticationConverter))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(orderBody());
 

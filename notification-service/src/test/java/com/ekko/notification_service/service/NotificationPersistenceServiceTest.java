@@ -56,6 +56,19 @@ class NotificationPersistenceServiceTest {
     }
 
     @Test
+    @DisplayName("persistPending genera un UUID sintético cuando recipientId es null (guest checkout)")
+    void persistPending_generatesSyntheticRecipientIdWhenNull() {
+        when(repository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.persistPending(null, "guest@ekko.test", NotificationType.EMAIL,
+                UUID.randomUUID(), "Subject", "Body", Map.of());
+
+        Notification captured = captureSaved();
+        assertThat(captured.getRecipientId()).isNotNull();
+        assertThat(captured.getRecipientEmail()).isEqualTo("guest@ekko.test");
+    }
+
+    @Test
     @DisplayName("persistPending usa Map.of() cuando renderedVariables es null")
     void persistPending_usesEmptyMapWhenVariablesNull() {
         when(repository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));

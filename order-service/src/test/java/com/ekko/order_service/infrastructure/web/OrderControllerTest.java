@@ -25,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -57,6 +58,9 @@ class OrderControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @MockitoBean
     private CreateOrderUseCase createOrderUseCase;
@@ -102,7 +106,7 @@ class OrderControllerTest {
             when(createOrderUseCase.execute(any(OrderDraft.class))).thenReturn(anOrder());
 
             mockMvc.perform(post("/orders")
-                            .with(customerAuth())
+                            .with(customerAuth(jwtAuthenticationConverter))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(guestBody(GUEST_EMAIL)))
                     .andExpect(status().isCreated());
@@ -131,7 +135,7 @@ class OrderControllerTest {
         @DisplayName("body invalido (shippingAddress nulo) -> 400 por Bean Validation")
         void createWithInvalidBodyReturns400() throws Exception {
             mockMvc.perform(post("/orders")
-                            .with(customerAuth())
+                            .with(customerAuth(jwtAuthenticationConverter))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {
@@ -173,7 +177,7 @@ class OrderControllerTest {
                     .thenThrow(new OrderAccessDeniedException());
 
             mockMvc.perform(get("/orders/{orderNumber}", ORDER_NUMBER)
-                            .with(otherCustomerAuth()))
+                            .with(otherCustomerAuth(jwtAuthenticationConverter)))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.error").value("ORDER_ACCESS_DENIED"));
         }
@@ -209,7 +213,7 @@ class OrderControllerTest {
                     .thenReturn(page);
 
             mockMvc.perform(get("/orders/me")
-                            .with(customerAuth())
+                            .with(customerAuth(jwtAuthenticationConverter))
                             .queryParam("page", "1")
                             .queryParam("size", "5"))
                     .andExpect(status().isOk())

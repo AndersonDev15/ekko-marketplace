@@ -48,6 +48,13 @@ spring:
     username: ${RABBITMQ_USER:ekko}
     password: ${RABBITMQ_PASSWORD:ekko123}
 
+keycloak:
+  admin:
+    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8180}
+    realm: ekko
+    client-id: notification-service-admin
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
+
 management:
   endpoints:
     web:

@@ -357,7 +357,7 @@ class OrderCreationServiceTest {
 
         verify(orderTransactionService).commitOrder(
                 argThat(order ->
-                        order.getGuestEmail().equals("guest@example.com")
+                        order.getCustomerEmail().equals("guest@example.com")
                                 && order.getCustomerId() == null
                                 && order.getStatus() == OrderStatus.PENDING));
     }

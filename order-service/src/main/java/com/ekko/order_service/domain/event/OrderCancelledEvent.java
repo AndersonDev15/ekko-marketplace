@@ -10,7 +10,7 @@ public record OrderCancelledEvent(
         UUID orderId,
         String orderNumber,
         UUID customerId,
-        String guestEmail,
+        String customerEmail,
         OrderStatus previousStatus,
         boolean refundRequired,
         List<OrderItemCancelled> items,
@@ -21,7 +21,8 @@ public record OrderCancelledEvent(
             UUID orderItemId,
             UUID productId,
             UUID variantId,
-            Integer quantity
+            Integer quantity,
+            UUID sellerKeycloakId
     ) {
     }
 }

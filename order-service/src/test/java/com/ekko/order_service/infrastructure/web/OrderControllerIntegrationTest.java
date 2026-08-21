@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -53,6 +54,9 @@ class OrderControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
@@ -82,7 +86,7 @@ class OrderControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                             .queryParam("guestEmail", GUEST_EMAIL))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.orderNumber").value(orderNumber))
-                    .andExpect(jsonPath("$.guestEmail").value(GUEST_EMAIL))
+                    .andExpect(jsonPath("$.customerEmail").value(GUEST_EMAIL))
                     .andExpect(jsonPath("$.status").value("PENDING"))
                     .andExpect(jsonPath("$.total").value(200.00))
                     .andExpect(jsonPath("$.items", hasSize(1)))
@@ -94,7 +98,7 @@ class OrderControllerIntegrationTest extends AbstractPostgresIntegrationTest {
 
             OrderEntity persisted = orderJpaRepository.findByOrderNumber(orderNumber).orElseThrow();
             assertEquals(1, persisted.getItems().size());
-            assertEquals(GUEST_EMAIL, persisted.getGuestEmail());
+            assertEquals(GUEST_EMAIL, persisted.getCustomerEmail());
             assertNotNull(persisted.getAddress());
             assertEquals(ADDRESS_LINE, persisted.getAddress().getAddressLine());
         }
@@ -119,7 +123,7 @@ class OrderControllerIntegrationTest extends AbstractPostgresIntegrationTest {
         void customerCreatesThenSeesInMyOrders() throws Exception {
             String orderNumber = createCustomerOrder();
 
-            mockMvc.perform(get("/orders/me").with(customerAuth()))
+            mockMvc.perform(get("/orders/me").with(customerAuth(jwtAuthenticationConverter)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content[?(@.orderNumber == '%s')]"
                             .formatted(orderNumber), hasSize(1)));
@@ -134,7 +138,7 @@ class OrderControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     private String createCustomerOrder() throws Exception {
-        return createOrder(null, customerAuth());
+        return createOrder(null, customerAuth(jwtAuthenticationConverter));
     }
 
     private String createOrder(String guestEmail, RequestPostProcessor auth) throws Exception {

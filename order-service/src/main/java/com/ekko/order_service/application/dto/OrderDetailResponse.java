@@ -10,7 +10,7 @@ import java.util.UUID;
 public record OrderDetailResponse(
         UUID id,
         UUID customerId,
-        String guestEmail,
+        String customerEmail,
         String orderNumber,
         OrderStatus status,
         BigDecimal subtotal,

@@ -101,9 +101,9 @@ class OrderInventoryServiceTest {
                 ORDER_ID, "EKK-001", UUID.randomUUID(), null, "CONFIRMED", true,
                 List.of(
                         new OrderCancelledEvent.OrderItemCancelled(
-                                UUID.randomUUID(), UUID.randomUUID(), VARIANT_1, quantity),
+                                UUID.randomUUID(), UUID.randomUUID(), VARIANT_1, quantity, UUID.randomUUID()),
                         new OrderCancelledEvent.OrderItemCancelled(
-                                UUID.randomUUID(), UUID.randomUUID(), VARIANT_2, 1)),
+                                UUID.randomUUID(), UUID.randomUUID(), VARIANT_2, 1, UUID.randomUUID())),
                 null);
     }
 }

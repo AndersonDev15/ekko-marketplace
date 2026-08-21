@@ -121,7 +121,7 @@ class OrderInventoryServiceIntegrationTest extends AbstractPostgresIntegrationTe
         return new OrderCancelledEvent(
                 orderId, "EKK-001", UUID.randomUUID(), null, "CONFIRMED", true,
                 List.of(new OrderCancelledEvent.OrderItemCancelled(
-                        UUID.randomUUID(), UUID.randomUUID(), variantId, quantity)),
+                        UUID.randomUUID(), UUID.randomUUID(), variantId, quantity, UUID.randomUUID())),
                 null);
     }
 

@@ -13,9 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -28,7 +27,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -45,6 +43,9 @@ class InventoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @MockitoBean
     private InventoryService inventoryService;
@@ -255,17 +256,14 @@ class InventoryControllerTest {
     }
 
     private RequestPostProcessor sellerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.sellerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SELLER"))));
+        return JwtTestUtils.sellerAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor customerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.customerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+        return JwtTestUtils.customerAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor serviceOrderAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.adminJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SERVICE_ORDER"))));
+        return JwtTestUtils.serviceOrderAuth(jwtAuthenticationConverter);
     }
 }

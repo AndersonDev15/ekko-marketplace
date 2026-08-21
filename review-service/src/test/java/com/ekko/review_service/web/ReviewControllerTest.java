@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -54,6 +55,9 @@ class ReviewControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
     @MockitoBean
     private ReviewCommandService reviewCommandService;
 
@@ -78,7 +82,7 @@ class ReviewControllerTest {
         // when
         // then
         mockMvc.perform(post("/reviews")
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -120,7 +124,7 @@ class ReviewControllerTest {
     @DisplayName("POST /reviews con rating fuera de rango -> 400 VALIDATION_ERROR")
     void createReview_shouldReturn400WhenRatingOutOfRange() throws Exception {
         mockMvc.perform(post("/reviews")
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -138,7 +142,7 @@ class ReviewControllerTest {
     @DisplayName("POST /reviews sin productId -> 400 VALIDATION_ERROR")
     void createReview_shouldReturn400WhenProductIdMissing() throws Exception {
         mockMvc.perform(post("/reviews")
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -161,7 +165,7 @@ class ReviewControllerTest {
         // when
         // then
         mockMvc.perform(post("/reviews")
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -187,7 +191,7 @@ class ReviewControllerTest {
         // when
         // then
         mockMvc.perform(patch("/reviews/{reviewId}", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rating": 4, "title": "Updated", "comment": "Still fine"}
@@ -206,7 +210,7 @@ class ReviewControllerTest {
         // when
         // then
         mockMvc.perform(patch("/reviews/{reviewId}", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rating": 4}
@@ -222,7 +226,7 @@ class ReviewControllerTest {
     void deleteReview_shouldReturn204() throws Exception {
         // when
         mockMvc.perform(delete("/reviews/{reviewId}", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID)))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isNoContent());
 
         // then
@@ -275,7 +279,7 @@ class ReviewControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/reviews/me").with(customerAuth(CUSTOMER_ID)))
+        mockMvc.perform(get("/reviews/me").with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
     }
@@ -291,7 +295,7 @@ class ReviewControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/reviews/eligible").with(customerAuth(CUSTOMER_ID)))
+        mockMvc.perform(get("/reviews/eligible").with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].orderItemId").value(ORDER_ITEM_ID.toString()));
     }
@@ -302,7 +306,7 @@ class ReviewControllerTest {
     @DisplayName("POST /reviews/{id}/helpful-votes -> 204")
     void addHelpfulVote_shouldReturn204() throws Exception {
         mockMvc.perform(post("/reviews/{reviewId}/helpful-votes", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID)))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isNoContent());
 
         verify(helpfulVoteService).addVote(REVIEW_ID, CUSTOMER_ID.toString());
@@ -318,7 +322,7 @@ class ReviewControllerTest {
         // when
         // then
         mockMvc.perform(post("/reviews/{reviewId}/helpful-votes", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID)))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("SELF_HELPFUL_VOTE_NOT_ALLOWED"));
     }
@@ -333,7 +337,7 @@ class ReviewControllerTest {
         // when
         // then
         mockMvc.perform(post("/reviews/{reviewId}/helpful-votes", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID)))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("HELPFUL_VOTE_ALREADY_EXISTS"));
     }
@@ -342,7 +346,7 @@ class ReviewControllerTest {
     @DisplayName("DELETE /reviews/{id}/helpful-votes -> 204")
     void removeHelpfulVote_shouldReturn204() throws Exception {
         mockMvc.perform(delete("/reviews/{reviewId}/helpful-votes", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID)))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isNoContent());
 
         verify(helpfulVoteService).removeVote(REVIEW_ID, CUSTOMER_ID.toString());

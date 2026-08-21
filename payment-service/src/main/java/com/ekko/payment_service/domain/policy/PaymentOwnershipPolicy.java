@@ -17,8 +17,8 @@ public class PaymentOwnershipPolicy {
     }
 
     public void assertGuestOwns(Payment payment, String guestEmail) {
-        if (payment.getGuestEmail() == null ||
-                !payment.getGuestEmail().equals(guestEmail)) {
+        if (payment.getCustomerEmail() == null ||
+                !payment.getCustomerEmail().equals(guestEmail)) {
             throw new PaymentAccessDeniedException();
         }
     }

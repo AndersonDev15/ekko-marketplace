@@ -169,6 +169,7 @@ class RabbitMQOrderEventPublisherTest {
                 "guest@ekko.test",
                 OrderStatus.CONFIRMED,
                 OrderStatus.SHIPPED,
+                List.of(SELLER_KEYCLOAK_ID),
                 LocalDateTime.of(2025, 8, 9, 14, 30));
 
         publisher.publishOrderStatusChanged(event);

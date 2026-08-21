@@ -22,7 +22,7 @@ public class Order {
 
     private UUID id;
     private UUID customerId;
-    private String guestEmail;
+    private String customerEmail;
     private OrderStatus status;
     private BigDecimal subtotal;
     private BigDecimal shippingCost;

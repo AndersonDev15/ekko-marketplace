@@ -41,7 +41,7 @@ public class PaymentService implements InitiatePaymentUseCase {
         Payment payment = Payment.initiate(
                 command.orderId(),
                 command.customerId(),
-                command.guestEmail(),
+                command.customerEmail(),
                 command.amount(),
                 command.currency());
 

@@ -24,9 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -45,7 +43,6 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -61,6 +58,9 @@ class SellerProductControllerIntegrationTest extends AbstractPostgresIntegration
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -484,13 +484,11 @@ class SellerProductControllerIntegrationTest extends AbstractPostgresIntegration
     // ------------------------------------------------------------------- helpers
 
     private RequestPostProcessor sellerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.sellerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SELLER"))));
+        return JwtTestUtils.sellerAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor customerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.customerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+        return JwtTestUtils.customerAuth(jwtAuthenticationConverter);
     }
 
     private String createJson(String name, UUID brandId, UUID categoryId) {

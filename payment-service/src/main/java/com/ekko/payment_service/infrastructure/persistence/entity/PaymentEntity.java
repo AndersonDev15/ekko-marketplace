@@ -45,8 +45,8 @@ public class PaymentEntity {
     @Column(name = "customer_id")
     private UUID customerId;
 
-    @Column(name = "guest_email", length = 255)
-    private String guestEmail;
+    @Column(name = "customer_email", length = 255)
+    private String customerEmail;
 
     @Column(name = "payment_intent_id", length = 255, unique = true)
     private String paymentIntentId;

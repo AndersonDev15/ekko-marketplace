@@ -26,12 +26,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,16 +76,48 @@ class NotificationOrchestratorServiceTest {
     }
 
     @Test
-    @DisplayName("process retorna sin llamar colaboradores cuando recipientId es null")
-    void process_ignoresEventWithoutRecipient() {
+    @DisplayName("process procesa EMAIL normal aunque recipientId sea null (guest checkout)")
+    void process_proceedsWithEmailWhenRecipientIdNull() {
+        UUID templateId = UUID.randomUUID();
+        UUID notificationId = UUID.randomUUID();
+        NotificationTemplate template = template(templateId);
+        Notification notification = notification(notificationId);
         NotificationEvent event = new NotificationEvent(
-                null, "customer@ekko.test", EVENT_TYPE, List.of(NotificationType.EMAIL), Map.of("nombre", "Ekko"));
+                null, "guest@ekko.test", EVENT_TYPE, List.of(NotificationType.EMAIL), Map.of());
+        when(templateService.findActiveByNameAndType(EVENT_TYPE, NotificationType.EMAIL))
+                .thenReturn(Optional.of(template));
+        when(templateRenderer.render(anyString(), anyMap())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(persistenceService.persistPending(isNull(), eq(event.recipientEmail()), eq(NotificationType.EMAIL),
+                eq(templateId), anyString(), anyString(), anyMap())).thenReturn(notification);
 
         orchestrator.process(event);
 
-        verifyNoInteractions(templateService, templateRenderer, persistenceService);
-        verify(emailChannel, never()).send(any(Notification.class));
+        verify(persistenceService).persistPending(isNull(), eq(event.recipientEmail()), eq(NotificationType.EMAIL),
+                eq(templateId), eq(template.getSubject()), eq(template.getBody()), eq(event.variables()));
+        verify(emailChannel).send(notification);
+        verify(persistenceService).persistFinalState(notificationId, NotificationStatus.SENT, null);
+    }
+
+    @Test
+    @DisplayName("process salta el canal IN_APP sin llamar colaboradores cuando recipientId es null")
+    void process_skipsInAppWhenRecipientIdNull() {
+        UUID notificationId = UUID.randomUUID();
+        NotificationEvent event = new NotificationEvent(
+                null, "guest@ekko.test", EVENT_TYPE,
+                List.of(NotificationType.EMAIL, NotificationType.IN_APP), Map.of());
+        when(templateService.findActiveByNameAndType(EVENT_TYPE, NotificationType.EMAIL))
+                .thenReturn(Optional.of(template(UUID.randomUUID())));
+        when(templateRenderer.render(anyString(), anyMap())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(persistenceService.persistPending(isNull(), eq(event.recipientEmail()), eq(NotificationType.EMAIL),
+                any(), anyString(), anyString(), anyMap())).thenReturn(notification(notificationId));
+
+        orchestrator.process(event);
+
+        verify(templateService).findActiveByNameAndType(EVENT_TYPE, NotificationType.EMAIL);
+        verify(templateService, never()).findActiveByNameAndType(EVENT_TYPE, NotificationType.IN_APP);
         verify(inAppChannel, never()).send(any(Notification.class));
+        verify(persistenceService, never()).persistPending(
+                any(), any(), eq(NotificationType.IN_APP), any(), any(), any(), any());
     }
 
     @Test

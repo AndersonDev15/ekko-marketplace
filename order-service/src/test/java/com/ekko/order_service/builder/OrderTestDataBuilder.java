@@ -81,7 +81,7 @@ public final class OrderTestDataBuilder {
         return Order.builder()
                 .id(UUID.randomUUID())
                 .customerId(CUSTOMER_KEYCLOAK_ID)
-                .guestEmail(null)
+                .customerEmail(null)
                 .status(OrderStatus.PENDING)
                 .subtotal(new BigDecimal("200.00"))
                 .shippingCost(BigDecimal.ZERO)
@@ -98,7 +98,7 @@ public final class OrderTestDataBuilder {
     public static Order aGuestOrder() {
         return anOrderBuilder()
                 .customerId(null)
-                .guestEmail(GUEST_EMAIL)
+                .customerEmail(GUEST_EMAIL)
                 .build();
     }
 }

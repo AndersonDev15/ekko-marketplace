@@ -1,8 +1,7 @@
 package com.ekko.order_service.util;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
@@ -14,7 +13,6 @@ import java.util.UUID;
 import static com.ekko.order_service.util.TestConstants.ADMIN_KEYCLOAK_ID;
 import static com.ekko.order_service.util.TestConstants.CUSTOMER_KEYCLOAK_ID;
 import static com.ekko.order_service.util.TestConstants.OTHER_CUSTOMER_KEYCLOAK_ID;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 public final class JwtTestUtils {
@@ -53,22 +51,19 @@ public final class JwtTestUtils {
         return builder.build();
     }
 
-    public static RequestPostProcessor customerAuth() {
-        return authentication(new JwtAuthenticationToken(
-                customerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+    public static RequestPostProcessor customerAuth(JwtAuthenticationConverter converter) {
+        return jwt().jwt(customerJwt())
+                .authorities(jwt -> converter.convert(jwt).getAuthorities());
     }
 
-    public static RequestPostProcessor otherCustomerAuth() {
-        return authentication(new JwtAuthenticationToken(
-                otherCustomerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+    public static RequestPostProcessor otherCustomerAuth(JwtAuthenticationConverter converter) {
+        return jwt().jwt(otherCustomerJwt())
+                .authorities(jwt -> converter.convert(jwt).getAuthorities());
     }
 
-    public static RequestPostProcessor adminAuth() {
-        return authentication(new JwtAuthenticationToken(
-                adminJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+    public static RequestPostProcessor adminAuth(JwtAuthenticationConverter converter) {
+        return jwt().jwt(adminJwt())
+                .authorities(jwt -> converter.convert(jwt).getAuthorities());
     }
 
     public static JwtRequestPostProcessor jwtCustomer() {

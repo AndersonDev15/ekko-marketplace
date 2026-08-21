@@ -125,6 +125,7 @@ public class AdminSellerService {
         return new SellerDocumentReviewEvent(
                 document.getSeller().getId(),
                 document.getSeller().getEmail(),
+                document.getSeller().getKeycloakId(),
                 document.getId(),
                 document.getDocumentType(),
                 document.getStatus(),

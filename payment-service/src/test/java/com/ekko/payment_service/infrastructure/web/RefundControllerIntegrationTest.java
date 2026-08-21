@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -42,6 +43,9 @@ class RefundControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
+    @Autowired
     private PaymentRepositoryPort paymentRepositoryPort;
 
     @Autowired
@@ -65,7 +69,7 @@ class RefundControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .thenReturn(STRIPE_REFUND_ID);
 
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", payment.getId())
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 40.00, "reason": "DUPLICATE", "notes": "admin note" }
@@ -99,7 +103,7 @@ class RefundControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     @DisplayName("POST con JWT customer (no ADMIN) -> 403 via @PreAuthorize")
     void createRefundWithCustomerJwtReturns403() throws Exception {
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", UUID.randomUUID())
-                        .with(customerAuth())
+                        .with(customerAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 40.00, "reason": "DUPLICATE" }
@@ -113,7 +117,7 @@ class RefundControllerIntegrationTest extends AbstractPostgresIntegrationTest {
         Payment payment = savePendingPayment(new BigDecimal("100.00"));
 
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", payment.getId())
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 40.00, "reason": "DUPLICATE" }
@@ -130,7 +134,7 @@ class RefundControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .thenReturn(STRIPE_REFUND_ID);
 
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", payment.getId())
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 150.00, "reason": "DUPLICATE" }

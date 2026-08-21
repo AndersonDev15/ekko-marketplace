@@ -29,8 +29,13 @@ public class NotificationPersistenceService {
             String subject,
             String body,
             Map<String, Object> renderedVariables) {
+        // Guest checkouts have no account, so the notification is delivered only by EMAIL and
+        // recipientId has no functional meaning (it is never consulted via GET /notifications/me,
+        // there is no guest JWT). The DB column is NOT NULL though, so a synthetic UUID is generated
+        // solely to satisfy the constraint.
+        UUID persistedRecipientId = recipientId != null ? recipientId : UUID.randomUUID();
         Notification notification = Notification.builder()
-                .recipientId(recipientId)
+                .recipientId(persistedRecipientId)
                 .recipientEmail(recipientEmail)
                 .type(type)
                 .templateId(templateId)

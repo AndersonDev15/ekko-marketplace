@@ -194,7 +194,7 @@ class OrderPaymentCallbackServiceTest {
         return Order.builder()
                 .id(ORDER_ID)
                 .customerId(base.getCustomerId())
-                .guestEmail(base.getGuestEmail())
+                .customerEmail(base.getCustomerEmail())
                 .status(OrderStatus.CONFIRMED)
                 .subtotal(base.getSubtotal())
                 .shippingCost(base.getShippingCost())

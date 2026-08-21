@@ -1,0 +1,1 @@
+ALTER TABLE orders RENAME COLUMN guest_email TO customer_email;

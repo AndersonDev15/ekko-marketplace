@@ -170,7 +170,7 @@ class OrderPaymentCallbackServiceIntegrationTest extends AbstractPostgresIntegra
         OrderDraft draft = new OrderDraft(
                 CUSTOMER_KEYCLOAK_ID,
                 null,
-                null,
+                "customer@example.com",
                 anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 2)),
                 "fragile");

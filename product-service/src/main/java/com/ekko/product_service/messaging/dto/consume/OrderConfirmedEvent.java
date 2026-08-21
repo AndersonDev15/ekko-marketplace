@@ -13,7 +13,7 @@ public record OrderConfirmedEvent(
         UUID orderId,
         String orderNumber,
         UUID customerId,
-        String guestEmail,
+        String customerEmail,
         List<OrderItemConfirmed> items,
         LocalDateTime confirmedAt
 ) {

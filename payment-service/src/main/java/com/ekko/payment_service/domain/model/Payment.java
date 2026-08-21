@@ -13,7 +13,7 @@ public class Payment {
     private final UUID id;
     private final UUID orderId;
     private final UUID customerId;
-    private final String guestEmail;
+    private final String customerEmail;
     private String paymentIntentId;
     private final BigDecimal amount;
     private final String currency;
@@ -26,12 +26,12 @@ public class Payment {
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Payment(UUID id, UUID orderId, UUID customerId, String guestEmail,
+    private Payment(UUID id, UUID orderId, UUID customerId, String customerEmail,
                     BigDecimal amount, String currency) {
         this.id = id;
         this.orderId = orderId;
         this.customerId = customerId;
-        this.guestEmail = guestEmail;
+        this.customerEmail = customerEmail;
         this.amount = amount;
         this.currency = currency;
         this.status = PaymentStatus.PENDING;
@@ -39,7 +39,7 @@ public class Payment {
         this.updatedAt = LocalDateTime.now();
     }
 
-    private Payment(UUID id, UUID orderId, UUID customerId, String guestEmail,
+    private Payment(UUID id, UUID orderId, UUID customerId, String customerEmail,
                     String paymentIntentId, BigDecimal amount, String currency,
                     PaymentStatus status, String stripeCustomerId,
                     String paymentMethodType, String paymentMethodLast4,
@@ -49,7 +49,7 @@ public class Payment {
         this.id = id;
         this.orderId = orderId;
         this.customerId = customerId;
-        this.guestEmail = guestEmail;
+        this.customerEmail = customerEmail;
         this.paymentIntentId = paymentIntentId;
         this.amount = amount;
         this.currency = currency;
@@ -65,18 +65,18 @@ public class Payment {
         this.updatedAt = updatedAt;
     }
 
-public static Payment initiate(UUID orderId, UUID customerId, String guestEmail,
+public static Payment initiate(UUID orderId, UUID customerId, String customerEmail,
                                 BigDecimal amount, String currency) {
         return new Payment(
                 null,
                 orderId,
                 customerId,
-                guestEmail,
+                customerEmail,
                 amount,
                 currency);
     }
 
-    public static Payment restore(UUID id, UUID orderId, UUID customerId, String guestEmail,
+    public static Payment restore(UUID id, UUID orderId, UUID customerId, String customerEmail,
                                   String paymentIntentId, BigDecimal amount, String currency,
                                   PaymentStatus status, String stripeCustomerId,
                                   String paymentMethodType, String paymentMethodLast4,
@@ -87,7 +87,7 @@ public static Payment initiate(UUID orderId, UUID customerId, String guestEmail,
                 id,
                 orderId,
                 customerId,
-                guestEmail,
+                customerEmail,
                 paymentIntentId,
                 amount,
                 currency,
@@ -146,8 +146,8 @@ public static Payment initiate(UUID orderId, UUID customerId, String guestEmail,
         return customerId;
     }
 
-    public String getGuestEmail() {
-        return guestEmail;
+    public String getCustomerEmail() {
+        return customerEmail;
     }
 
     public String getPaymentIntentId() {

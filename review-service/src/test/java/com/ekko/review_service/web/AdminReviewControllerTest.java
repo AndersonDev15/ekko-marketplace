@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -47,6 +48,9 @@ class AdminReviewControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
     @MockitoBean
     private ReviewCommandService reviewCommandService;
 
@@ -68,7 +72,7 @@ class AdminReviewControllerTest {
     @Test
     @DisplayName("GET /admin/reviews con customer -> 403")
     void getAllReviews_shouldReturn403ForCustomer() throws Exception {
-        mockMvc.perform(get("/admin/reviews").with(customerAuth(CUSTOMER_ID)))
+        mockMvc.perform(get("/admin/reviews").with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID)))
                 .andExpect(status().isForbidden());
     }
 
@@ -84,7 +88,7 @@ class AdminReviewControllerTest {
         // when
         // then
         mockMvc.perform(get("/admin/reviews")
-                        .with(adminAuth(ADMIN_ID))
+                        .with(adminAuth(jwtAuthenticationConverter, ADMIN_ID))
                         .param("status", "HIDDEN")
                         .param("productId", PRODUCT_ID.toString())
                         .param("customerId", "customer-1"))
@@ -107,7 +111,7 @@ class AdminReviewControllerTest {
         // when
         // then
         mockMvc.perform(patch("/admin/reviews/{reviewId}/status", REVIEW_ID)
-                        .with(adminAuth(ADMIN_ID))
+                        .with(adminAuth(jwtAuthenticationConverter, ADMIN_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"newStatus": "HIDDEN"}
@@ -122,7 +126,7 @@ class AdminReviewControllerTest {
     @DisplayName("PATCH /admin/reviews/{id}/status sin newStatus -> 400 VALIDATION_ERROR")
     void updateReviewStatus_shouldReturn400WhenStatusMissing() throws Exception {
         mockMvc.perform(patch("/admin/reviews/{reviewId}/status", REVIEW_ID)
-                        .with(adminAuth(ADMIN_ID))
+                        .with(adminAuth(jwtAuthenticationConverter, ADMIN_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -133,7 +137,7 @@ class AdminReviewControllerTest {
     @DisplayName("PATCH /admin/reviews/{id}/status con customer -> 403")
     void updateReviewStatus_shouldReturn403ForCustomer() throws Exception {
         mockMvc.perform(patch("/admin/reviews/{reviewId}/status", REVIEW_ID)
-                        .with(customerAuth(CUSTOMER_ID))
+                        .with(customerAuth(jwtAuthenticationConverter, CUSTOMER_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"newStatus": "HIDDEN"}
@@ -153,7 +157,7 @@ class AdminReviewControllerTest {
         // when
         // then
         mockMvc.perform(patch("/admin/reviews/{reviewId}/content", REVIEW_ID)
-                        .with(adminAuth(ADMIN_ID))
+                        .with(adminAuth(jwtAuthenticationConverter, ADMIN_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rating": 1, "title": "Fixed", "comment": "Corrected"}
@@ -166,7 +170,7 @@ class AdminReviewControllerTest {
     @DisplayName("PATCH /admin/reviews/{id}/content con rating inválido -> 400 VALIDATION_ERROR")
     void updateReviewContent_shouldReturn400WhenRatingInvalid() throws Exception {
         mockMvc.perform(patch("/admin/reviews/{reviewId}/content", REVIEW_ID)
-                        .with(adminAuth(ADMIN_ID))
+                        .with(adminAuth(jwtAuthenticationConverter, ADMIN_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rating": 0, "title": "Fixed", "comment": "Corrected"}
@@ -181,7 +185,7 @@ class AdminReviewControllerTest {
     @DisplayName("DELETE /admin/reviews/{id} con admin -> 204")
     void deleteReview_shouldReturn204() throws Exception {
         mockMvc.perform(delete("/admin/reviews/{reviewId}", REVIEW_ID)
-                        .with(adminAuth(ADMIN_ID)))
+                        .with(adminAuth(jwtAuthenticationConverter, ADMIN_ID)))
                 .andExpect(status().isNoContent());
 
         verify(reviewCommandService).adminDeleteReview(REVIEW_ID);

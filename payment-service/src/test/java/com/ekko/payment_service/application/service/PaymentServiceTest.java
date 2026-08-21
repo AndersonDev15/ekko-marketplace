@@ -172,7 +172,6 @@ class PaymentServiceTest {
                         ORDER_ID,
                         null,
                         "guest@example.com",
-                        "guest@example.com",
                         AMOUNT,
                         "USD",
                         List.of(new InitiatePaymentCommand.VendorGrossAmount(VENDOR_ID, new BigDecimal("100.00")))));
@@ -202,7 +201,6 @@ class PaymentServiceTest {
         return new InitiatePaymentCommand(
                 ORDER_ID,
                 CUSTOMER_ID,
-                "guest@example.com",
                 "customer@example.com",
                 AMOUNT,
                 "USD",

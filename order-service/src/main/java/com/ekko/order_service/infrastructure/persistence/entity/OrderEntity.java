@@ -43,8 +43,8 @@ public class OrderEntity {
     @Column(name = "customer_id")
     private UUID customerId;
 
-    @Column(name = "guest_email", length = 255)
-    private String guestEmail;
+    @Column(name = "customer_email", length = 255)
+    private String customerEmail;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

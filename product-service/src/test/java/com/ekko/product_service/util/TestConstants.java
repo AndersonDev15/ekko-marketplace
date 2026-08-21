@@ -18,6 +18,9 @@ public final class TestConstants {
     // Customer
     public static final UUID CUSTOMER_KEYCLOAK_ID = UUID.fromString("00000000-0000-0000-0000-000000000009");
 
+    // Order service
+    public static final UUID SERVICE_ORDER_KEYCLOAK_ID = UUID.fromString("00000000-0000-0000-0000-000000000010");
+
     // Brand
     public static final UUID BRAND_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     public static final String BRAND_NAME = "Apple";

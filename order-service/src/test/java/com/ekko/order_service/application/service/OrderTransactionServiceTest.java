@@ -172,7 +172,7 @@ class OrderTransactionServiceTest {
         return Order.builder()
                 .id(id)
                 .customerId(base.getCustomerId())
-                .guestEmail(base.getGuestEmail())
+                .customerEmail(base.getCustomerEmail())
                 .status(status)
                 .subtotal(base.getSubtotal())
                 .shippingCost(base.getShippingCost())

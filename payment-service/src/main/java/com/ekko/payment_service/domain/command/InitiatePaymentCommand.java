@@ -7,7 +7,6 @@ import java.util.UUID;
 public record InitiatePaymentCommand(
         UUID orderId,
         UUID customerId,
-        String guestEmail,
         String customerEmail,
         BigDecimal amount,
         String currency,

@@ -32,7 +32,7 @@ public interface PaymentPersistenceMapper {
                 entity.getId(),
                 entity.getOrderId(),
                 entity.getCustomerId(),
-                entity.getGuestEmail(),
+                entity.getCustomerEmail(),
                 entity.getPaymentIntentId(),
                 entity.getAmount(),
                 entity.getCurrency(),

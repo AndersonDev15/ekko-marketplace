@@ -181,7 +181,6 @@ class PaymentServiceIntegrationTest extends AbstractPostgresIntegrationTest {
                 ORDER_ID,
                 null,
                 "guest@example.com",
-                "guest@example.com",
                 new BigDecimal("150.00"),
                 "USD",
                 List.of(

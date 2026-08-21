@@ -43,7 +43,8 @@ class OrderEventListenerTest {
         OrderCancelledEvent event = new OrderCancelledEvent(
                 UUID.randomUUID(), "EKK-001", UUID.randomUUID(), null, "CONFIRMED", true,
                 List.of(new OrderCancelledEvent.OrderItemCancelled(
-                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 2)),
+                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 2,
+                        UUID.randomUUID())),
                 null);
 
         listener.onOrderCancelled(event);

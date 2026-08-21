@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -46,6 +47,9 @@ class AdminOrderControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @MockitoBean
     private GetAllOrdersUseCase getAllOrdersUseCase;
@@ -76,7 +80,7 @@ class AdminOrderControllerTest {
         @Test
         @DisplayName("JWT CUSTOMER -> 403")
         void customerReturns403() throws Exception {
-            mockMvc.perform(get("/admin/orders").with(customerAuth()))
+            mockMvc.perform(get("/admin/orders").with(customerAuth(jwtAuthenticationConverter)))
                     .andExpect(status().isForbidden());
         }
 
@@ -86,7 +90,7 @@ class AdminOrderControllerTest {
             when(getAllOrdersUseCase.execute(any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(anOrderBuilder().build())));
 
-            mockMvc.perform(get("/admin/orders").with(adminAuth()))
+            mockMvc.perform(get("/admin/orders").with(adminAuth(jwtAuthenticationConverter)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content", hasSize(1)));
         }
@@ -102,7 +106,7 @@ class AdminOrderControllerTest {
             when(getOrderByOrderNumberForAdminUseCase.execute(ORDER_NUMBER))
                     .thenReturn(anOrderBuilder().build());
 
-            mockMvc.perform(get("/admin/orders/{orderNumber}", ORDER_NUMBER).with(adminAuth()))
+            mockMvc.perform(get("/admin/orders/{orderNumber}", ORDER_NUMBER).with(adminAuth(jwtAuthenticationConverter)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.orderNumber").value(ORDER_NUMBER));
 
@@ -121,7 +125,7 @@ class AdminOrderControllerTest {
                     .thenThrow(new InvalidOrderStatusTransitionException(OrderStatus.CONFIRMED, OrderStatus.PENDING));
 
             mockMvc.perform(patch("/admin/orders/{orderNumber}/status", ORDER_NUMBER)
-                            .with(adminAuth())
+                            .with(adminAuth(jwtAuthenticationConverter))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     { "newStatus": "PENDING" }
@@ -138,7 +142,7 @@ class AdminOrderControllerTest {
                     .thenReturn(shipped);
 
             mockMvc.perform(patch("/admin/orders/{orderNumber}/status", ORDER_NUMBER)
-                            .with(adminAuth())
+                            .with(adminAuth(jwtAuthenticationConverter))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     { "newStatus": "SHIPPED" }

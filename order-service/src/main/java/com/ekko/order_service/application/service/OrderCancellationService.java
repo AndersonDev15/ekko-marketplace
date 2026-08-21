@@ -88,7 +88,7 @@ public class OrderCancellationService implements CancelOrderUseCase {
                 saved.getId(),
                 saved.getOrderNumber(),
                 saved.getCustomerId(),
-                saved.getGuestEmail(),
+                saved.getCustomerEmail(),
                 previousStatus,
                 previousStatus == OrderStatus.CONFIRMED,
                 saved.getItems().stream()
@@ -96,7 +96,8 @@ public class OrderCancellationService implements CancelOrderUseCase {
                                 item.id(),
                                 item.productId(),
                                 item.variantId(),
-                                item.quantity()))
+                                item.quantity(),
+                                item.sellerKeycloakId()))
                         .toList(),
                 saved.getUpdatedAt());
     }

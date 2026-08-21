@@ -63,7 +63,7 @@ public class OrderCreationService implements CreateOrderUseCase {
 
         Order order = Order.builder()
                 .customerId(draft.customerId())
-                .guestEmail(guestEmailFor(draft))
+                .customerEmail(customerEmailFor(draft))
                 .status(OrderStatus.PENDING)
                 .subtotal(totals.subtotal())
                 .shippingCost(totals.shippingCost())
@@ -82,16 +82,16 @@ public class OrderCreationService implements CreateOrderUseCase {
                 .toList());
 
         Order saved = orderTransactionService.commitOrder(order);
-        orderEventPublisherPort.publishOrderCreated(toEvent(saved, draft.customerEmail()));
+        orderEventPublisherPort.publishOrderCreated(toEvent(saved));
         return saved;
     }
 
-    private OrderCreatedEvent toEvent(Order saved, String customerEmail) {
+    private OrderCreatedEvent toEvent(Order saved) {
         return new OrderCreatedEvent(
                 saved.getId(),
                 saved.getOrderNumber(),
                 saved.getCustomerId(),
-                customerEmail,
+                saved.getCustomerEmail(),
                 saved.getTotal(),
                 saved.getStatus(),
                 saved.getCreatedAt(),
@@ -107,6 +107,10 @@ public class OrderCreationService implements CreateOrderUseCase {
     }
 
     private void validateGuest(OrderDraft draft) {
+        if (draft.customerEmail() == null || draft.customerEmail().isBlank()) {
+            throw new InvalidGuestEmailException(
+                    "customerEmail es requerido");
+        }
         if (draft.customerId() == null && draft.guestEmail() == null) {
             throw new InvalidGuestEmailException(
                     "Se requiere customerId o guestEmail");
@@ -179,9 +183,9 @@ public class OrderCreationService implements CreateOrderUseCase {
                         + ORDER_NUMBER_MAX_ATTEMPTS + " intentos");
     }
 
-    private String guestEmailFor(OrderDraft draft) {
-        return draft.guestEmail() != null
-                ? draft.guestEmail().strip()
+    private String customerEmailFor(OrderDraft draft) {
+        return draft.customerEmail() != null
+                ? draft.customerEmail().strip()
                 : null;
     }
 }

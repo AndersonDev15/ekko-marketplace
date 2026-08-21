@@ -39,12 +39,13 @@ public class NotificationOrchestratorService {
     }
 
     public void process(NotificationEvent event) {
-        if (event.recipientId() == null) {
-            log.error("NotificationEvent without recipientId ignored: {}", event);
-            return;
-        }
-
         for (NotificationType channel : event.channels()) {
+            if (channel == NotificationType.IN_APP && event.recipientId() == null) {
+                log.warn("Skipping IN_APP channel: recipientId is null (likely guest checkout), eventType={}",
+                        event.eventType());
+                continue;
+            }
+
             Optional<NotificationTemplate> templateOpt =
                     templateService.findActiveByNameAndType(event.eventType(), channel);
             if (templateOpt.isEmpty()) {

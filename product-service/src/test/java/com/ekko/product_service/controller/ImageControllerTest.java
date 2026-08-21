@@ -15,9 +15,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -33,7 +32,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -50,6 +48,9 @@ class ImageControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @MockitoBean
     private ImageService imageService;
@@ -337,13 +338,11 @@ class ImageControllerTest {
     }
 
     private RequestPostProcessor sellerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.sellerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SELLER"))));
+        return JwtTestUtils.sellerAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor customerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.customerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+        return JwtTestUtils.customerAuth(jwtAuthenticationConverter);
     }
 
     private ProductImageResponse productImageResponse(Boolean isPrimary, int sortOrder) {

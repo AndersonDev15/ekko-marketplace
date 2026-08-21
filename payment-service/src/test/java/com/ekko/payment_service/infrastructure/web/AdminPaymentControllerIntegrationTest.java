@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -27,6 +28,9 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @Autowired
     private PaymentRepositoryPort paymentRepositoryPort;
@@ -48,7 +52,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/admin/payments/{paymentId}", payment.getId())
-                        .with(adminAuth()))
+                        .with(adminAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(payment.getId().toString()))
                 .andExpect(jsonPath("$.customerId").value(CUSTOMER_KEYCLOAK_ID.toString()));
@@ -60,7 +64,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/admin/payments/by-order/{orderId}", payment.getOrderId())
-                        .with(adminAuth()))
+                        .with(adminAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(payment.getOrderId().toString()));
     }
@@ -71,7 +75,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/admin/payments/{paymentId}/transactions", payment.getId())
-                        .with(adminAuth()))
+                        .with(adminAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -82,7 +86,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/admin/payments/{paymentId}", payment.getId())
-                        .with(customerAuth()))
+                        .with(customerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isForbidden());
     }
 
@@ -92,7 +96,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/admin/payments/by-order/{orderId}", payment.getOrderId())
-                        .with(customerAuth()))
+                        .with(customerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isForbidden());
     }
 
@@ -102,7 +106,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/admin/payments/{paymentId}/transactions", payment.getId())
-                        .with(customerAuth()))
+                        .with(customerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isForbidden());
     }
 
@@ -137,7 +141,7 @@ class AdminPaymentControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = Payment.initiate(
                 UUID.randomUUID(),
                 CUSTOMER_KEYCLOAK_ID,
-                null,
+                "customer@example.com",
                 new BigDecimal("100.00"),
                 "USD");
         payment.attachPaymentIntent("pi_admin_" + UUID.randomUUID(), "cus_test_123");

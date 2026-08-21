@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -48,6 +49,9 @@ class RefundControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
     @MockitoBean
     private CreateRefundUseCase createRefundUseCase;
 
@@ -60,7 +64,7 @@ class RefundControllerTest {
         when(createRefundUseCase.execute(any(CreateRefundCommand.class))).thenReturn(aRefund());
 
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", PAYMENT_ID)
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 40.00, "reason": "DUPLICATE", "notes": "admin note" }
@@ -98,7 +102,7 @@ class RefundControllerTest {
     @DisplayName("con JWT no-ADMIN (customer) -> 403 via @PreAuthorize")
     void createRefundWithCustomerJwtReturns403() throws Exception {
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", PAYMENT_ID)
-                        .with(customerAuth())
+                        .with(customerAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 40.00, "reason": "DUPLICATE" }
@@ -129,7 +133,7 @@ class RefundControllerTest {
                 .thenThrow(new RefundNotAllowedException(PAYMENT_ID, PaymentStatus.PENDING));
 
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", PAYMENT_ID)
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 40.00, "reason": "DUPLICATE" }
@@ -146,7 +150,7 @@ class RefundControllerTest {
                         PAYMENT_ID, new BigDecimal("150.00"), BigDecimal.ZERO, new BigDecimal("100.00")));
 
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", PAYMENT_ID)
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": 150.00, "reason": "DUPLICATE" }
@@ -159,7 +163,7 @@ class RefundControllerTest {
     @DisplayName("body invalido (amount nulo / negativo, reason nulo) -> 400 por Bean Validation")
     void createRefundWithInvalidBodyReturns400() throws Exception {
         mockMvc.perform(post("/admin/payments/{paymentId}/refunds", PAYMENT_ID)
-                        .with(adminAuth())
+                        .with(adminAuth(jwtAuthenticationConverter))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "amount": -5.00, "reason": null }

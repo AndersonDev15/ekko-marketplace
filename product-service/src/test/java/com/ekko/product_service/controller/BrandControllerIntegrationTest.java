@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +19,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,6 +32,9 @@ class BrandControllerIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @Autowired
     private BrandRepository brandRepository;
@@ -138,13 +139,11 @@ class BrandControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     // --------------------------------------------------------------- helpers
 
     private RequestPostProcessor adminAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.adminJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+        return JwtTestUtils.adminAuth(jwtAuthenticationConverter);
     }
 
     private RequestPostProcessor sellerAuth() {
-        return authentication(new JwtAuthenticationToken(JwtTestUtils.sellerJwt(),
-                List.of(new SimpleGrantedAuthority("ROLE_SELLER"))));
+        return JwtTestUtils.sellerAuth(jwtAuthenticationConverter);
     }
 
     private Brand persistBrand(String name, String slug) {

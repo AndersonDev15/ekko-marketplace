@@ -61,7 +61,7 @@ class OrderCreationServiceIntegrationTest extends AbstractPostgresIntegrationTes
         OrderDraft draft = new OrderDraft(
                 CUSTOMER_KEYCLOAK_ID,
                 null,
-                null,
+                "customer@example.com",
                 anOrderAddress(),
                 List.of(new OrderDraft.OrderItemDraft(VARIANT_ID, 2)),
                 "fragile");
@@ -93,7 +93,7 @@ class OrderCreationServiceIntegrationTest extends AbstractPostgresIntegrationTes
         assertEquals(created.getStatus(), event.status());
         assertEquals(0, new BigDecimal("200.00").compareTo(event.total()));
         assertEquals(CUSTOMER_KEYCLOAK_ID, event.customerId());
-        assertNull(event.customerEmail());
+        assertEquals("customer@example.com", event.customerEmail());
 
         assertEquals(1, event.items().size());
         OrderCreatedEvent.OrderItemPayload item = event.items().get(0);
@@ -118,7 +118,7 @@ class OrderCreationServiceIntegrationTest extends AbstractPostgresIntegrationTes
 
         Order created = createOrderUseCase.execute(draft);
 
-        assertEquals("guest@example.com", created.getGuestEmail());
+        assertEquals("guest@example.com", created.getCustomerEmail());
         assertNotNull(orderJpaRepository.findByOrderNumber(created.getOrderNumber()).orElseThrow());
 
         verify(orderEventPublisherPort, times(1))

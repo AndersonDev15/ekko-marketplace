@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -31,6 +32,9 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
     private MockMvc mockMvc;
 
     @Autowired
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
+
+    @Autowired
     private PaymentRepositoryPort paymentRepositoryPort;
 
     @Autowired
@@ -50,7 +54,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/payments/{paymentId}", payment.getId())
-                        .with(customerAuth()))
+                        .with(customerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(payment.getId().toString()))
                 .andExpect(jsonPath("$.customerId").value(CUSTOMER_KEYCLOAK_ID.toString()));
@@ -62,7 +66,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/payments/{paymentId}", payment.getId())
-                        .with(otherCustomerAuth()))
+                        .with(otherCustomerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("PAYMENT_ACCESS_DENIED"));
     }
@@ -76,7 +80,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
                         .queryParam("guestEmail", GUEST_EMAIL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(payment.getId().toString()))
-                .andExpect(jsonPath("$.guestEmail").value(GUEST_EMAIL));
+                .andExpect(jsonPath("$.customerEmail").value(GUEST_EMAIL));
     }
 
     @Test
@@ -106,7 +110,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/payments/by-order/{orderId}", payment.getOrderId())
-                        .with(customerAuth()))
+                        .with(customerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(payment.getOrderId().toString()));
     }
@@ -117,7 +121,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/payments/by-order/{orderId}", payment.getOrderId())
-                        .with(otherCustomerAuth()))
+                        .with(otherCustomerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("PAYMENT_ACCESS_DENIED"));
     }
@@ -128,7 +132,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/payments/{paymentId}/transactions", payment.getId())
-                        .with(customerAuth()))
+                        .with(customerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -139,7 +143,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = saveCustomerPayment();
 
         mockMvc.perform(get("/payments/{paymentId}/transactions", payment.getId())
-                        .with(otherCustomerAuth()))
+                        .with(otherCustomerAuth(jwtAuthenticationConverter)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("PAYMENT_ACCESS_DENIED"));
     }
@@ -148,7 +152,7 @@ class PaymentQueryControllerIntegrationTest extends AbstractPostgresIntegrationT
         Payment payment = Payment.initiate(
                 UUID.randomUUID(),
                 CUSTOMER_KEYCLOAK_ID,
-                null,
+                "customer@example.com",
                 new BigDecimal("100.00"),
                 "USD");
         payment.attachPaymentIntent("pi_customer_" + UUID.randomUUID(), "cus_test_123");
