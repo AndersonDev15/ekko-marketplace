@@ -8,7 +8,7 @@ spring:
     name: seller-service
 
   profiles:
-    active: local
+    active: dev
 
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/seller_db

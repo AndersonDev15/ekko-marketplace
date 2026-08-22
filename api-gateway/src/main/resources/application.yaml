@@ -31,8 +31,6 @@ spring:
           keycloak:
             issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
 
-
-
   cloud:
     gateway:
       server:
@@ -46,6 +44,7 @@ spring:
             locator:
               enabled: false
               lower-case-service-id: true
+
           globalcors:
             corsConfigurations:
               '[/**]':
@@ -59,18 +58,22 @@ spring:
                   - OPTIONS
                 allowedHeaders: "*"
                 allowCredentials: true
+
           routes:
+
             - id: keycloak-userinfo-test
               uri: http://localhost:8180
               predicates:
                 - Path=/test/relay
               filters:
                 - SetPath=/realms/ekko/protocol/openid-connect/userinfo
+
             - id: seller-service
               uri: lb://seller-service
               predicates:
                 - Path=/api/sellers/**,/api/admin/sellers/**
               filters:
+                - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: seller-cb
@@ -82,6 +85,7 @@ spring:
               predicates:
                 - Path=/api/products/**
               filters:
+                - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: product-cb
@@ -93,6 +97,7 @@ spring:
               predicates:
                 - Path=/api/orders/**
               filters:
+                - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: order-cb
@@ -104,6 +109,7 @@ spring:
               predicates:
                 - Path=/api/payments/**
               filters:
+                - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: payment-cb
@@ -115,6 +121,7 @@ spring:
               predicates:
                 - Path=/api/reviews/**
               filters:
+                - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: review-cb
@@ -125,6 +132,7 @@ spring:
               predicates:
                 - Path=/api/notifications/**
               filters:
+                - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: notification-cb
@@ -132,7 +140,12 @@ spring:
 
 eureka:
   client:
-    enabled: false
+    enabled: true
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+
+  instance:
+    prefer-ip-address: true
 
 resilience4j:
   circuitbreaker:
