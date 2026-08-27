@@ -64,9 +64,10 @@ public class AdminProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAllProducts(int page, int size) {
-        // TODO: implementar filtros opcionales (estado, nombre, vendedor)
+
         Pageable pageable = PageRequest.of(page, size);
-        return productRepository.findAll(pageable)
+        return productRepository
+                .findByStatusAndDeletedAtIsNull(ProductStatus.ACTIVE, pageable)
                 .map(productMapper::toResponse);
     }
 

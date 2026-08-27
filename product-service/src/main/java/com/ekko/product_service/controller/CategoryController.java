@@ -7,16 +7,11 @@ import com.ekko.product_service.dto.response.CategoryResponse;
 import com.ekko.product_service.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,10 +27,20 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getCategoryTree());
     }
 
-    @PostMapping("/admin/categories")
+    @PostMapping(value = "/admin/categories", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CategoryResponse> createCategory(@RequestBody CreateCategoryRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(request));
+    public ResponseEntity<CategoryResponse> createCategory(
+            @RequestPart("data") CreateCategoryRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(request, image));
+    }
+
+    @PatchMapping(value = "/admin/categories/{categoryId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CategoryResponse> updateCategoryImage(
+            @PathVariable UUID categoryId,
+            @RequestPart("image") MultipartFile image) {
+        return ResponseEntity.ok(categoryService.updateImage(categoryId, image));
     }
 
     @PutMapping("/admin/categories/{id}")

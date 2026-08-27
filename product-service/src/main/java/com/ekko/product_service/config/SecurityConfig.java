@@ -29,8 +29,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/catalog/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/catalog/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/brands").permitAll()
                         .requestMatchers("/admin/brands/**").hasRole("ADMIN")
 

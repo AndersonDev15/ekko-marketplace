@@ -99,6 +99,10 @@ public abstract class AbstractPostgresIntegrationTest {
         return insertSeller(SellerTestDataBuilder.aSeller().withKeycloakId(keycloakId).active());
     }
 
+    protected Seller insertPendingReviewSeller(String keycloakId) {
+        return insertSeller(SellerTestDataBuilder.aSeller().withKeycloakId(keycloakId).pendingReview());
+    }
+
     protected void insertSellerMetrics(java.util.UUID sellerId) {
         jdbcTemplate.update("""
                 INSERT INTO seller_metrics

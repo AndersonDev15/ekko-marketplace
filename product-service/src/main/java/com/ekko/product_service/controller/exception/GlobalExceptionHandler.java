@@ -23,6 +23,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    @ExceptionHandler(SellerNotOperationalException.class)
+    public ResponseEntity<ErrorResponse> handleSellerNotOperational(SellerNotOperationalException ex) {
+        ErrorResponse body = new ErrorResponse(
+                "SELLER_NOT_OPERATIONAL",
+                ex.getMessage(),
+                ex.getSellerKeycloakId(),
+                HttpStatus.CONFLICT.value());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<Void> handleProductNotFound(ProductNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

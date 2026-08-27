@@ -20,7 +20,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @BeforeEach
     void seedSeller() {
-        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
     }
 
     // ── 401 Unauthorized ────────────────────────────────────────────────────
@@ -64,8 +64,9 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(2));
     }
 
-    @Test
+@Test
     void getAllSellers_filtroPorEstado_devuelve200() throws Exception {
+        // Seed seller is PENDING_REVIEW (from @BeforeEach), plus this one = 2 PENDING_REVIEW
         insertSeller(SellerTestDataBuilder.aSeller()
                 .withStoreName("Tienda 2")
                 .withEmail("tienda2@ekko.test")
@@ -75,7 +76,7 @@ class AdminSellerMockMvcTest extends AbstractPostgresIntegrationTest {
                         .param("status", "PENDING_REVIEW")
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content.length()").value(2))
                 .andExpect(jsonPath("$.content[0].status").value("PENDING_REVIEW"));
     }
 

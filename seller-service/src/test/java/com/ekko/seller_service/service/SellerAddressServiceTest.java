@@ -7,9 +7,10 @@ import com.ekko.seller_service.entity.SellerAddress;
 import com.ekko.seller_service.exception.LastAddressDeleteException;
 import com.ekko.seller_service.exception.PrimaryAddressDeleteException;
 import com.ekko.seller_service.exception.SellerAddressNotFoundException;
+import com.ekko.seller_service.exception.SellerAlreadyActiveException;
 import com.ekko.seller_service.exception.SellerNotFoundException;
-import com.ekko.seller_service.exception.SellerPendingException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
+import com.ekko.seller_service.exception.SellerPendingException;
 import com.ekko.seller_service.mapper.SellerMapper;
 import com.ekko.seller_service.repository.SellerAddressRepository;
 import com.ekko.seller_service.repository.SellerRepository;
@@ -70,7 +71,7 @@ class SellerAddressServiceTest {
 
         @Test
         void primeraDireccion_seCreaComoPrimaria() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.existsBySellerId(SELLER_ID)).thenReturn(false);
             when(addressRepository.save(any(SellerAddress.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -94,7 +95,7 @@ class SellerAddressServiceTest {
 
         @Test
         void direccionAdicional_seCreaComoNoPrimaria() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.existsBySellerId(SELLER_ID)).thenReturn(true);
             when(addressRepository.save(any(SellerAddress.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -129,17 +130,6 @@ class SellerAddressServiceTest {
 
             verify(addressRepository, never()).save(any(SellerAddress.class));
         }
-
-        @Test
-        void vendedorPendingReview_lanzaSellerPending() {
-            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
-            when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
-
-            assertThrows(SellerPendingException.class,
-                    () -> sellerAddressService.addAddress(SELLER_ID, REQUEST));
-
-            verify(addressRepository, never()).save(any(SellerAddress.class));
-        }
     }
 
     @Nested
@@ -147,7 +137,7 @@ class SellerAddressServiceTest {
 
         @Test
         void actualizacionCorrecta_actualizaCampos() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerAddress address = anAddress().withId(ADDRESS_ID).withSeller(seller).build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.of(address));
@@ -168,8 +158,19 @@ class SellerAddressServiceTest {
         }
 
         @Test
-        void direccionInexistente_lanzaAddressNotFound() {
+        void vendedorActivo_lanzaSellerAlreadyActive() {
             Seller seller = aSeller().withId(SELLER_ID).active().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerAlreadyActiveException.class,
+                    () -> sellerAddressService.updateAddress(SELLER_ID, ADDRESS_ID, REQUEST));
+
+            verify(addressRepository, never()).save(any(SellerAddress.class));
+        }
+
+        @Test
+        void direccionInexistente_lanzaAddressNotFound() {
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.empty());
 
@@ -181,7 +182,7 @@ class SellerAddressServiceTest {
 
         @Test
         void direccionDeOtroVendedor_lanzaAddressNotFound() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.empty());
 
@@ -197,7 +198,7 @@ class SellerAddressServiceTest {
 
         @Test
         void eliminacionCorrecta_eliminaDireccion() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerAddress address = anAddress().withId(ADDRESS_ID).withSeller(seller).notPrimary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.of(address));
@@ -209,8 +210,19 @@ class SellerAddressServiceTest {
         }
 
         @Test
-        void ultimaDireccion_lanzaLastAddressDelete() {
+        void vendedorActivo_lanzaSellerAlreadyActive() {
             Seller seller = aSeller().withId(SELLER_ID).active().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerAlreadyActiveException.class,
+                    () -> sellerAddressService.deleteAddress(SELLER_ID, ADDRESS_ID));
+
+            verify(addressRepository, never()).delete(any(SellerAddress.class));
+        }
+
+        @Test
+        void ultimaDireccion_lanzaLastAddressDelete() {
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerAddress address = anAddress().withId(ADDRESS_ID).withSeller(seller).notPrimary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.of(address));
@@ -224,7 +236,7 @@ class SellerAddressServiceTest {
 
         @Test
         void direccionPrimaria_lanzaPrimaryAddressDelete() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerAddress address = anAddress().withId(ADDRESS_ID).withSeller(seller).primary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.of(address));
@@ -242,7 +254,7 @@ class SellerAddressServiceTest {
 
         @Test
         void promueveDireccion_limpiaPrimariasYGuarda() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerAddress address = anAddress().withId(ADDRESS_ID).withSeller(seller).notPrimary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.of(address));
@@ -259,8 +271,20 @@ class SellerAddressServiceTest {
         }
 
         @Test
-        void yaEraPrimaria_noHaceNada() {
+        void vendedorActivo_lanzaSellerAlreadyActive() {
             Seller seller = aSeller().withId(SELLER_ID).active().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerAlreadyActiveException.class,
+                    () -> sellerAddressService.setPrimaryAddress(SELLER_ID, ADDRESS_ID));
+
+            verify(addressRepository, never()).clearPrimaryBySellerId(any(UUID.class));
+            verify(addressRepository, never()).save(any(SellerAddress.class));
+        }
+
+        @Test
+        void yaEraPrimaria_noHaceNada() {
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerAddress address = anAddress().withId(ADDRESS_ID).withSeller(seller).primary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.of(address));
@@ -275,7 +299,7 @@ class SellerAddressServiceTest {
 
         @Test
         void direccionInexistente_lanzaAddressNotFound() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(addressRepository.findByIdAndSellerId(ADDRESS_ID, SELLER_ID)).thenReturn(Optional.empty());
 

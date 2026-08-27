@@ -1,0 +1,2 @@
+ALTER TABLE seller_documents
+DROP CONSTRAINT IF EXISTS uk_seller_document_type;

@@ -42,6 +42,7 @@ public class RabbitMQConfig {
     public static final String SELLER_CREATED_ROUTING_KEY = "seller.created";
     public static final String SELLER_STATUS_CHANGED_ROUTING_KEY = "seller.status.changed";
     public static final String SELLER_DOCUMENT_REVIEW_ROUTING_KEY = "seller.document.review";
+    public static final String SELLER_SLUG_CHANGED_ROUTING_KEY = "seller.slug.changed";
 
     @Bean
     public DirectExchange orderExchange() {

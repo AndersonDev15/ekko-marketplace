@@ -45,7 +45,7 @@ public class SellerDocumentService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         assertNoExistingDocument(sellerId, documentType);
 
@@ -71,7 +71,7 @@ public class SellerDocumentService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         assertNoExistingDocument(sellerId, documentType);
 

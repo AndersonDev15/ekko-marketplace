@@ -3,6 +3,7 @@ package com.ekko.seller_service.messaging;
 import com.ekko.seller_service.config.RabbitMQConfig;
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerSlugChangedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -39,5 +40,13 @@ public class RabbitMQSellerEventPublisher implements SellerEventPublisher {
                 RabbitMQConfig.SELLER_DOCUMENT_REVIEW_ROUTING_KEY,
                 event
         );
+    }
+
+    @Override
+    public void publishSellerSlugChanged(SellerSlugChangedEvent event) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.SELLER_EXCHANGE,
+                RabbitMQConfig.SELLER_SLUG_CHANGED_ROUTING_KEY,
+                event);
     }
 }

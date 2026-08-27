@@ -52,8 +52,8 @@ public class VariantController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{variantId}/deactivate")
-    public ResponseEntity<VariantSummaryResponse> deactivateVariant(
+    @PatchMapping("/{variantId}/desactivate")
+    public ResponseEntity<VariantSummaryResponse> desactivateVariant(
             @PathVariable UUID id,
             @PathVariable UUID variantId,
             @AuthenticationPrincipal Jwt jwt) {

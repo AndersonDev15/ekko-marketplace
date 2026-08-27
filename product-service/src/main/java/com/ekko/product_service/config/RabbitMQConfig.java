@@ -39,6 +39,48 @@ public class RabbitMQConfig {
     public static final String PRODUCT_DEACTIVATED_ROUTING_KEY = "product.deactivated";
     public static final String INVENTORY_LOW_STOCK_ROUTING_KEY = "inventory.low_stock";
 
+    public static final String SELLER_EXCHANGE = "seller.exchange";
+    public static final String SELLER_STATUS_CHANGED_ROUTING_KEY = "seller.status.changed";
+    public static final String SELLER_STATUS_CHANGED_QUEUE = "product.seller.status.changed.queue";
+    public static final String SELLER_STATUS_CHANGED_DLQ = "product.seller.status.changed.dlq";
+
+
+    @Bean
+    public DirectExchange sellerExchange() {
+        // seller-service already declares seller.exchange as a DirectExchange.
+        // Declare it EXACTLY the same (name + type) or RabbitMQ fails startup with 406 PRECONDITION_FAILED.
+        return new DirectExchange(SELLER_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue sellerStatusChangedQueue() {
+        return QueueBuilder.durable(SELLER_STATUS_CHANGED_QUEUE)
+                .withArgument("x-dead-letter-exchange", PRODUCT_DLX)
+                .build();
+    }
+
+    @Bean
+    public Queue sellerStatusChangedDlq() {
+        return QueueBuilder.durable(SELLER_STATUS_CHANGED_DLQ).build();
+    }
+
+    @Bean
+    public Binding sellerStatusChangedBinding(Queue sellerStatusChangedQueue, DirectExchange sellerExchange) {
+        return BindingBuilder
+                .bind(sellerStatusChangedQueue)
+                .to(sellerExchange)
+                .with(SELLER_STATUS_CHANGED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding sellerStatusChangedDlqBinding(Queue sellerStatusChangedDlq, DirectExchange productDlx) {
+        return BindingBuilder
+                .bind(sellerStatusChangedDlq)
+                .to(productDlx)
+                .with(SELLER_STATUS_CHANGED_ROUTING_KEY);
+    }
+
+
     @Bean
     public DirectExchange orderExchange() {
         // order-service already declares order.exchange as a DirectExchange.

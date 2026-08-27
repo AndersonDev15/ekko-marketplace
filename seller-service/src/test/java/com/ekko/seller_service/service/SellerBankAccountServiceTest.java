@@ -9,6 +9,7 @@ import com.ekko.seller_service.exception.DuplicateSellerBankAccountException;
 import com.ekko.seller_service.exception.LastBankAccountDeleteException;
 import com.ekko.seller_service.exception.PrimaryBankAccountDeleteException;
 import com.ekko.seller_service.exception.SellerBankAccountNotFoundException;
+import com.ekko.seller_service.exception.SellerAlreadyActiveException;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
@@ -73,7 +74,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void primeraCuenta_seCreaComoPrimaria() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
                     SELLER_ID, REQUEST.bankName(), REQUEST.accountNumber())).thenReturn(false);
@@ -98,7 +99,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void cuentaAdicional_seCreaComoNoPrimaria() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
                     SELLER_ID, REQUEST.bankName(), REQUEST.accountNumber())).thenReturn(false);
@@ -117,7 +118,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void duplicadoPrevisto_lanzaDuplicateBankAccount() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
                     SELLER_ID, REQUEST.bankName(), REQUEST.accountNumber())).thenReturn(true);
@@ -130,7 +131,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void dataIntegrityViolation_conUniqueConstraint_lanzaDuplicateBankAccount() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SQLException sql = new SQLException(
                     "duplicate key value violates unique constraint \"uk_seller_bank_account\"", "23505");
             DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
@@ -146,7 +147,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void dataIntegrityViolation_conOtroError_relanzaExcepcion() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SQLException sql = new SQLException(
                     "value too long for type character varying(50)", "22001");
             DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
@@ -162,7 +163,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void dataIntegrityViolation_conConstraintDistinta_relanzaExcepcion() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SQLException sql = new SQLException(
                     "value too long for type character varying(50)", "23505");
             DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
@@ -178,7 +179,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void dataIntegrityViolation_conCausaNoSql_relanzaExcepcion() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             DataIntegrityViolationException violation =
                     new DataIntegrityViolationException("stmt", new RuntimeException("boom"));
             when(sellerRepository.findByIdForUpdate(SELLER_ID)).thenReturn(Optional.of(seller));
@@ -218,7 +219,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void actualizacionCorrecta_actualizaCampos() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).notPrimary().build();
             SellerBankAccountRequest request = new SellerBankAccountRequest(
                     "BBVA", BankAccountType.CHECKING, "0987654321", "Nuevo Titular");
@@ -242,8 +243,19 @@ class SellerBankAccountServiceTest {
         }
 
         @Test
-        void cuentaInexistente_lanzaBankAccountNotFound() {
+        void vendedorActivo_lanzaSellerAlreadyActive() {
             Seller seller = aSeller().withId(SELLER_ID).active().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerAlreadyActiveException.class,
+                    () -> sellerBankAccountService.updateBankAccount(SELLER_ID, ACCOUNT_ID, REQUEST));
+
+            verify(bankRepository, never()).save(any(SellerBankAccount.class));
+        }
+
+        @Test
+        void cuentaInexistente_lanzaBankAccountNotFound() {
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.empty());
 
@@ -255,7 +267,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void duplicadoEnActualizacion_lanzaDuplicateBankAccount() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.of(account));
@@ -274,7 +286,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void eliminacionCorrecta_eliminaCuenta() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).notPrimary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.of(account));
@@ -286,8 +298,19 @@ class SellerBankAccountServiceTest {
         }
 
         @Test
-        void ultimaCuenta_lanzaLastBankAccountDelete() {
+        void vendedorActivo_lanzaSellerAlreadyActive() {
             Seller seller = aSeller().withId(SELLER_ID).active().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerAlreadyActiveException.class,
+                    () -> sellerBankAccountService.deleteBankAccount(SELLER_ID, ACCOUNT_ID));
+
+            verify(bankRepository, never()).delete(any(SellerBankAccount.class));
+        }
+
+        @Test
+        void ultimaCuenta_lanzaLastBankAccountDelete() {
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).notPrimary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.of(account));
@@ -301,7 +324,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void cuentaPrimaria_lanzaPrimaryBankAccountDelete() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).primary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.of(account));
@@ -319,7 +342,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void promueveCuenta_limpiaPrimariasYGuarda() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).notPrimary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.of(account));
@@ -336,8 +359,20 @@ class SellerBankAccountServiceTest {
         }
 
         @Test
-        void yaEraPrimaria_noHaceNada() {
+        void vendedorActivo_lanzaSellerAlreadyActive() {
             Seller seller = aSeller().withId(SELLER_ID).active().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerAlreadyActiveException.class,
+                    () -> sellerBankAccountService.setPrimaryBankAccount(SELLER_ID, ACCOUNT_ID));
+
+            verify(bankRepository, never()).clearPrimaryBySellerId(any(UUID.class));
+            verify(bankRepository, never()).save(any(SellerBankAccount.class));
+        }
+
+        @Test
+        void yaEraPrimaria_noHaceNada() {
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SellerBankAccount account = aBankAccount().withId(ACCOUNT_ID).withSeller(seller).primary().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.of(account));
@@ -353,7 +388,7 @@ class SellerBankAccountServiceTest {
 
         @Test
         void cuentaInexistente_lanzaBankAccountNotFound() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(bankRepository.findByIdAndSellerId(ACCOUNT_ID, SELLER_ID)).thenReturn(Optional.empty());
 

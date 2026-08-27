@@ -11,6 +11,7 @@ import com.ekko.product_service.repository.BrandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,9 +22,10 @@ import java.util.UUID;
 public class BrandService {
 
     private final BrandRepository brandRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Transactional
-    public BrandResponse createBrand(CreateBrandRequest request) {
+    public BrandResponse createBrand(CreateBrandRequest request, MultipartFile logo) {
         if (brandRepository.existsByName(request.name())) {
             throw new DuplicateBrandNameException();
         }
@@ -31,14 +33,22 @@ public class BrandService {
             throw new DuplicateBrandSlugException();
         }
 
-        Brand brand = new Brand();
-        brand.setName(request.name());
-        brand.setSlug(request.slug());
-        brand.setLogoUrl(request.logoUrl());
-        brand.setDescription(request.description());
-        brand.setIsActive(true);
-        brand.setCreatedAt(LocalDateTime.now());
-        brand.setUpdatedAt(LocalDateTime.now());
+        Brand.BrandBuilder builder = Brand.builder()
+                .name(request.name())
+                .slug(request.slug())
+                .description(request.description())
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now());
+
+        if (logo != null && !logo.isEmpty()) {
+            CloudinaryService.UploadResult upload = cloudinaryService.upload(logo, "brands");
+            builder.logoUrl(upload.url())
+                    .logoPublicId(upload.publicId());
+        }
+
+
+        Brand brand = builder.build();
         return toResponse(brandRepository.save(brand));
     }
 
@@ -62,13 +72,27 @@ public class BrandService {
         if (request.slug() != null) {
             brand.setSlug(request.slug());
         }
-        if (request.logoUrl() != null) {
-            brand.setLogoUrl(request.logoUrl());
-        }
         if (request.description() != null) {
             brand.setDescription(request.description());
         }
         brand.setUpdatedAt(LocalDateTime.now());
+        return toResponse(brandRepository.save(brand));
+    }
+
+    @Transactional
+    public BrandResponse updateLogo(UUID brandId, MultipartFile logo) {
+        Brand brand = brandRepository.findById(brandId)
+                .orElseThrow(BrandNotFoundException::new);
+
+        if (brand.getLogoPublicId() != null) {
+            cloudinaryService.delete(brand.getLogoPublicId());
+        }
+
+        CloudinaryService.UploadResult upload = cloudinaryService.upload(logo, "brands");
+
+        brand.setLogoUrl(upload.url());
+        brand.setLogoPublicId(upload.publicId());
+
         return toResponse(brandRepository.save(brand));
     }
 

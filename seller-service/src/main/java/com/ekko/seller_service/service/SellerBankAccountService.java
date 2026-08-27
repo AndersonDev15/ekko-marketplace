@@ -35,7 +35,7 @@ public class SellerBankAccountService {
         Seller seller = sellerRepository.findByIdForUpdate(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         boolean exists = bankRepository.existsBySellerIdAndBankNameAndAccountNumber(
                 sellerId, request.bankName(), request.accountNumber());
@@ -73,7 +73,7 @@ public class SellerBankAccountService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         SellerBankAccount account = bankRepository
                 .findByIdAndSellerId(accountId, sellerId)
@@ -105,7 +105,7 @@ public class SellerBankAccountService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         SellerBankAccount account = bankRepository
                 .findByIdAndSellerId(accountId, sellerId)
@@ -129,7 +129,7 @@ public class SellerBankAccountService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         SellerBankAccount account = bankRepository
                 .findByIdAndSellerId(accountId, sellerId)

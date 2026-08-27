@@ -29,6 +29,7 @@ import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
 import com.ekko.product_service.repository.ProductRepository;
 import com.ekko.product_service.repository.ProductVariantRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -58,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -94,11 +96,19 @@ class ProductServiceTest {
     @Mock
     private ProductEventPublisher productEventPublisher;
 
+    @Mock(lenient = true)
+    private com.ekko.product_service.util.SellerStatusValidator sellerStatusValidator;
+
     @InjectMocks
     private ProductService productService;
 
     private final UUID productId = UUID.randomUUID();
     private final UUID sellerId = SELLER_KEYCLOAK_ID;
+
+    @BeforeEach
+    void setUp() {
+        doNothing().when(sellerStatusValidator).validateCanOperate(sellerId);
+    }
 
     // ------------------------------------------------------------------ createProduct
 

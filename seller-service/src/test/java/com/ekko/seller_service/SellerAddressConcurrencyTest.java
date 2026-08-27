@@ -30,7 +30,8 @@ class SellerAddressConcurrencyTest extends AbstractPostgresIntegrationTest {
 
     @BeforeEach
     void seedSeller() {
-        seller = insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        // addAddress uses validateCanEditProfile which requires PENDING_REVIEW
+        seller = insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
     }
 
     @Test
@@ -63,12 +64,14 @@ assertThat(results).hasSize(threads);
         for (int i = 0; i < count; i++) {
             ids.add(sellerAddressService.addAddress(seller.getId(), addressRequest("Dir " + i)).id());
         }
+        // Change to PENDING_REVIEW for setPrimaryAddress (uses validateCanEditProfile)
+        jdbcTemplate.update("UPDATE sellers SET status = 'PENDING_REVIEW' WHERE keycloak_id = ?", JwtTestUtils.SELLER_KEYCLOAK_ID);
 
         List<SellerAddressResponse> results = ConcurrencyRunner.run(
-                "cambios de primary", count,
+                "cambios de primary", 4,
                 i -> () -> sellerAddressService.setPrimaryAddress(seller.getId(), ids.get(i)));
 
-        assertThat(results).hasSize(count);
+        assertThat(results).hasSize(4);
 
         long primaryAddress = addressRepository.findBySellerId(seller.getId())
                 .stream()

@@ -16,6 +16,7 @@ import com.ekko.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,9 +33,10 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Transactional
-    public CategoryResponse createCategory(CreateCategoryRequest request) {
+    public CategoryResponse createCategory(CreateCategoryRequest request, MultipartFile logo) {
         if (categoryRepository.existsBySlug(request.slug())) {
             throw new DuplicateSlugException();
         }
@@ -48,38 +50,34 @@ public class CategoryService {
             }
         }
 
-        Category category = new Category();
-        category.setName(request.name());
-        category.setSlug(request.slug());
-        category.setDescription(request.description());
-        category.setImageUrl(request.imageUrl());
-        category.setParent(parent);
-        category.setIsActive(true);
-        category.setCreatedAt(LocalDateTime.now());
-        category.setUpdatedAt(LocalDateTime.now());
+        Category.CategoryBuilder builder = Category.builder()
+                .name(request.name())
+                .slug(request.slug())
+                .description(request.description())
+                .parent(parent)
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now());
+
+        if (logo != null && !logo.isEmpty()) {
+            CloudinaryService.UploadResult upload = cloudinaryService.upload(logo, "categories");
+            builder.imageUrl(upload.url())
+                    .imagePublicId(upload.publicId());
+        }
+
+        Category category = builder.build();
         return toResponse(categoryRepository.save(category));
     }
+
 
     @Transactional
     public CategoryResponse updateCategory(UUID id, UpdateCategoryRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(CategoryNotFoundException::new);
 
-        if (request.slug() != null
-                && categoryRepository.existsBySlugAndIdNot(request.slug(), id)) {
+        if (request.slug() != null && !request.slug().equals(category.getSlug())
+                && categoryRepository.existsBySlug(request.slug())) {
             throw new DuplicateSlugException();
-        }
-
-        if (request.parentId() != null) {
-            Category newParent = categoryRepository.findById(request.parentId())
-                    .orElseThrow(CategoryNotFoundException::new);
-            if (isAncestor(newParent, id)) {
-                throw new CyclicCategoryException();
-            }
-            if (!Boolean.TRUE.equals(newParent.getIsActive())) {
-                throw new InactiveParentCategoryException();
-            }
-            category.setParent(newParent);
         }
 
         if (request.name() != null) {
@@ -91,13 +89,26 @@ public class CategoryService {
         if (request.description() != null) {
             category.setDescription(request.description());
         }
-        if (request.imageUrl() != null) {
-            category.setImageUrl(request.imageUrl());
-        }
-        if (request.isActive() != null) {
-            category.setIsActive(request.isActive());
-        }
         category.setUpdatedAt(LocalDateTime.now());
+
+        return toResponse(categoryRepository.save(category));
+    }
+
+    @Transactional
+    public CategoryResponse updateImage(UUID categoryId, MultipartFile image) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(CategoryNotFoundException::new);
+
+        if (category.getImagePublicId() != null) {
+            cloudinaryService.delete(category.getImagePublicId());
+        }
+
+        CloudinaryService.UploadResult upload = cloudinaryService.upload(image, "categories");
+
+        category.setImageUrl(upload.url());
+        category.setImagePublicId(upload.publicId());
+
+        ;
         return toResponse(categoryRepository.save(category));
     }
 

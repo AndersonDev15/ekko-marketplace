@@ -28,7 +28,7 @@ public class ImageService {
     @Transactional
     public ProductImageResponse uploadImage(UUID productId, MultipartFile file, Boolean isPrimary,
                                             UUID sellerKeycloakId) {
-        CloudinaryService.UploadResult upload = cloudinaryService.upload(file);
+        CloudinaryService.UploadResult upload = cloudinaryService.upload(file, "products");
         return addImage(productId, new CreateImageRequest(upload.url(), isPrimary), sellerKeycloakId,
                 upload.publicId());
     }

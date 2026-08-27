@@ -1,0 +1,1 @@
+ALTER TABLE sellers ADD COLUMN logo_public_id VARCHAR(255);

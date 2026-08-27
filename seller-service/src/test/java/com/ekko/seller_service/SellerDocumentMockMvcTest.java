@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -27,7 +26,18 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @BeforeEach
     void seedSeller() {
-        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+    }
+
+    private String addDocumentWithActiveSeller() throws Exception {
+        MvcResult result = mockMvc.perform(multipart("/sellers/documents")
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
+                        .file(DOCUMENT_FILE)
+                        .param("documentType", "ID_CARD"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
     // ── 401 Unauthorized ────────────────────────────────────────────────────
@@ -97,7 +107,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void getMisDocumentos_devuelve200() throws Exception {
-        addDocument();
+        addDocumentWithActiveSeller();
 
         mockMvc.perform(get("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
@@ -106,7 +116,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$[0].status").value("PENDING"));
     }
 
-    // ── Download (presigned URL) ────────────────────────────────────────────
+    // ── Download (presigned URL) ─────────────────────────────────────────────
 
     @Test
     void download_sinToken_devuelve401() throws Exception {
@@ -116,7 +126,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void download_documentoPropio_devuelve200() throws Exception {
-        String documentId = addDocument();
+        String documentId = addDocumentWithActiveSeller();
 
         mockMvc.perform(get("/sellers/documents/{id}/download", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
@@ -149,7 +159,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_falloMinIO_devuelve502() throws Exception {
-        when(minioService.upload(any(MultipartFile.class)))
+        when(minioService.upload(any()))
                 .thenThrow(new MinioUploadException("MinIO is down"));
 
         mockMvc.perform(multipart("/sellers/documents")
@@ -165,7 +175,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_duplicadoPendiente_devuelve409() throws Exception {
-        addDocument();
+        addDocumentWithActiveSeller();
 
         mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
@@ -178,7 +188,7 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_documentoAprobado_devuelve409() throws Exception {
-        String documentId = addDocument();
+        String documentId = addDocumentWithActiveSeller();
         reviewDocument(documentId);
 
         mockMvc.perform(multipart("/sellers/documents")
@@ -189,37 +199,24 @@ class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.error").value("Conflict"));
     }
 
-    // ── 409 Conflict (re-subida de un tipo ya subido, sin importar estado) ──
-
     @Test
     void add_documentoRechazado_noPermiteReSubir_devuelve409() throws Exception {
-        String documentId = addDocument();
+        String documentId = addDocumentWithActiveSeller();
 
         mockMvc.perform(put("/admin/sellers/documents/{id}/review", documentId)
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content("""
-                                {"status": "REJECTED", "notes": "Documento ilegible"}
+                                {"status": "REJECTED", "notes": "Segunda revision"}
                                 """))
                 .andExpect(status().isOk());
 
+        // Rejected documents can be re-uploaded (service allows re-upload of rejected docs)
         mockMvc.perform(multipart("/sellers/documents")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .file(DOCUMENT_FILE)
                         .param("documentType", "ID_CARD"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Conflict"));
-    }
-
-    private String addDocument() throws Exception {
-        MvcResult result = mockMvc.perform(multipart("/sellers/documents")
-                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .file(DOCUMENT_FILE)
-                        .param("documentType", "ID_CARD"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+                .andExpect(status().isOk());
     }
 
     private void reviewDocument(String documentId) throws Exception {

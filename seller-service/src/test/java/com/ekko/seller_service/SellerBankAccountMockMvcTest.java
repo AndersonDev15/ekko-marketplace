@@ -1,7 +1,6 @@
 package com.ekko.seller_service;
 
 import com.ekko.seller_service.support.JwtTestUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -28,26 +27,43 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
     private static final java.util.concurrent.atomic.AtomicInteger ACCOUNT_SEQ =
             new java.util.concurrent.atomic.AtomicInteger();
 
-    @BeforeEach
-    void seedSeller() {
-        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+    private String addAccount() throws Exception {
+        String payload = """
+                {
+                  "bankName": "Banco Nacional",
+                  "accountType": "SAVINGS",
+                  "accountNumber": "9%08d",
+                  "accountHolder": "Vendedor Test"
+                }
+                """.formatted(ACCOUNT_SEQ.incrementAndGet());
+
+        MvcResult result = mockMvc.perform(post("/sellers/bank-accounts")
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
     // ── 401 Unauthorized ────────────────────────────────────────────────────
 
     @Test
     void add_sinToken_devuelve401() throws Exception {
-        mockMvc.perform(post("/seller/bank-accounts")
+        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/bank-accounts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BANK_ACCOUNT_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
-    // ── 403 Forbidden ───────────────────────────────────────────────────────
+    // ── 403 Forbidden ──────────────────────────────────────────────────────
 
     @Test
     void add_rolIncorrecto_devuelve403() throws Exception {
-        mockMvc.perform(post("/seller/bank-accounts")
+        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/bank-accounts")
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BANK_ACCOUNT_JSON))
@@ -58,7 +74,8 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_dtoInvalido_devuelve400() throws Exception {
-        mockMvc.perform(post("/seller/bank-accounts")
+        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/bank-accounts")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -71,7 +88,8 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_tokenValido_devuelve200() throws Exception {
-        mockMvc.perform(post("/seller/bank-accounts")
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/bank-accounts")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BANK_ACCOUNT_JSON))
@@ -82,10 +100,11 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void getMisCuentas_devuelve200() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         addAccount();
         addAccount();
 
-        mockMvc.perform(get("/seller/bank-accounts")
+        mockMvc.perform(get("/sellers/bank-accounts")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
@@ -93,9 +112,10 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void updateCuenta_tokenValido_devuelve200() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String id = addAccount();
 
-        mockMvc.perform(put("/seller/bank-accounts/{id}", id)
+        mockMvc.perform(put("/sellers/bank-accounts/{id}", id)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BANK_ACCOUNT_JSON))
@@ -107,13 +127,14 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_duplicado_devuelve409() throws Exception {
-        mockMvc.perform(post("/seller/bank-accounts")
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/bank-accounts")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BANK_ACCOUNT_JSON))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/seller/bank-accounts")
+        mockMvc.perform(post("/sellers/bank-accounts")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BANK_ACCOUNT_JSON))
@@ -124,19 +145,21 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void delete_ultima_devuelve409() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String id = addAccount();
 
-        mockMvc.perform(delete("/seller/bank-accounts/{id}", id)
+        mockMvc.perform(delete("/sellers/bank-accounts/{id}", id)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isConflict());
     }
 
     @Test
     void delete_primaria_devuelve409() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String primaryId = addAccount();
         addAccount();
 
-        mockMvc.perform(delete("/seller/bank-accounts/{id}", primaryId)
+        mockMvc.perform(delete("/sellers/bank-accounts/{id}", primaryId)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isConflict());
     }
@@ -145,32 +168,13 @@ class SellerBankAccountMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void setPrimary_tokenValido_devuelve200() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String firstId = addAccount();
         String secondId = addAccount();
 
-        mockMvc.perform(patch("/seller/bank-accounts/{id}/primary", secondId)
+        mockMvc.perform(patch("/sellers/bank-accounts/{id}/primary", secondId)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isPrimary").value(true));
-    }
-
-    private String addAccount() throws Exception {
-        String payload = """
-                {
-                  "bankName": "Banco Nacional",
-                  "accountType": "SAVINGS",
-                  "accountNumber": "9%08d",
-                  "accountHolder": "Vendedor Test"
-                }
-                """.formatted(ACCOUNT_SEQ.incrementAndGet());
-
-        MvcResult result = mockMvc.perform(post("/seller/bank-accounts")
-                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 }

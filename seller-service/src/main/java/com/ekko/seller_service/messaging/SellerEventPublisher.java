@@ -2,6 +2,7 @@ package com.ekko.seller_service.messaging;
 
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
+import com.ekko.seller_service.messaging.dto.publish.SellerSlugChangedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
 
 public interface SellerEventPublisher {
@@ -11,4 +12,6 @@ public interface SellerEventPublisher {
     void publishSellerStatusChanged(SellerStatusChangedEvent event);
 
     void publishSellerDocumentReview(SellerDocumentReviewEvent event);
+
+    void publishSellerSlugChanged(SellerSlugChangedEvent event);
 }

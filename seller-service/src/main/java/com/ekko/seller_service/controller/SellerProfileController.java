@@ -1,15 +1,18 @@
 package com.ekko.seller_service.controller;
 
+import com.ekko.seller_service.dto.response.SellerLogoResponse;
 import com.ekko.seller_service.dto.response.SellerResponse;
 import com.ekko.seller_service.dto.request.SellerUpdateRequest;
 import com.ekko.seller_service.support.SellerResolver;
 import com.ekko.seller_service.service.SellerProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -38,6 +41,16 @@ public class SellerProfileController {
             @RequestBody @Valid SellerUpdateRequest request
     ) {
         return sellerProfileService.updateMyProfile(jwt.getSubject(), request);
+    }
+
+    @PostMapping("/sellers/me/logo")
+    public ResponseEntity<SellerLogoResponse> uploadLogo(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String keycloakId = jwt.getSubject();
+        SellerLogoResponse response = sellerProfileService.uploadLogo(keycloakId, file);
+        return ResponseEntity.ok(response);
     }
 
     // ── Rutas públicas (/sellers/{id}) ────────────────────────────────────

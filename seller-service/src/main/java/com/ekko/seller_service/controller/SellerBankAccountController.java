@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/seller/bank-accounts")
+@RequestMapping("/sellers/bank-accounts")
 @PreAuthorize("hasRole('SELLER')")
 public class SellerBankAccountController {
 

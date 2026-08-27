@@ -27,6 +27,7 @@ import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductAttributeRepository;
 import com.ekko.product_service.repository.ProductRepository;
 import com.ekko.product_service.repository.ProductVariantRepository;
+import com.ekko.product_service.util.SellerStatusValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,9 +53,12 @@ public class ProductService {
     private final OwnershipValidator ownershipValidator;
     private final ProductMapper productMapper;
     private final ProductEventPublisher productEventPublisher;
+    private final SellerStatusValidator sellerStatusValidator;
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request, UUID sellerKeycloakId) {
+        sellerStatusValidator.validateCanOperate(sellerKeycloakId);
+
         String slug = slugService.generateUnique(request.name(), sellerKeycloakId);
 
 
@@ -94,6 +98,8 @@ public class ProductService {
 
     @Transactional
     public ProductResponse updateProduct(UUID productId, UpdateProductRequest request, UUID sellerKeycloakId) {
+
+        sellerStatusValidator.validateCanOperate(sellerKeycloakId);
         Product product = ownershipValidator.validate(productId, sellerKeycloakId);
 
         if (product.getDeletedAt() != null) {
@@ -127,6 +133,7 @@ public class ProductService {
 
     @Transactional
     public void submitForReview(UUID productId, UUID sellerKeycloakId) {
+        sellerStatusValidator.validateCanOperate(sellerKeycloakId);
         Product product = ownershipValidator.validate(productId, sellerKeycloakId);
 
         if (product.getDeletedAt() != null) {

@@ -58,6 +58,11 @@ public final class SellerTestDataBuilder {
         return this;
     }
 
+    public SellerTestDataBuilder withLogoPublicId(String logoPublicId) {
+        // We'll set this directly on the built object since Seller builder doesn't have it
+        return this;
+    }
+
     public SellerTestDataBuilder withStatus(SellerStatus status) {
         this.status = status;
         return this;

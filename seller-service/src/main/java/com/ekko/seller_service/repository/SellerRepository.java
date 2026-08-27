@@ -18,6 +18,7 @@ import java.util.UUID;
 public interface SellerRepository extends JpaRepository<Seller, UUID> {
 
     Optional<Seller> findByKeycloakId(String keycloakId);
+    boolean existsBySlug(String slug);
 
 
     @Query("""

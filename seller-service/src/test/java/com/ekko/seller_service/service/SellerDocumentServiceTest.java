@@ -8,6 +8,7 @@ import com.ekko.seller_service.enums.DocumentStatus;
 import com.ekko.seller_service.enums.DocumentType;
 import com.ekko.seller_service.exception.DocumentAlreadyApprovedException;
 import com.ekko.seller_service.exception.DocumentAlreadyPendingException;
+import com.ekko.seller_service.exception.SellerAlreadyActiveException;
 import com.ekko.seller_service.exception.SellerDocumentNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
@@ -70,7 +71,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void documentoNuevo_guardaComoPending() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(false);
@@ -92,8 +93,17 @@ class SellerDocumentServiceTest {
         }
 
         @Test
+        void vendedorSuspendido_lanzaSellerSuspended() {
+            Seller seller = aSeller().withId(SELLER_ID).suspended().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerSuspendedException.class,
+                    () -> sellerDocumentService.addDocument(SELLER_ID, DOCUMENT_TYPE, OBJECT_KEY));
+        }
+
+        @Test
         void documentoPendingExistente_lanzaDocumentAlreadyPending() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(true);
 
@@ -103,7 +113,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void documentoApprovedExistente_lanzaDocumentAlreadyApproved() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(true);
@@ -114,7 +124,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void constraintUkSellerDocumentPending_lanzaDocumentAlreadyPending() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             DataIntegrityViolationException violation = dataIntegrityViolation("uk_seller_document_pending");
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
@@ -127,7 +137,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void constraintUkSellerDocumentType_lanzaDocumentAlreadyPending() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             DataIntegrityViolationException violation = dataIntegrityViolation("uk_seller_document_type");
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
@@ -140,7 +150,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void dataIntegrityViolation_conConstraintDistinta_relanzaExcepcion() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             SQLException sql = new SQLException(
                     "duplicate key value violates unique constraint \"uk_sellers_email\"", "23505");
             DataIntegrityViolationException violation = new DataIntegrityViolationException("stmt", sql);
@@ -155,7 +165,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void dataIntegrityViolation_conCausaNoSql_relanzaExcepcion() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             DataIntegrityViolationException violation =
                     new DataIntegrityViolationException("stmt", new RuntimeException("boom"));
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
@@ -176,7 +186,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void documentoValido_subirAMinioYPersistir() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(false);
@@ -197,8 +207,19 @@ class SellerDocumentServiceTest {
         }
 
         @Test
+        void vendedorSuspendido_lanzaSellerSuspended() {
+            Seller seller = aSeller().withId(SELLER_ID).suspended().build();
+            when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerSuspendedException.class,
+                    () -> sellerDocumentService.uploadDocument(SELLER_ID, DOCUMENT_TYPE, FILE));
+
+            verifyNoInteractions(minioService);
+        }
+
+        @Test
         void documentoPendingExistente_lanzaSinSubirAMinio() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(true);
 
@@ -210,7 +231,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void documentoApprovedExistente_lanzaSinSubirAMinio() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(true);
@@ -234,7 +255,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void conflictoAlPersistir_borraObjetoYRelanza() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(false);
@@ -250,7 +271,7 @@ class SellerDocumentServiceTest {
 
         @Test
         void falloDePersistenciaPorCualquierMotivo_borraObjetoYRelanza() {
-            Seller seller = aSeller().withId(SELLER_ID).active().build();
+            Seller seller = aSeller().withId(SELLER_ID).pendingReview().build();
             when(sellerRepository.findById(SELLER_ID)).thenReturn(Optional.of(seller));
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.PENDING)).thenReturn(false);
             when(documentRepository.existsBySellerIdAndDocumentTypeAndStatus(SELLER_ID, DOCUMENT_TYPE, DocumentStatus.APPROVED)).thenReturn(false);

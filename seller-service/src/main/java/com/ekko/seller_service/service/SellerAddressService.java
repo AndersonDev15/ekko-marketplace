@@ -32,7 +32,7 @@ public class SellerAddressService {
         Seller seller = sellerRepository.findByIdForUpdate(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         boolean isFirst = !addressRepository.existsBySellerId(sellerId);
 
@@ -62,7 +62,7 @@ public class SellerAddressService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         SellerAddress address = addressRepository
                 .findByIdAndSellerId(addressId, sellerId)
@@ -82,7 +82,7 @@ public class SellerAddressService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         SellerAddress address = addressRepository
                 .findByIdAndSellerId(addressId, sellerId)
@@ -106,7 +106,7 @@ public class SellerAddressService {
         Seller seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
 
-        validator.validateCanOperate(seller);
+        validator.validateCanEditProfile(seller);
 
         SellerAddress address = addressRepository
                 .findByIdAndSellerId(addressId, sellerId)

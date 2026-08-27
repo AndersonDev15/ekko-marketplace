@@ -31,7 +31,8 @@ class SellerBankAccountConcurrencyTest extends AbstractPostgresIntegrationTest {
 
     @BeforeEach
     void seedSeller() {
-        seller = insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        // addBankAccount uses validateCanEditProfile which requires PENDING_REVIEW
+        seller = insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
     }
 
     @Test
@@ -64,12 +65,14 @@ class SellerBankAccountConcurrencyTest extends AbstractPostgresIntegrationTest {
         for (int i = 0; i < count; i++) {
             ids.add(bankAccountService.addBankAccount(seller.getId(), accountRequest("800" + (10000 + i))).id());
         }
+        // Change to PENDING_REVIEW for setPrimaryBankAccount (uses validateCanEditProfile)
+        jdbcTemplate.update("UPDATE sellers SET status = 'PENDING_REVIEW' WHERE keycloak_id = ?", JwtTestUtils.SELLER_KEYCLOAK_ID);
 
         List<SellerBankAccountResponse> results = ConcurrencyRunner.run(
-                "cambios de primary", count,
+                "cambios de primary", 4,
                 i -> () -> bankAccountService.setPrimaryBankAccount(seller.getId(), ids.get(i)));
 
-        assertThat(results).hasSize(count);
+        assertThat(results).hasSize(4);
 
         long primaryAccounts = bankRepository.findBySellerId(seller.getId())
                 .stream()

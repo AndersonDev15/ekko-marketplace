@@ -18,6 +18,9 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String UNPROCESSABLE_CONTENT_REASON = "Unprocessable Content";
+    private static final String NOT_FOUND_REASON = "Not Found";
+
     // -------------------------------------------------------------------------
     // 404 NOT FOUND
     // -------------------------------------------------------------------------
@@ -26,35 +29,35 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleSellerNotFound(
             SellerNotFoundException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), request.getRequestURI()));
+                .body(ErrorResponse.of(404, NOT_FOUND_REASON, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(SellerAddressNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAddressNotFound(
             SellerAddressNotFoundException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), request.getRequestURI()));
+                .body(ErrorResponse.of(404, NOT_FOUND_REASON, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(SellerBankAccountNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleBankAccountNotFound(
             SellerBankAccountNotFoundException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), request.getRequestURI()));
+                .body(ErrorResponse.of(404, NOT_FOUND_REASON, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(SellerMetricsNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleMetricsNotFound(
             SellerMetricsNotFoundException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), request.getRequestURI()));
+                .body(ErrorResponse.of(404, NOT_FOUND_REASON, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(SellerDocumentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleDocumentNotFound(
             SellerDocumentNotFoundException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), request.getRequestURI()));
+                .body(ErrorResponse.of(404, NOT_FOUND_REASON, ex.getMessage(), request.getRequestURI()));
     }
 
     // -------------------------------------------------------------------------
@@ -64,6 +67,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MinioUploadException.class)
     public ResponseEntity<ErrorResponse> handleMinioUpload(
             MinioUploadException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorResponse.of(502, "Bad Gateway", ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(ImageUploadException.class)
+    public ResponseEntity<ErrorResponse> handleImageUpload(
+            ImageUploadException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(ErrorResponse.of(502, "Bad Gateway", ex.getMessage(), request.getRequestURI()));
     }
@@ -96,16 +106,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SellerSuspendedException.class)
     public ResponseEntity<ErrorResponse> handleSellerSuspended(
             SellerSuspendedException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(ErrorResponse.of(422, "Unprocessable Entity", ex.getMessage(), request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+                .body(ErrorResponse.of(422, UNPROCESSABLE_CONTENT_REASON, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(SellerPendingException.class)
     public ResponseEntity<ErrorResponse> handleSellerPending(
             SellerPendingException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(ErrorResponse.of(422, "Unprocessable Entity", ex.getMessage(), request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+                .body(ErrorResponse.of(422, UNPROCESSABLE_CONTENT_REASON, ex.getMessage(), request.getRequestURI()));
     }
+
+    @ExceptionHandler(SellerAlreadyActiveException.class)
+    public ResponseEntity<ErrorResponse> handleSellerAlreadyActive(
+            SellerAlreadyActiveException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+                .body(ErrorResponse.of(422, UNPROCESSABLE_CONTENT_REASON, ex.getMessage(), request.getRequestURI()));
+    }
+
 
     // -------------------------------------------------------------------------
     // 400 BAD REQUEST — validación de @Valid

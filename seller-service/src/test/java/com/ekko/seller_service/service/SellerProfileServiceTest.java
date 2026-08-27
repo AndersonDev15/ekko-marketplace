@@ -1,6 +1,7 @@
 package com.ekko.seller_service.service;
 
 import com.ekko.seller_service.dto.request.SellerUpdateRequest;
+import com.ekko.seller_service.dto.response.SellerLogoResponse;
 import com.ekko.seller_service.dto.response.SellerResponse;
 import com.ekko.seller_service.entity.Seller;
 import com.ekko.seller_service.entity.SellerMetrics;
@@ -12,6 +13,7 @@ import com.ekko.seller_service.messaging.SellerEventPublisher;
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
+import com.ekko.seller_service.service.CloudinaryService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,9 +21,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.SQLException;
 import java.util.Optional;
@@ -31,6 +35,8 @@ import static com.ekko.seller_service.support.SellerTestDataBuilder.aSeller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +64,9 @@ class SellerProfileServiceTest {
 
     @Mock
     private TransactionStatus transactionStatus;
+
+    @Mock
+    private CloudinaryService cloudinaryService;
 
     @InjectMocks
     private SellerProfileService sellerProfileService;
@@ -250,6 +259,92 @@ class SellerProfileServiceTest {
 
             assertThrows(SellerNotFoundException.class,
                     () -> sellerProfileService.getPublicProfile(sellerId));
+        }
+    }
+
+@Nested
+    class UploadLogo {
+
+        @Test
+        void vendedorActivo_subeLogoYRetornaUrl() {
+            String keycloakId = KEYCLOAK_ID;
+            Seller seller = aSeller().withKeycloakId(keycloakId).active().build();
+            MultipartFile file = Mockito.mock(MultipartFile.class);
+            when(sellerRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.of(seller));
+            when(cloudinaryService.upload(file)).thenReturn(
+                    new CloudinaryService.UploadResult("public-id-123", "https://cloudinary.com/logo.png"));
+            when(sellerRepository.save(seller)).thenReturn(seller);
+
+            SellerLogoResponse result = sellerProfileService.uploadLogo(keycloakId, file);
+
+            assertEquals("https://cloudinary.com/logo.png", result.logoUrl());
+            verify(cloudinaryService).upload(file);
+            assertEquals("https://cloudinary.com/logo.png", seller.getLogoUrl());
+            assertEquals("public-id-123", seller.getLogoPublicId());
+            verify(sellerRepository).save(seller);
+        }
+
+        @Test
+        void vendedorConLogoExistente_borraAnteriorYActualiza() {
+            String keycloakId = KEYCLOAK_ID;
+            Seller seller = aSeller().withKeycloakId(keycloakId).active()
+                    .withLogoUrl("https://old-logo.png")
+                    .build();
+            seller.setLogoPublicId("old-public-id");
+            MultipartFile file = Mockito.mock(MultipartFile.class);
+            when(sellerRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.of(seller));
+            doNothing().when(cloudinaryService).delete("old-public-id");
+            when(cloudinaryService.upload(file)).thenReturn(
+                    new CloudinaryService.UploadResult("new-public-id", "https://new-logo.png"));
+            when(sellerRepository.save(seller)).thenReturn(seller);
+
+            SellerLogoResponse result = sellerProfileService.uploadLogo(keycloakId, file);
+
+            assertEquals("https://new-logo.png", result.logoUrl());
+            verify(cloudinaryService).delete("old-public-id");
+            verify(cloudinaryService).upload(file);
+            assertEquals("https://new-logo.png", seller.getLogoUrl());
+            assertEquals("new-public-id", seller.getLogoPublicId());
+        }
+
+        @Test
+        void vendedorInexistente_lanzaSellerNotFound() {
+            String keycloakId = "nonexistent";
+            MultipartFile file = Mockito.mock(MultipartFile.class);
+            when(sellerRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.empty());
+
+            assertThrows(SellerNotFoundException.class,
+                    () -> sellerProfileService.uploadLogo(keycloakId, file));
+
+            verify(cloudinaryService, never()).upload(any());
+            verify(sellerRepository, never()).save(any());
+        }
+
+        @Test
+        void vendedorSuspendido_lanzaSellerSuspended() {
+            Seller seller = aSeller().withKeycloakId(KEYCLOAK_ID).suspended().build();
+            MultipartFile file = Mockito.mock(MultipartFile.class);
+            when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(seller));
+
+            assertThrows(SellerSuspendedException.class,
+                    () -> sellerProfileService.uploadLogo(KEYCLOAK_ID, file));
+
+            verify(cloudinaryService, never()).upload(any());
+            verify(sellerRepository, never()).save(any());
+        }
+
+        @Test
+        void cloudinaryFallaAlSubir_relanzaExcepcion() {
+            Seller seller = aSeller().withKeycloakId(KEYCLOAK_ID).active().build();
+            MultipartFile file = Mockito.mock(MultipartFile.class);
+            when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(seller));
+            when(cloudinaryService.upload(file))
+                    .thenThrow(new RuntimeException("Cloudinary upload failed"));
+
+            assertThrows(RuntimeException.class,
+                    () -> sellerProfileService.uploadLogo(KEYCLOAK_ID, file));
+
+            verify(sellerRepository, never()).save(any());
         }
     }
 

@@ -27,6 +27,9 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/actuator/health").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/catalog/products/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/brands/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/sellers/*").permitAll()
                         .pathMatchers("/test/oauth2").authenticated()
@@ -35,10 +38,6 @@ public class SecurityConfig {
                 )
 
                 .oauth2Login(Customizer.withDefaults())
-
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(Customizer.withDefaults())
-                )
 
                 .build();
     }

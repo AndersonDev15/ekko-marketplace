@@ -38,8 +38,14 @@ public class Seller {
     @Column
     private String description;
 
+    @Column(name = "slug", unique = true)
+    private String slug;
+
     @Column(name = "logo_url")
     private String logoUrl;
+
+    @Column(name = "logo_public_id")
+    private String logoPublicId;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

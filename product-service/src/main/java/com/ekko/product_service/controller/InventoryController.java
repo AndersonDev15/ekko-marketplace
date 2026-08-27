@@ -21,28 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
+@RequestMapping("/seller/variants/{variantId}/inventory")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('SELLER')")
 public class InventoryController {
 
     private final InventoryService inventoryService;
 
 
-    @PostMapping("/internal/inventory/confirm")
-    // TODO: configurar seguridad SERVICE_ORDER en Keycloak (client credentials flow).
-    public ResponseEntity<Void> confirm(@RequestBody InventoryQuantityRequest request) {
-        inventoryService.confirmStock(request.variantId(), request.quantity());
-        return ResponseEntity.ok().build();
-    }
 
-    @PostMapping("/internal/inventory/release")
-    // TODO: configurar seguridad SERVICE_ORDER en Keycloak (client credentials flow).
-    public ResponseEntity<Void> release(@RequestBody InventoryQuantityRequest request) {
-        inventoryService.releaseStock(request.variantId(), request.quantity());
-        return ResponseEntity.ok().build();
-    }
 
-    @GetMapping("/seller/variants/{variantId}/inventory")
-    @PreAuthorize("hasRole('SELLER')")
+    @GetMapping
     public ResponseEntity<InventoryViewResponse> getInventory(
             @PathVariable UUID variantId,
             @AuthenticationPrincipal Jwt jwt) {
@@ -50,8 +39,7 @@ public class InventoryController {
                 inventoryService.getInventory(variantId, JwtUtils.keycloakId(jwt)));
     }
 
-    @PutMapping("/seller/variants/{variantId}/inventory")
-    @PreAuthorize("hasRole('SELLER')")
+    @PutMapping
     public ResponseEntity<InventoryViewResponse> adjustStock(
             @PathVariable UUID variantId,
             @RequestBody AdjustStockRequest request,

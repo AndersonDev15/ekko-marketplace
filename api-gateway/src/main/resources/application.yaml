@@ -10,10 +10,6 @@ spring:
 
   security:
     oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
-
       client:
         registration:
           keycloak:
@@ -83,7 +79,7 @@ spring:
             - id: product-service
               uri: lb://product-service
               predicates:
-                - Path=/api/products/**
+                - Path=/api/products/**,/api/seller/products/**,/api/admin/products/**,/api/admin/categories/**,/api/admin/brands/**,/api/catalog/products/**,/api/categories/**,/api/brands/**,/api/seller/variants/**,/api/internal/**
               filters:
                 - TokenRelay
                 - name: CircuitBreaker
@@ -102,7 +98,7 @@ spring:
                   args:
                     name: order-cb
                     fallbackUri: forward:/fallback/orders
-                - StripPrefix=1
+                - StripPrefix=2
 
             - id: payment-service
               uri: lb://payment-service
@@ -149,16 +145,44 @@ eureka:
 
 resilience4j:
   circuitbreaker:
-    instances:
-      seller-cb:
+    configs:
+      default:
         sliding-window-size: 10
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
 
-  timelimiter:
     instances:
       seller-cb:
+        base-config: default
+      product-cb:
+        base-config: default
+      order-cb:
+        base-config: default
+      payment-cb:
+        base-config: default
+      review-cb:
+        base-config: default
+      notification-cb:
+        base-config: default
+
+  timelimiter:
+    configs:
+      default:
         timeout-duration: 10s
+
+    instances:
+      seller-cb:
+        base-config: default
+      product-cb:
+        base-config: default
+      order-cb:
+        base-config: default
+      payment-cb:
+        base-config: default
+      review-cb:
+        base-config: default
+      notification-cb:
+        base-config: default
 
 management:
   endpoints:

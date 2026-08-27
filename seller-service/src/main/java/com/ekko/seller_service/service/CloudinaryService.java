@@ -1,8 +1,8 @@
-package com.ekko.product_service.service;
+package com.ekko.seller_service.service;
 
-import com.ekko.product_service.exception.ImageUploadException;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.ekko.seller_service.exception.ImageUploadException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,18 +13,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CloudinaryService {
 
+    private static final String LOGOS_FOLDER = "sellers/logos";
+
     private final Cloudinary cloudinary;
 
-    public UploadResult upload(MultipartFile file, String folder) {
+    public UploadResult upload(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new ImageUploadException("Image file is required");
+            throw new ImageUploadException("Logo file is required");
         }
 
         try {
             Map<?, ?> result = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
-                            "folder", folder,
+                            "folder", LOGOS_FOLDER,
                             "resource_type", "image",
                             "overwrite", true));
 
@@ -32,7 +34,7 @@ public class CloudinaryService {
                     (String) result.get("public_id"),
                     (String) result.get("secure_url"));
         } catch (Exception e) {
-            throw new ImageUploadException("Failed to upload image to Cloudinary", e);
+            throw new ImageUploadException("Failed to upload logo to Cloudinary", e);
         }
     }
 
@@ -40,7 +42,7 @@ public class CloudinaryService {
         try {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         } catch (Exception e) {
-            throw new ImageUploadException("Failed to delete image from Cloudinary", e);
+            throw new ImageUploadException("Failed to delete logo from Cloudinary", e);
         }
     }
 

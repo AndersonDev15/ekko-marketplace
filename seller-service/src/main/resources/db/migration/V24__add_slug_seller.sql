@@ -1,0 +1,2 @@
+ALTER TABLE sellers ADD COLUMN slug VARCHAR(255);
+ALTER TABLE sellers ADD CONSTRAINT uk_sellers_slug UNIQUE (slug);

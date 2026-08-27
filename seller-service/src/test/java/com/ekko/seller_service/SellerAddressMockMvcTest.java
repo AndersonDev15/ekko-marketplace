@@ -1,7 +1,6 @@
 package com.ekko.seller_service;
 
 import com.ekko.seller_service.support.JwtTestUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -25,16 +24,22 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
             }
             """;
 
-    @BeforeEach
-    void seedSeller() {
-        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+    private String addAddress() throws Exception {
+        MvcResult result = mockMvc.perform(post("/sellers/addresses")
+                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ADDRESS_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
     // ── 401 Unauthorized ────────────────────────────────────────────────────
 
     @Test
     void add_sinToken_devuelve401() throws Exception {
-        mockMvc.perform(post("/seller/addresses")
+        mockMvc.perform(post("/sellers/addresses")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(ADDRESS_JSON))
                 .andExpect(status().isUnauthorized());
@@ -44,7 +49,8 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_rolIncorrecto_devuelve403() throws Exception {
-        mockMvc.perform(post("/seller/addresses")
+        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/addresses")
                         .header("Authorization", "Bearer " + JwtTestUtils.adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(ADDRESS_JSON))
@@ -56,7 +62,8 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_dtoInvalido_devuelve400() throws Exception {
-        mockMvc.perform(post("/seller/addresses")
+        insertActiveSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/addresses")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -69,7 +76,8 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void add_tokenValido_devuelve200() throws Exception {
-        mockMvc.perform(post("/seller/addresses")
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
+        mockMvc.perform(post("/sellers/addresses")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(ADDRESS_JSON))
@@ -80,10 +88,11 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void getMisDirecciones_devuelve200() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         addAddress();
         addAddress();
 
-        mockMvc.perform(get("/seller/addresses")
+        mockMvc.perform(get("/sellers/addresses")
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
@@ -91,9 +100,10 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void updateDireccion_tokenValido_devuelve200() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String id = addAddress();
 
-        mockMvc.perform(put("/seller/addresses/{id}", id)
+        mockMvc.perform(put("/sellers/addresses/{id}", id)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(ADDRESS_JSON))
@@ -105,9 +115,10 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void delete_ultimaDireccion_devuelve409() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String id = addAddress();
 
-        mockMvc.perform(delete("/seller/addresses/{id}", id)
+        mockMvc.perform(delete("/sellers/addresses/{id}", id)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
@@ -116,10 +127,11 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void delete_primaria_devuelve409() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String primaryId = addAddress();
         addAddress();
 
-        mockMvc.perform(delete("/seller/addresses/{id}", primaryId)
+        mockMvc.perform(delete("/sellers/addresses/{id}", primaryId)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isConflict());
     }
@@ -128,22 +140,12 @@ class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     @Test
     void delete_secundaria_devuelve204() throws Exception {
+        insertPendingReviewSeller(JwtTestUtils.SELLER_KEYCLOAK_ID);
         String primaryId = addAddress();
         String secondaryId = addAddress();
 
-        mockMvc.perform(delete("/seller/addresses/{id}", secondaryId)
+        mockMvc.perform(delete("/sellers/addresses/{id}", secondaryId)
                         .header("Authorization", "Bearer " + JwtTestUtils.sellerToken()))
                 .andExpect(status().isNoContent());
-    }
-
-    private String addAddress() throws Exception {
-        MvcResult result = mockMvc.perform(post("/seller/addresses")
-                        .header("Authorization", "Bearer " + JwtTestUtils.sellerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(ADDRESS_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 }
