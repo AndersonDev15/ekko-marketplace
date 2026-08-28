@@ -27,14 +27,5 @@ public class SlugService {
                 .replaceAll("^-|-$", "");
     }
 
-    public String generateUnique(String name, UUID sellerKeycloakId) {
-        String base = generate(name);
-        String slug = base;
-        int suffix = 2;
-        while (productRepository.existsBySellerKeycloakIdAndSlug(sellerKeycloakId, slug)) {
-            slug = base + "-" + suffix;
-            suffix++;
-        }
-        return slug;
-    }
+
 }

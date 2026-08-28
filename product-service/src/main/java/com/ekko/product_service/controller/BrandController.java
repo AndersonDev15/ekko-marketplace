@@ -26,12 +26,13 @@ public class BrandController {
         return ResponseEntity.ok(brandService.getActiveBrands());
     }
 
-    @PostMapping(value = "/admin/brands", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/admin/brands")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BrandResponse> createBrand(
-            @RequestPart("data") CreateBrandRequest request,
-            @RequestPart(value = "logo", required = false) MultipartFile logo) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(brandService.createBrand(request, logo));
+            @RequestBody CreateBrandRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(brandService.createBrand(request));
     }
 
     @PatchMapping(value = "/admin/brands/{brandId}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

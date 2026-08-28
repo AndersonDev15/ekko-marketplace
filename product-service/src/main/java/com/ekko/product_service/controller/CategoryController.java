@@ -27,12 +27,13 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getCategoryTree());
     }
 
-    @PostMapping(value = "/admin/categories", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/admin/categories")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponse> createCategory(
-            @RequestPart("data") CreateCategoryRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(request, image));
+            @RequestBody CreateCategoryRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(categoryService.createCategory(request));
     }
 
     @PatchMapping(value = "/admin/categories/{categoryId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

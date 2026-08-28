@@ -15,12 +15,14 @@ public class SellerStatusValidator {
 
     private final SellerStatusViewRepository repository;
 
-    public void validateCanOperate(UUID sellerKeycloakId) {
+    public SellerStatusView validateCanOperate(UUID sellerKeycloakId) {
         SellerStatusView view = repository.findById(sellerKeycloakId)
                 .orElseThrow(() -> new SellerNotOperationalException(sellerKeycloakId));
 
         if (view.getStatus() != SellerStatus.ACTIVE) {
             throw new SellerNotOperationalException(sellerKeycloakId);
         }
+
+        return view;
     }
 }

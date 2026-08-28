@@ -23,29 +23,23 @@ public class BrandService {
 
     private final BrandRepository brandRepository;
     private final CloudinaryService cloudinaryService;
+    private final SlugService slugService;
 
     @Transactional
-    public BrandResponse createBrand(CreateBrandRequest request, MultipartFile logo) {
+    public BrandResponse createBrand(CreateBrandRequest request) {
         if (brandRepository.existsByName(request.name())) {
             throw new DuplicateBrandNameException();
         }
-        if (brandRepository.existsBySlug(request.slug())) {
-            throw new DuplicateBrandSlugException();
-        }
+        String slug = generateUniqueSlug(request.name());
 
         Brand.BrandBuilder builder = Brand.builder()
                 .name(request.name())
-                .slug(request.slug())
+                .slug(slug)
                 .description(request.description())
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now());
 
-        if (logo != null && !logo.isEmpty()) {
-            CloudinaryService.UploadResult upload = cloudinaryService.upload(logo, "brands");
-            builder.logoUrl(upload.url())
-                    .logoPublicId(upload.publicId());
-        }
 
 
         Brand brand = builder.build();
@@ -57,25 +51,27 @@ public class BrandService {
         Brand brand = brandRepository.findById(brandId)
                 .orElseThrow(BrandNotFoundException::new);
 
-        if (request.name() != null && !request.name().equals(brand.getName())
+        if (request.name() != null
+                && !request.name().equals(brand.getName())
                 && brandRepository.existsByNameAndIdNot(request.name(), brandId)) {
             throw new DuplicateBrandNameException();
         }
-        if (request.slug() != null && !request.slug().equals(brand.getSlug())
-                && brandRepository.existsBySlugAndIdNot(request.slug(), brandId)) {
-            throw new DuplicateBrandSlugException();
+
+        if (request.name() != null
+                && !request.name().equals(brand.getName())) {
+
+            String slug = generateUniqueSlug(request.name(), brandId);
+
+            brand.setName(request.name());
+            brand.setSlug(slug);
         }
 
-        if (request.name() != null) {
-            brand.setName(request.name());
-        }
-        if (request.slug() != null) {
-            brand.setSlug(request.slug());
-        }
         if (request.description() != null) {
             brand.setDescription(request.description());
         }
+
         brand.setUpdatedAt(LocalDateTime.now());
+
         return toResponse(brandRepository.save(brand));
     }
 
@@ -110,6 +106,32 @@ public class BrandService {
         return brandRepository.findAllByIsActiveTrue().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    private String generateUniqueSlug(String name) {
+
+        String baseSlug = slugService.generate(name);
+        String slug = baseSlug;
+        int suffix = 2;
+
+        while (brandRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + suffix;
+            suffix++;
+        }
+
+        return slug;
+    }
+    private String generateUniqueSlug(String name, UUID brandId) {
+        String baseSlug = slugService.generate(name);
+        String slug = baseSlug;
+        int suffix = 2;
+
+        while (brandRepository.existsBySlugAndIdNot(slug, brandId)) {
+            slug = baseSlug + "-" + suffix;
+            suffix++;
+        }
+
+        return slug;
     }
 
     private BrandResponse toResponse(Brand brand) {

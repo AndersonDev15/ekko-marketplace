@@ -20,6 +20,11 @@ public interface ProductRepository
         extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
 
     boolean existsBySellerKeycloakIdAndSlug(UUID sellerKeycloakId, String slug);
+    boolean existsBySellerKeycloakIdAndSlugAndIdNot(
+            UUID sellerKeycloakId,
+            String slug,
+            UUID productId
+    );
 
     Page<Product> findBySellerKeycloakIdAndDeletedAtIsNull(UUID sellerKeycloakId, Pageable pageable);
 

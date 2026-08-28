@@ -7,6 +7,7 @@ public record ProductSummaryResponse(
         UUID id,
         String name,
         String slug,
+        String sellerSlug,
         BigDecimal price,
         String mainImageUrl,
         String brandName,

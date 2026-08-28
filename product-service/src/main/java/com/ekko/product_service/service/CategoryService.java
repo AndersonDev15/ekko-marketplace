@@ -34,12 +34,11 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final CloudinaryService cloudinaryService;
+    private final SlugService slugService;
 
     @Transactional
-    public CategoryResponse createCategory(CreateCategoryRequest request, MultipartFile logo) {
-        if (categoryRepository.existsBySlug(request.slug())) {
-            throw new DuplicateSlugException();
-        }
+    public CategoryResponse createCategory(CreateCategoryRequest request) {
+        String slug = generateUniqueSlug(request.name());
 
         Category parent = null;
         if (request.parentId() != null) {
@@ -52,18 +51,14 @@ public class CategoryService {
 
         Category.CategoryBuilder builder = Category.builder()
                 .name(request.name())
-                .slug(request.slug())
+                .slug(slug)
                 .description(request.description())
                 .parent(parent)
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now());
 
-        if (logo != null && !logo.isEmpty()) {
-            CloudinaryService.UploadResult upload = cloudinaryService.upload(logo, "categories");
-            builder.imageUrl(upload.url())
-                    .imagePublicId(upload.publicId());
-        }
+
 
         Category category = builder.build();
         return toResponse(categoryRepository.save(category));
@@ -75,20 +70,22 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(CategoryNotFoundException::new);
 
-        if (request.slug() != null && !request.slug().equals(category.getSlug())
-                && categoryRepository.existsBySlug(request.slug())) {
-            throw new DuplicateSlugException();
+
+        if (request.name() != null
+                && !request.name().equals(category.getName())) {
+
+            category.setName(request.name());
+
+            category.setSlug(
+                    generateUniqueSlug(request.name(), id)
+            );
         }
 
-        if (request.name() != null) {
-            category.setName(request.name());
-        }
-        if (request.slug() != null) {
-            category.setSlug(request.slug());
-        }
         if (request.description() != null) {
             category.setDescription(request.description());
         }
+
+
         category.setUpdatedAt(LocalDateTime.now());
 
         return toResponse(categoryRepository.save(category));
@@ -108,7 +105,7 @@ public class CategoryService {
         category.setImageUrl(upload.url());
         category.setImagePublicId(upload.publicId());
 
-        ;
+
         return toResponse(categoryRepository.save(category));
     }
 
@@ -191,6 +188,35 @@ public class CategoryService {
         }
         return new CategoryNodeResponse(category.getId(), category.getName(),
                 category.getSlug(), children);
+    }
+
+    private String generateUniqueSlug(String name) {
+
+        String baseSlug = slugService.generate(name);
+        String slug = baseSlug;
+        int suffix = 2;
+
+        while (categoryRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + suffix;
+            suffix++;
+        }
+
+        return slug;
+    }
+    private String generateUniqueSlug(
+            String name,
+            UUID categoryId) {
+
+        String baseSlug = slugService.generate(name);
+        String slug = baseSlug;
+        int suffix = 2;
+
+        while (categoryRepository.existsBySlugAndIdNot(slug, categoryId)) {
+            slug = baseSlug + "-" + suffix;
+            suffix++;
+        }
+
+        return slug;
     }
 
     private boolean isAncestor(Category newParent, UUID categoryId) {

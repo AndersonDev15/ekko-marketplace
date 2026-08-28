@@ -5,28 +5,13 @@ import com.ekko.product_service.dto.request.CreateProductRequest;
 import com.ekko.product_service.dto.request.UpdateProductRequest;
 import com.ekko.product_service.dto.response.ProductDetailResponse;
 import com.ekko.product_service.dto.response.ProductResponse;
-import com.ekko.product_service.entity.Brand;
-import com.ekko.product_service.entity.Category;
-import com.ekko.product_service.entity.Product;
-import com.ekko.product_service.entity.ProductAttribute;
-import com.ekko.product_service.entity.ProductImage;
-import com.ekko.product_service.entity.ProductVariant;
+import com.ekko.product_service.entity.*;
 import com.ekko.product_service.enums.ProductStatus;
-import com.ekko.product_service.exception.InvalidProductStatusException;
-import com.ekko.product_service.exception.NoActiveVariantException;
-import com.ekko.product_service.exception.NoPrimaryImageException;
-import com.ekko.product_service.exception.ProductAlreadyDeletedException;
-import com.ekko.product_service.exception.ProductNotAvailableException;
-import com.ekko.product_service.exception.ProductNotFoundException;
-import com.ekko.product_service.exception.VariantNotFoundException;
+import com.ekko.product_service.exception.*;
 import com.ekko.product_service.mapper.ProductMapper;
 import com.ekko.product_service.messaging.ProductEventPublisher;
 import com.ekko.product_service.messaging.dto.publish.ProductDeactivatedEvent;
-import com.ekko.product_service.repository.BrandRepository;
-import com.ekko.product_service.repository.CategoryRepository;
-import com.ekko.product_service.repository.ProductAttributeRepository;
-import com.ekko.product_service.repository.ProductRepository;
-import com.ekko.product_service.repository.ProductVariantRepository;
+import com.ekko.product_service.repository.*;
 import com.ekko.product_service.util.SellerStatusValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,6 +32,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductAttributeRepository productAttributeRepository;
+    private final SellerStatusViewRepository sellerStatusViewRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
     private final SlugService slugService;
@@ -57,16 +43,15 @@ public class ProductService {
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request, UUID sellerKeycloakId) {
-        sellerStatusValidator.validateCanOperate(sellerKeycloakId);
+        SellerStatusView sellerView = sellerStatusValidator.validateCanOperate(sellerKeycloakId);
 
-        String slug = slugService.generateUnique(request.name(), sellerKeycloakId);
+        String slug = generateUniqueSlug(request.name(), sellerKeycloakId);
 
 
-        String sellerSlug = "pending";
 
         Product product = Product.builder()
                 .sellerKeycloakId(sellerKeycloakId)
-                .sellerSlug(sellerSlug)
+                .sellerSlug(sellerView.getSellerSlug())
                 .brand(resolveBrand(request.brandId()))
                 .category(resolveCategory(request.categoryId()))
                 .name(request.name())
@@ -113,7 +98,7 @@ public class ProductService {
 
         if (request.name() != null && !request.name().equals(product.getName())) {
             product.setName(request.name());
-            product.setSlug(slugService.generateUnique(request.name(), sellerKeycloakId));
+            product.setSlug(generateUniqueSlug(request.name(), sellerKeycloakId,productId));
         }
         if (request.description() != null) {
             product.setDescription(request.description());
@@ -226,6 +211,43 @@ public class ProductService {
         }
         return categoryRepository.findById(categoryId)
                 .orElseThrow(ProductNotFoundException::new);
+    }
+
+    private String generateUniqueSlug(
+            String name,
+            UUID sellerKeycloakId) {
+
+        String baseSlug = slugService.generate(name);
+        String slug = baseSlug;
+        int suffix = 2;
+
+        while (productRepository.existsBySellerKeycloakIdAndSlug(
+                sellerKeycloakId,
+                slug)) {
+
+            slug = baseSlug + "-" + suffix;
+            suffix++;
+        }
+
+        return slug;
+    }
+    private String generateUniqueSlug(
+            String name,
+            UUID sellerKeycloakId,
+            UUID productId) {
+
+        String baseSlug = slugService.generate(name);
+        String slug = baseSlug;
+        int suffix = 2;
+
+        while (productRepository.existsBySellerKeycloakIdAndSlugAndIdNot(
+                sellerKeycloakId, slug, productId)) {
+
+            slug = baseSlug + "-" + suffix;
+            suffix++;
+        }
+
+        return slug;
     }
 
     private ProductDeactivatedEvent toDeactivatedEvent(Product product, ProductStatus previousStatus) {

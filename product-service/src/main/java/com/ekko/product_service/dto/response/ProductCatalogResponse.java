@@ -7,6 +7,7 @@ public record ProductCatalogResponse(
         UUID id,
         String name,
         String slug,
+        String sellerSlug,
         String description,
         BigDecimal averageRating,
         Integer reviewCount,

@@ -1,0 +1,1 @@
+ALTER TABLE seller_status_view ADD COLUMN seller_slug VARCHAR(255);

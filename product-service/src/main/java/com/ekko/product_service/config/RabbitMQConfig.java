@@ -45,6 +45,39 @@ public class RabbitMQConfig {
     public static final String SELLER_STATUS_CHANGED_DLQ = "product.seller.status.changed.dlq";
 
 
+    public static final String SELLER_SLUG_CHANGED_ROUTING_KEY = "seller.slug.changed";
+    public static final String SELLER_SLUG_CHANGED_QUEUE = "product.seller.slug.changed.queue";
+    public static final String SELLER_SLUG_CHANGED_DLQ = "product.seller.slug.changed.dlq";
+
+    @Bean
+    public Queue sellerSlugChangedQueue() {
+        return QueueBuilder.durable(SELLER_SLUG_CHANGED_QUEUE)
+                .withArgument("x-dead-letter-exchange", PRODUCT_DLX)
+                .build();
+    }
+
+    @Bean
+    public Queue sellerSlugChangedDlq() {
+        return QueueBuilder.durable(SELLER_SLUG_CHANGED_DLQ).build();
+    }
+
+    @Bean
+    public Binding sellerSlugChangedBinding(Queue sellerSlugChangedQueue, DirectExchange sellerExchange) {
+        return BindingBuilder
+                .bind(sellerSlugChangedQueue)
+                .to(sellerExchange)
+                .with(SELLER_SLUG_CHANGED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding sellerSlugChangedDlqBinding(Queue sellerSlugChangedDlq, DirectExchange productDlx) {
+        return BindingBuilder
+                .bind(sellerSlugChangedDlq)
+                .to(productDlx)
+                .with(SELLER_SLUG_CHANGED_ROUTING_KEY);
+    }
+
+
     @Bean
     public DirectExchange sellerExchange() {
         // seller-service already declares seller.exchange as a DirectExchange.

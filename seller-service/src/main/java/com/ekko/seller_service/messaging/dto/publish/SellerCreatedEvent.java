@@ -9,6 +9,7 @@ public record SellerCreatedEvent(
         UUID sellerId,
         String keycloakId,
         String storeName,
+        String slug,
         String email,
         SellerStatus status,
         LocalDateTime createdAt

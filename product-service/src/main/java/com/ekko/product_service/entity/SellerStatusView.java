@@ -20,6 +20,6 @@ public class SellerStatusView {
     private UUID sellerKeycloakId;
     @Enumerated(EnumType.STRING)
     private SellerStatus status;
-
+    private String sellerSlug;
     private LocalDateTime updatedAt;
 }

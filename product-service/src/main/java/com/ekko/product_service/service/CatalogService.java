@@ -130,6 +130,7 @@ public class CatalogService {
                 product.getId(),
                 product.getName(),
                 product.getSlug(),
+                product.getSellerSlug(),
                 price,
                 mainImageUrl,
                 brandName,
