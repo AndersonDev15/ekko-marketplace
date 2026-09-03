@@ -116,8 +116,8 @@ public class SellerProfileService {
                 seller.getId(),
                 seller.getKeycloakId(),
                 seller.getStoreName(),
-                seller.getEmail(),
                 seller.getSlug(),
+                seller.getEmail(),
                 seller.getStatus(),
                 seller.getCreatedAt()
         );

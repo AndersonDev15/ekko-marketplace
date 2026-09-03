@@ -49,6 +49,42 @@ public class RabbitMQConfig {
     public static final String SELLER_SLUG_CHANGED_QUEUE = "product.seller.slug.changed.queue";
     public static final String SELLER_SLUG_CHANGED_DLQ = "product.seller.slug.changed.dlq";
 
+    public static final String SELLER_CREATED_ROUTING_KEY = "seller.created";
+    public static final String SELLER_CREATED_QUEUE = "product.seller.created.queue";
+    public static final String SELLER_CREATED_DLQ = "product.seller.created.dlq";
+
+    @Bean
+    public Queue sellerCreatedQueue() {
+        return QueueBuilder.durable(SELLER_CREATED_QUEUE)
+                .withArgument("x-dead-letter-exchange", PRODUCT_DLX)
+                .build();
+    }
+    @Bean
+    public Queue sellerCreatedDlq() {
+        return QueueBuilder.durable(SELLER_CREATED_DLQ).build();
+    }
+    @Bean
+    public Binding sellerCreatedBinding(
+            Queue sellerCreatedQueue,
+            DirectExchange sellerExchange) {
+
+        return BindingBuilder
+                .bind(sellerCreatedQueue)
+                .to(sellerExchange)
+                .with(SELLER_CREATED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding sellerCreatedDlqBinding(
+            Queue sellerCreatedDlq,
+            DirectExchange productDlx) {
+
+        return BindingBuilder
+                .bind(sellerCreatedDlq)
+                .to(productDlx)
+                .with(SELLER_CREATED_ROUTING_KEY);
+    }
+
     @Bean
     public Queue sellerSlugChangedQueue() {
         return QueueBuilder.durable(SELLER_SLUG_CHANGED_QUEUE)

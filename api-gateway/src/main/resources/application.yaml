@@ -91,19 +91,19 @@ spring:
             - id: order-service
               uri: lb://order-service
               predicates:
-                - Path=/api/orders/**
+                - Path=/api/orders,/api/orders/**,/api/admin/orders,/api/admin/orders/**
               filters:
                 - TokenRelay
                 - name: CircuitBreaker
                   args:
                     name: order-cb
                     fallbackUri: forward:/fallback/orders
-                - StripPrefix=2
+                - StripPrefix=1
 
             - id: payment-service
               uri: lb://payment-service
               predicates:
-                - Path=/api/payments/**
+                - Path=/api/payments/**,/api/admin/payments/**,/api/vendor-accounts/**
               filters:
                 - TokenRelay
                 - name: CircuitBreaker

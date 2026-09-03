@@ -2,19 +2,28 @@ package com.ekko.payment_service.infrastructure.gateway;
 
 import com.ekko.payment_service.domain.enums.RefundReason;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
+
+import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Account;
-import com.stripe.model.AccountLink;
+
+// V1 — siguen siendo necesarios para Customer, PaymentIntent, Refund y Transfer
 import com.stripe.model.Customer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.Refund;
 import com.stripe.model.Transfer;
-import com.stripe.param.AccountCreateParams;
-import com.stripe.param.AccountLinkCreateParams;
+
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.TransferCreateParams;
+
+// V2 — Connected Accounts y Account Links
+import com.stripe.model.v2.core.Account;
+import com.stripe.model.v2.core.AccountLink;
+import com.stripe.param.v2.core.AccountCreateParams;
+import com.stripe.param.v2.core.AccountLinkCreateParams;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,9 +31,15 @@ import java.math.RoundingMode;
 import java.util.Locale;
 
 @Service
+@Slf4j
 public class StripeGatewayAdapter implements PaymentGatewayPort {
 
     private static final BigDecimal MINOR_UNITS_MULTIPLIER = new BigDecimal("100");
+    private final StripeClient stripeClient;
+
+    public StripeGatewayAdapter(StripeClient stripeClient) {
+        this.stripeClient = stripeClient;
+    }
 
     @Override
     public String resolveOrCreateCustomer(String existingStripeCustomerId, String email) {
@@ -92,29 +107,81 @@ public class StripeGatewayAdapter implements PaymentGatewayPort {
     @Override
     public String createConnectedAccount(String country, String email) {
         try {
-            AccountCreateParams params = AccountCreateParams.builder()
-                    .setType(AccountCreateParams.Type.EXPRESS)
-                    .setCountry(country)
-                    .setEmail(email)
-                    .build();
-            return Account.create(params).getId();
+            AccountCreateParams.Identity identity =
+                    AccountCreateParams.Identity.builder()
+                            .setCountry(country)
+                            .build();
+
+            AccountCreateParams params =
+                    AccountCreateParams.builder()
+                            .setContactEmail(email)
+                            .setIdentity(identity)
+                            .build();
+
+            Account account = stripeClient.v2()
+                    .core()
+                    .accounts()
+                    .create(params);
+
+            return account.getId();
+
         } catch (StripeException e) {
-            throw new PaymentGatewayException("Failed to create Stripe Connected Account", e);
+            log.error(
+                    "Stripe V2 error creating Connected Account: status={}, code={}, message={}",
+                    e.getStatusCode(),
+                    e.getCode(),
+                    e.getMessage(),
+                    e
+            );
+
+            throw new PaymentGatewayException(
+                    "Failed to create Stripe Connected Account", e);
         }
     }
 
     @Override
-    public String createAccountLink(String stripeAccountId, String refreshUrl, String returnUrl) {
+    public String createAccountLink(
+            String stripeAccountId,
+            String refreshUrl,
+            String returnUrl) {
+
         try {
-            AccountLinkCreateParams params = AccountLinkCreateParams.builder()
-                    .setAccount(stripeAccountId)
-                    .setRefreshUrl(refreshUrl)
-                    .setReturnUrl(returnUrl)
-                    .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
-                    .build();
-            return AccountLink.create(params).getUrl();
+            AccountLinkCreateParams.UseCase.AccountOnboarding onboarding =
+                    AccountLinkCreateParams.UseCase.AccountOnboarding.builder()
+                            .setRefreshUrl(refreshUrl)
+                            .setReturnUrl(returnUrl)
+                            .build();
+
+            AccountLinkCreateParams.UseCase useCase =
+                    AccountLinkCreateParams.UseCase.builder()
+                            .setType(AccountLinkCreateParams.UseCase.Type.ACCOUNT_ONBOARDING)
+                            .setAccountOnboarding(onboarding)
+                            .build();
+
+            AccountLinkCreateParams params =
+                    AccountLinkCreateParams.builder()
+                            .setAccount(stripeAccountId)
+                            .setUseCase(useCase)
+                            .build();
+
+            AccountLink accountLink = stripeClient.v2()
+                    .core()
+                    .accountLinks()
+                    .create(params);
+
+            return accountLink.getUrl();
+
         } catch (StripeException e) {
-            throw new PaymentGatewayException("Failed to create Stripe Account Link", e);
+            log.error(
+                    "Stripe V2 error creating Account Link: status={}, code={}, message={}",
+                    e.getStatusCode(),
+                    e.getCode(),
+                    e.getMessage(),
+                    e
+            );
+
+            throw new PaymentGatewayException(
+                    "Failed to create Stripe Account Link", e);
         }
     }
 

@@ -32,8 +32,8 @@ public record CreateOrderRequest(
 
     public record ItemRequest(
             @NotNull UUID variantId,
-            @Min(1) long quantity,
-            @Positive BigDecimal unitPrice
+            @Min(1) long quantity
+
     ) {
     }
 }

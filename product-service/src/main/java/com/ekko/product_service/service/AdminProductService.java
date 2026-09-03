@@ -63,12 +63,24 @@ public class AdminProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductResponse> getAllProducts(int page, int size) {
-
+    public Page<ProductResponse> getAllProducts(
+            ProductStatus status,
+            int page,
+            int size
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return productRepository
-                .findByStatusAndDeletedAtIsNull(ProductStatus.ACTIVE, pageable)
-                .map(productMapper::toResponse);
+
+        Page<Product> products;
+
+        if (status != null) {
+            products = productRepository
+                    .findByStatusAndDeletedAtIsNull(status, pageable);
+        } else {
+            products = productRepository
+                    .findByDeletedAtIsNull(pageable);
+        }
+
+        return products.map(productMapper::toResponse);
     }
 
     private ProductPublishedEvent toPublishedEvent(Product product) {

@@ -2,6 +2,7 @@ package com.ekko.product_service.controller;
 
 import com.ekko.product_service.dto.request.RejectProductRequest;
 import com.ekko.product_service.dto.response.ProductResponse;
+import com.ekko.product_service.enums.ProductStatus;
 import com.ekko.product_service.service.AdminProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,9 +28,13 @@ public class AdminProductController {
 
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> getAllProducts(
+            @RequestParam(required = false) ProductStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(adminProductService.getAllProducts(page, size));
+
+        return ResponseEntity.ok(
+                adminProductService.getAllProducts(status, page, size)
+        );
     }
 
     @PatchMapping("/{id}/approve")
