@@ -39,8 +39,11 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/api/orders/*").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/orders/*/cancel").permitAll()
 
+                        .pathMatchers("/api/vendor-accounts/onboarding/**").permitAll()
+                        .pathMatchers("/webhooks/stripe").permitAll()
                         .pathMatchers("/test/oauth2").authenticated()
                         .pathMatchers("/test/relay").authenticated()
+
 
                         .anyExchange().authenticated()
                 )

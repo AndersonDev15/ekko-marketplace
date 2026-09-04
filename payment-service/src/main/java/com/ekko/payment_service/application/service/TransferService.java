@@ -31,24 +31,30 @@ public class TransferService implements ProcessTransfersUseCase {
 
     @Override
     public void execute(UUID paymentId) {
-        // Idempotency: if any transfer already exists for this payment, treat the process
-        // as already run and do not reprocess anything. NOTE: this deliberately does NOT
-        // retry only the FAILED vendors — manual retry is a future feature out of scope.
-        // When that retry is built, this guard should become "skip only vendors that already
-        // have a transfer row (SUCCEEDED or FAILED) and process the missing ones".
-        if (!paymentTransferRepositoryPort.findByPaymentId(paymentId).isEmpty()) {
+        if (paymentTransferRepositoryPort.findByPaymentId(paymentId)
+                .stream()
+                .anyMatch(t -> t.getStatus() == TransferStatus.SUCCEEDED)) {
             return;
         }
 
         Payment payment = paymentRepositoryPort.findById(paymentId)
-                .orElseThrow(() -> new IllegalStateException("Payment not found for id " + paymentId));
+                .orElseThrow(() -> new IllegalStateException(
+                        "Payment not found for id " + paymentId));
 
         for (VendorAllocation allocation : payment.getAllocations()) {
-            PaymentTransfer saved = paymentTransferRepositoryPort.save(transferFor(payment, allocation));
+            PaymentTransfer saved =
+                    paymentTransferRepositoryPort.save(
+                            transferFor(payment, allocation));
+
             if (saved.getStatus() == TransferStatus.FAILED) {
-                paymentEventPublisherPort.publishTransferFailed(toEvent(payment, saved));
+                paymentEventPublisherPort.publishTransferFailed(
+                        toEvent(payment, saved));
             }
         }
+    }
+
+    public void retry(UUID paymentId) {
+        execute(paymentId);
     }
 
     private TransferFailedEvent toEvent(Payment payment, PaymentTransfer transfer) {
@@ -94,6 +100,7 @@ public class TransferService implements ProcessTransfersUseCase {
                     payment.getId().toString());
             transfer.markSucceeded(stripeTransferId);
         } catch (PaymentGatewayException e) {
+            e.printStackTrace();
             transfer.markFailed();
         }
         return transfer;

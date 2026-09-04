@@ -112,6 +112,11 @@ spring:
                     fallbackUri: forward:/fallback/payments
                 - StripPrefix=1
 
+            - id: stripe-webhook
+              uri: lb://payment-service
+              predicates:
+                - Path=/webhooks/stripe
+
             - id: review-service
               uri: lb://review-service
               predicates:

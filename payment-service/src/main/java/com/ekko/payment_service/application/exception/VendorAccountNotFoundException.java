@@ -1,7 +1,10 @@
 package com.ekko.payment_service.application.exception;
 
+import lombok.Getter;
+
 import java.util.UUID;
 
+@Getter
 public class VendorAccountNotFoundException extends RuntimeException {
 
     private final UUID vendorId;
@@ -16,7 +19,4 @@ public class VendorAccountNotFoundException extends RuntimeException {
         this.vendorId = null;
     }
 
-    public UUID getVendorId() {
-        return vendorId;
-    }
 }

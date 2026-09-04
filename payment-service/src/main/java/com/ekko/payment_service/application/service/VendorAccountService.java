@@ -8,6 +8,7 @@ import com.ekko.payment_service.domain.model.VendorAccountResult;
 import com.ekko.payment_service.domain.enums.VendorAccountStatus;
 import com.ekko.payment_service.domain.model.VendorStripeAccount;
 import com.ekko.payment_service.domain.port.in.CreateVendorAccountUseCase;
+import com.ekko.payment_service.domain.port.in.RefreshOnboardingLinkByStripeAccountUseCase;
 import com.ekko.payment_service.domain.port.in.RefreshOnboardingLinkUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
 import com.ekko.payment_service.domain.port.out.VendorStripeAccountRepositoryPort;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class VendorAccountService implements CreateVendorAccountUseCase, RefreshOnboardingLinkUseCase {
+public class VendorAccountService implements CreateVendorAccountUseCase, RefreshOnboardingLinkUseCase, RefreshOnboardingLinkByStripeAccountUseCase {
 
     private final VendorStripeAccountRepositoryPort vendorStripeAccountRepositoryPort;
     private final PaymentGatewayPort paymentGatewayPort;
@@ -69,6 +70,25 @@ public class VendorAccountService implements CreateVendorAccountUseCase, Refresh
         return paymentGatewayPort.createAccountLink(
                 account.getStripeAccountId(),
                 onboardingRefreshUrl,
+                onboardingReturnUrl);
+    }
+
+    @Override
+    public String execute(String stripeAccountId) {
+
+        VendorStripeAccount account =
+                vendorStripeAccountRepositoryPort
+                        .findByStripeAccountId(stripeAccountId)
+                        .orElseThrow(() ->
+                                new VendorAccountNotFoundException(
+                                        stripeAccountId));
+
+        String refreshUrl = onboardingRefreshUrl
+                + "?accountId=" + stripeAccountId;
+
+        return paymentGatewayPort.createAccountLink(
+                account.getStripeAccountId(),
+                refreshUrl,
                 onboardingReturnUrl);
     }
 }

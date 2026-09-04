@@ -30,15 +30,28 @@ public class StripeWebhookController {
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String stripeSignatureHeader) {
 
+        log.info("- STRIPE WEBHOOK RECEIVED -");
+
         Event event;
         try {
-            event = Webhook.constructEvent(payload, stripeSignatureHeader, webhookSecret);
+            event = Webhook.constructEvent(
+                    payload,
+                    stripeSignatureHeader,
+                    webhookSecret
+            );
         } catch (SignatureVerificationException e) {
             log.warn("Rejected webhook with invalid Stripe signature: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
 
+        log.info(
+                "Stripe webhook received: type={}, id={}",
+                event.getType(),
+                event.getId()
+        );
+
         webhookDispatcherService.dispatch(event);
+
         return ResponseEntity.ok().build();
     }
 }

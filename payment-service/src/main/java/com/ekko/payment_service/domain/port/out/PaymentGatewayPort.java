@@ -17,4 +17,9 @@ public interface PaymentGatewayPort {
     String createConnectedAccount(String country, String email);
 
     String createAccountLink(String stripeAccountId, String refreshUrl, String returnUrl);
+
+
+    String  retrievePaymentIntentClientSecret(String paymentIntentId);
+
+    StripePaymentIntentSnapshot retrievePaymentIntent(String paymentIntentId);
 }

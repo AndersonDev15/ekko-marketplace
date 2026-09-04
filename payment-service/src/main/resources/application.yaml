@@ -47,9 +47,8 @@ stripe:
 
 app:
   stripe-onboarding:
-    refresh-url: ${STRIPE_ONBOARDING_REFRESH_URL:http://localhost:8084/vendor/onboarding/refresh}
-    return-url: ${STRIPE_ONBOARDING_RETURN_URL:http://localhost:8084/vendor/onboarding/return}
-
+    refresh-url: ${STRIPE_ONBOARDING_REFRESH_URL:http://localhost:8080/api/vendor-accounts/onboarding/refresh}
+    return-url: ${STRIPE_ONBOARDING_RETURN_URL:http://localhost:8080/api/vendor-accounts/onboarding/return}
 management:
   endpoints:
     web:

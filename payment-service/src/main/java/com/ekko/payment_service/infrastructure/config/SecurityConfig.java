@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/webhooks/stripe").permitAll()
                         .requestMatchers("/payments/**").permitAll()
+                        .requestMatchers("/vendor-accounts/onboarding/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth
