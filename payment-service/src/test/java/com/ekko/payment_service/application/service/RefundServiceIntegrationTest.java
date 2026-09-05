@@ -7,7 +7,6 @@ import com.ekko.payment_service.domain.model.Payment;
 import com.ekko.payment_service.domain.model.Refund;
 import com.ekko.payment_service.domain.enums.RefundReason;
 import com.ekko.payment_service.domain.enums.RefundStatus;
-import com.ekko.payment_service.domain.port.in.CreateRefundUseCase;
 import com.ekko.payment_service.domain.port.out.PaymentEventPublisherPort;
 import com.ekko.payment_service.domain.port.out.PaymentGatewayPort;
 import com.ekko.payment_service.domain.port.out.PaymentRepositoryPort;

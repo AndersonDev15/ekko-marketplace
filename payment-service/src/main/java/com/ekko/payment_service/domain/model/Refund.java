@@ -2,11 +2,13 @@ package com.ekko.payment_service.domain.model;
 
 import com.ekko.payment_service.domain.enums.RefundReason;
 import com.ekko.payment_service.domain.enums.RefundStatus;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Getter
 public class Refund {
 
     private final UUID id;
@@ -81,43 +83,9 @@ public class Refund {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public UUID getId() {
-        return id;
+    public void markRejected() {
+        this.status = RefundStatus.REJECTED;
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public UUID getPaymentId() {
-        return paymentId;
-    }
-
-    public String getStripeRefundId() {
-        return stripeRefundId;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public RefundReason getReason() {
-        return reason;
-    }
-
-    public RefundStatus getStatus() {
-        return status;
-    }
-
-    public UUID getRequestedBy() {
-        return requestedBy;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
 }

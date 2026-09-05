@@ -13,4 +13,7 @@ public interface RefundRepositoryPort {
     BigDecimal sumSucceededAmountByPaymentId(UUID paymentId);
 
     Optional<Refund> findByStripeRefundId(String stripeRefundId);
+
+    Optional<Refund> findById(UUID id);
+
 }

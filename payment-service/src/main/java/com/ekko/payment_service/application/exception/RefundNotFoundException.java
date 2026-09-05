@@ -1,15 +1,18 @@
 package com.ekko.payment_service.application.exception;
 
-public class RefundNotFoundException extends RuntimeException {
+import lombok.Getter;
 
-    private final String stripeRefundId;
+import java.util.UUID;
+
+@Getter
+public class RefundNotFoundException extends RuntimeException {
 
     public RefundNotFoundException(String stripeRefundId) {
         super("Refund not found for Stripe refund id " + stripeRefundId);
-        this.stripeRefundId = stripeRefundId;
     }
 
-    public String getStripeRefundId() {
-        return stripeRefundId;
+    public RefundNotFoundException(UUID refundId) {
+        super("Refund not found: " + refundId);
     }
+
 }

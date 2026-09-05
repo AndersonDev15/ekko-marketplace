@@ -45,4 +45,11 @@ public class RefundRepositoryAdapter implements RefundRepositoryPort {
         return refundJpaRepository.findByStripeRefundId(stripeRefundId)
                 .map(refundPersistenceMapper::toDomain);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Refund> findById(UUID id) {
+        return refundJpaRepository.findById(id)
+                .map(refundPersistenceMapper::toDomain);
+    }
 }

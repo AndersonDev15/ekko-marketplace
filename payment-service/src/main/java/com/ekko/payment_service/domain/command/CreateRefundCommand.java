@@ -9,7 +9,7 @@ public record CreateRefundCommand(
         UUID paymentId,
         BigDecimal amount,
         RefundReason reason,
-        String notes,
-        UUID requestedBy
-) {
-}
+        UUID requestedBy,
+        String guestEmail,
+        String notes
+) {}
