@@ -39,6 +39,9 @@ public class ReviewImage {
     @Column(nullable = false, length = 500)
     private String url;
 
+    @Column(name = "public_id")
+    private String publicId;
+
     @Column(name = "sort_order")
     private Integer sortOrder;
 

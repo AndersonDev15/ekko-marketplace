@@ -1,5 +1,6 @@
 package com.ekko.review_service.mapper;
 
+import com.ekko.review_service.dto.response.ReviewImageResponse;
 import com.ekko.review_service.entity.Review;
 import com.ekko.review_service.entity.ReviewImage;
 import com.ekko.review_service.dto.request.CreateReviewRequest;
@@ -29,6 +30,11 @@ public interface ReviewMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Review toEntity(CreateReviewRequest request, String customerId);
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "url", source = "url")
+    @Mapping(target = "sortOrder", source = "sortOrder")
+    ReviewImageResponse toImageResponse(ReviewImage image);
 
     default String reviewImageToUrl(ReviewImage image) {
         return image.getUrl();

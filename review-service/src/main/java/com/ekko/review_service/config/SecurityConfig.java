@@ -27,7 +27,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/products/*/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/product-reviews/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/reviews/eligible").authenticated()
                         .requestMatchers(HttpMethod.GET, "/reviews/*").permitAll()

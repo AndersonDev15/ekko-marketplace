@@ -1,5 +1,11 @@
 server:
   port: 8080
+  reactive:
+    session:
+      cookie:
+        same-site: lax
+        http-only: true
+        secure: true
 
 spring:
   config:
@@ -120,7 +126,7 @@ spring:
             - id: review-service
               uri: lb://review-service
               predicates:
-                - Path=/api/reviews/**
+                - Path=/api/reviews/**,/api/admin/reviews/**,/api/product-reviews/**
               filters:
                 - TokenRelay
                 - name: CircuitBreaker
@@ -131,7 +137,7 @@ spring:
             - id: notification-service
               uri: lb://notification-service
               predicates:
-                - Path=/api/notifications/**
+                - Path=/api/notifications/**,/api/admin/notification-templates/**
               filters:
                 - TokenRelay
                 - name: CircuitBreaker
@@ -200,3 +206,5 @@ logging:
     org.springframework.cloud.gateway: TRACE
     reactor.netty.http.client: DEBUG
     reactor.netty.http.server: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web.server.csrf: TRACE

@@ -6,7 +6,6 @@ import com.ekko.review_service.entity.ReviewImage;
 import com.ekko.review_service.enums.ReviewStatus;
 import com.ekko.review_service.event.RatingRecalculationRequestedEvent;
 import com.ekko.review_service.exception.ReviewAlreadyExistsException;
-import com.ekko.review_service.exception.ReviewEditWindowExpiredException;
 import com.ekko.review_service.exception.ReviewNotFoundException;
 import com.ekko.review_service.exception.ReviewOwnershipException;
 import com.ekko.review_service.mapper.ReviewMapper;
@@ -18,12 +17,12 @@ import com.ekko.review_service.dto.request.AdminUpdateContentRequest;
 import com.ekko.review_service.dto.request.CreateReviewRequest;
 import com.ekko.review_service.dto.response.ReviewResponse;
 import com.ekko.review_service.dto.request.UpdateReviewRequest;
+import com.ekko.review_service.validator.ReviewEditWindowValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +39,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
     private final ReviewImageRepository reviewImageRepository;
     private final ReviewMapper reviewMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ReviewEditWindowValidator editWindowValidator;
     private final ReviewEventPublisher reviewEventPublisher;
 
     @Override
@@ -54,12 +54,11 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
                 });
 
         Review saved = reviewRepository.save(reviewMapper.toEntity(request, customerId));
-        List<ReviewImage> images = replaceImages(saved, request.imageUrls());
 
         applicationEventPublisher.publishEvent(new RatingRecalculationRequestedEvent(saved.getProductId()));
         reviewEventPublisher.publishReviewCreated(toCreatedEvent(saved, eligible.getSellerKeycloakId()));
 
-        return reviewMapper.toResponse(saved, images);
+        return reviewMapper.toResponse(saved, List.of());
     }
 
     @Override
@@ -69,21 +68,14 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
                 .orElseThrow(ReviewNotFoundException::new);
 
         assertOwnership(review, customerId);
+        editWindowValidator.assertWithinWindow(review.getCreatedAt());
 
-        Duration age = Duration.between(review.getCreatedAt(), LocalDateTime.now());
-        if (age.toDays() > EDIT_WINDOW_DAYS) {
-            throw new ReviewEditWindowExpiredException();
-        }
+
 
         Integer previousRating = review.getRating();
         review.setRating(request.rating());
         review.setTitle(request.title());
         review.setComment(request.comment());
-
-        if (request.imageUrls() != null) {
-            reviewImageRepository.deleteByReviewId(reviewId);
-            replaceImages(review, request.imageUrls());
-        }
 
         if (ratingChanged(previousRating, review.getRating())) {
             applicationEventPublisher.publishEvent(new RatingRecalculationRequestedEvent(review.getProductId()));
@@ -91,7 +83,6 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
 
         return toResponse(review);
     }
-
     @Override
     @Transactional
     public void deleteReview(UUID reviewId, String customerId) {
@@ -166,20 +157,6 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         return previousRating != null && !previousRating.equals(newRating);
     }
 
-    private List<ReviewImage> replaceImages(Review review, List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty()) {
-            return List.of();
-        }
-        List<ReviewImage> images = new ArrayList<>(imageUrls.size());
-        for (int i = 0; i < imageUrls.size(); i++) {
-            images.add(reviewImageRepository.save(ReviewImage.builder()
-                    .review(review)
-                    .url(imageUrls.get(i))
-                    .sortOrder(i)
-                    .build()));
-        }
-        return images;
-    }
 
     private ReviewResponse toResponse(Review review) {
         List<ReviewImage> images = reviewImageRepository.findByReviewIdOrderBySortOrderAsc(review.getId());

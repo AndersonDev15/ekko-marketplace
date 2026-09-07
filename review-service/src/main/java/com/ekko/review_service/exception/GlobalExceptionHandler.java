@@ -61,12 +61,27 @@ public class GlobalExceptionHandler {
                 message.isEmpty() ? "Validation failed" : message);
     }
 
+    @ExceptionHandler(ReviewImageLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleReviewImageLimitExceeded(ReviewImageLimitExceededException ex) {
+        return response(HttpStatus.BAD_REQUEST, "REVIEW_IMAGE_LIMIT_EXCEEDED", ex.getMessage());
+    }
+
+    @ExceptionHandler(ReviewImageNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleReviewImageNotFound(ReviewImageNotFoundException ex) {
+        return response(HttpStatus.NOT_FOUND, "REVIEW_IMAGE_NOT_FOUND", ex.getMessage());
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
         String message = ex.getConstraintViolations().stream()
                 .map(violation -> violation.getPropertyPath().toString() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
         return response(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", message);
+    }
+
+    @ExceptionHandler(ImageUploadException.class)
+    public ResponseEntity<ErrorResponse> handleImageUpload(ImageUploadException ex) {
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, "IMAGE_UPLOAD_FAILED", ex.getMessage());
     }
 
     private ResponseEntity<ErrorResponse> response(HttpStatus status, String error, String message) {

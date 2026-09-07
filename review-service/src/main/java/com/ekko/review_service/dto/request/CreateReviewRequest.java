@@ -15,7 +15,6 @@ public record CreateReviewRequest(
         @NotNull UUID orderItemId,
         @NotNull @Min(1) @Max(5) Integer rating,
         @Size(max = 255) String title,
-        String comment,
-        List<@NotBlank @Size(max = 500) String> imageUrls
+        String comment
 ) {
 }
