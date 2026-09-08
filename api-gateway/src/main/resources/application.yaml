@@ -144,6 +144,19 @@ spring:
                   args:
                     name: notification-cb
                 - StripPrefix=1
+                
+            - id: identity-service
+              uri: lb://identity-service
+              predicates:
+                - Path=/api/identity/**
+              filters:
+                - TokenRelay
+                - name: CircuitBreaker
+                  args:
+                    name: identity-cb
+                    fallbackUri: forward:/fallback/identity
+                - StripPrefix=1
+
 
 eureka:
   client:

@@ -205,6 +205,34 @@ services:
     networks:
       - ekko-network
 
+  identity-db:
+    image: postgres:16-alpine
+    container_name: ekko-identity-db
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5439:5432"
+    volumes:
+      - identity_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d identity_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ekko-network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ekko-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - ekko-network
+
 volumes:
   keycloak_data:
   redis_data:
@@ -216,6 +244,7 @@ volumes:
   notification_data:
   rabbitmq_data:
   minio_data:
+  identity_data:
 
 networks:
   ekko-network:

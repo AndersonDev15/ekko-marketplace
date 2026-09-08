@@ -1,0 +1,70 @@
+server:
+  port: 8087
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: identity-service
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5439}/identity_db
+    username: ${DB_USER:ekko}
+    password: ${DB_PASSWORD:ekko123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:ekko}
+    password: ${RABBITMQ_PASSWORD:ekko123}
+
+  flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+keycloak:
+  admin:
+    url: ${KEYCLOAK_URL:http://localhost:8180}
+    realm: ${KEYCLOAK_REALM:ekko}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:identity-service}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
+
+eureka:
+  client:
+    enabled: true
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    org.keycloak: DEBUG

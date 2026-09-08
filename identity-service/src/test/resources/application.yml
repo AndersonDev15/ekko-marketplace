@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: identity-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5435/identity_service_db_test
+    username: ekko
+    password: ekko123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: false
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ekko
+    password: ekko123
+
+keycloak:
+  admin:
+    url: http://localhost:8180
+    realm: ekko
+    client-id: identity-service
+    client-secret: secret
+
+logging:
+  level:
+    com.ekko.identity_service: DEBUG
+    org.springframework.security: DEBUG

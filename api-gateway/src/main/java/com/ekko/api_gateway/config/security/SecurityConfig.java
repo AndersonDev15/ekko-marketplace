@@ -43,6 +43,8 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/orders").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/orders/*").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/orders/*/cancel").permitAll()
+
+                        .pathMatchers(HttpMethod.POST, "/api/identity/password/forgot").permitAll()
                         .pathMatchers("/api/vendor-accounts/onboarding/**").permitAll()
                         .pathMatchers("/webhooks/stripe").permitAll()
                         .pathMatchers("/csrf").permitAll()
