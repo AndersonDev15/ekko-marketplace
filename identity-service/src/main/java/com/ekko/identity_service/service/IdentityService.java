@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +28,8 @@ public class IdentityService {
     private final KeycloakService keycloakService;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+
+    private static final Duration MAX_AUTH_AGE = Duration.ofMinutes(5);
 
     @Transactional
     public RegisterResponse registerCustomer(RegisterRequest request) {
@@ -77,7 +80,7 @@ public class IdentityService {
     public UpdateCredentialsResponse updateCredentials(UpdateCredentialsRequest request) {
         String keycloakId = getCurrentUserKeycloakId();
         keycloakService.updateUser(keycloakId, request.email(), request.firstName(), request.lastName());
-        
+
         var user = keycloakService.getUserById(keycloakId);
         return new UpdateCredentialsResponse(
                 keycloakId,
@@ -90,10 +93,28 @@ public class IdentityService {
 
     @Transactional
     public PasswordChangedResponse changePassword(ChangePasswordRequest request) {
+        validateRecentAuthentication();
         String keycloakId = getCurrentUserKeycloakId();
-        keycloakService.changePassword(keycloakId, request.currentPassword(), request.newPassword());
+        keycloakService.changePassword(keycloakId, request.newPassword());
         publishPasswordChangedEvent(keycloakId);
         return new PasswordChangedResponse(keycloakId, Instant.now());
+    }
+
+    private void validateRecentAuthentication() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (!(auth.getPrincipal() instanceof Jwt jwt)) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+
+        Long authTimeEpoch = jwt.getClaim("auth_time");
+        if (authTimeEpoch == null) {
+            throw new StepUpAuthRequiredException("Token does not contain auth_time claim");
+        }
+
+        Instant authTime = Instant.ofEpochSecond(authTimeEpoch);
+        if (authTime.isBefore(Instant.now().minus(MAX_AUTH_AGE))) {
+            throw new StepUpAuthRequiredException("Recent re-authentication required to change password");
+        }
     }
 
     private void publishPasswordChangedEvent(String keycloakId) {

@@ -11,9 +11,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -24,16 +21,10 @@ public class KeycloakService {
 
     private final Keycloak keycloak;
     private final String realm;
-    private final String serverUrl;
-    private final String clientId;
-    private final String clientSecret;
 
     public KeycloakService(Keycloak keycloak, KeycloakProperties properties) {
         this.keycloak = keycloak;
         this.realm = properties.getRealm();
-        this.serverUrl = properties.getUrl();
-        this.clientId = properties.getClientId();
-        this.clientSecret = properties.getClientSecret();
     }
 
     private RealmResource realmResource() {
@@ -141,16 +132,7 @@ public class KeycloakService {
         }
     }
 
-    public void changePassword(String userId, String currentPassword, String newPassword) {
-        // First validate the current password by attempting to login with it
-        UserRepresentation user = getUserById(userId);
-        if (user == null) {
-            throw new KeycloakCommunicationException("User not found: " + userId);
-        }
-        
-        validateCurrentPassword(user.getUsername(), currentPassword);
-        
-        // If validation succeeds, apply the new password
+    public void changePassword(String userId, String newPassword) {
         try {
             UserResource userResource = usersResource().get(userId);
 
@@ -170,35 +152,6 @@ public class KeycloakService {
             throw new KeycloakCommunicationException("Failed to change password", e);
         } catch (Exception e) {
             throw new KeycloakCommunicationException("Failed to change password", e);
-        }
-    }
-
-    private void validateCurrentPassword(String username, String currentPassword) {
-        String tokenUrl = serverUrl + "/realms/" + realm + "/protocol/openid-connect/token";
-        
-        RestClient restClient = RestClient.create();
-        
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("grant_type", "password");
-        formData.add("client_id", clientId);
-        formData.add("client_secret", clientSecret);
-        formData.add("username", username);
-        formData.add("password", currentPassword);
-        
-        try {
-            restClient.post()
-                    .uri(tokenUrl)
-                    .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
-                    .body(formData)
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            if (e.getStatusCode().value() == 400 || e.getStatusCode().value() == 401) {
-                throw new InvalidPasswordException("Current password is incorrect");
-            }
-            throw new KeycloakCommunicationException("Failed to validate current password", e);
-        } catch (Exception e) {
-            throw new KeycloakCommunicationException("Failed to validate current password", e);
         }
     }
 

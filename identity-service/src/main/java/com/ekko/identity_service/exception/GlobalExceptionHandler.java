@@ -25,6 +25,11 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, "INVALID_PASSWORD", ex.getDetail(), null);
     }
 
+    @ExceptionHandler(StepUpAuthRequiredException.class)
+    public ResponseEntity<ErrorResponse> handleStepUpAuthRequired(StepUpAuthRequiredException ex) {
+        return response(HttpStatus.FORBIDDEN, "STEP_UP_AUTH_REQUIRED", ex.getMessage(), null);
+    }
+
     @ExceptionHandler(KeycloakCommunicationException.class)
     public ResponseEntity<ErrorResponse> handleKeycloakCommunication(KeycloakCommunicationException ex) {
         log.error("Keycloak communication failure", ex);

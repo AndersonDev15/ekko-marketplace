@@ -5,6 +5,7 @@ import com.ekko.identity_service.dto.response.*;
 import com.ekko.identity_service.entity.OutboxEvent;
 import com.ekko.identity_service.exception.EmailAlreadyExistsException;
 import com.ekko.identity_service.exception.InvalidPasswordException;
+import com.ekko.identity_service.exception.StepUpAuthRequiredException;
 import com.ekko.identity_service.keycloak.KeycloakService;
 import com.ekko.identity_service.repository.OutboxEventRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -146,18 +148,21 @@ class IdentityServiceTest {
     }
 
     @Test
-    void changePassword_shouldValidateCurrentPasswordAndChange() {
+    void changePassword_withRecentAuthTime_shouldChangePasswordAndPublishEvent() {
         String keycloakId = UUID.randomUUID().toString();
-        ChangePasswordRequest request = new ChangePasswordRequest("oldPass", "newPassword123");
+        ChangePasswordRequest request = new ChangePasswordRequest("newPassword123");
         
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(keycloakId);
+        // auth_time within 5 minutes (recent)
+        long authTime = Instant.now().minus(2, ChronoUnit.MINUTES).getEpochSecond();
+        when(jwt.getClaim("auth_time")).thenReturn(authTime);
 
         PasswordChangedResponse response = identityService.changePassword(request);
 
         assertThat(response.keycloakId()).isEqualTo(keycloakId);
-        verify(keycloakService).changePassword(keycloakId, "oldPass", "newPassword123");
+        verify(keycloakService).changePassword(keycloakId, "newPassword123");
         
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxEventRepository).save(captor.capture());
@@ -166,37 +171,57 @@ class IdentityServiceTest {
     }
 
     @Test
+    void changePassword_withOldAuthTime_shouldThrowStepUpAuthRequired() {
+        String keycloakId = UUID.randomUUID().toString();
+        ChangePasswordRequest request = new ChangePasswordRequest("newPassword123");
+        
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(jwt);
+        // auth_time older than 5 minutes
+        long authTime = Instant.now().minus(10, ChronoUnit.MINUTES).getEpochSecond();
+        when(jwt.getClaim("auth_time")).thenReturn(authTime);
+
+        assertThatThrownBy(() -> identityService.changePassword(request))
+                .isInstanceOf(StepUpAuthRequiredException.class)
+                .hasMessageContaining("Recent re-authentication required to change password");
+        
+        verify(keycloakService, never()).changePassword(anyString(), anyString());
+    }
+
+    @Test
+    void changePassword_withoutAuthTimeClaim_shouldThrowStepUpAuthRequired() {
+        String keycloakId = UUID.randomUUID().toString();
+        ChangePasswordRequest request = new ChangePasswordRequest("newPassword123");
+        
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(jwt);
+        // No auth_time claim
+        when(jwt.getClaim("auth_time")).thenReturn(null);
+
+        assertThatThrownBy(() -> identityService.changePassword(request))
+                .isInstanceOf(StepUpAuthRequiredException.class)
+                .hasMessageContaining("Token does not contain auth_time claim");
+        
+        verify(keycloakService, never()).changePassword(anyString(), anyString());
+    }
+
+    @Test
     void changePassword_whenInvalidPassword_shouldThrowException() {
         String keycloakId = UUID.randomUUID().toString();
-        ChangePasswordRequest request = new ChangePasswordRequest("oldPass", "weak");
+        ChangePasswordRequest request = new ChangePasswordRequest("weak");
         
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(jwt);
         when(jwt.getSubject()).thenReturn(keycloakId);
+        long authTime = Instant.now().minus(2, ChronoUnit.MINUTES).getEpochSecond();
+        when(jwt.getClaim("auth_time")).thenReturn(authTime);
         
         doThrow(new InvalidPasswordException("Password too weak"))
-                .when(keycloakService).changePassword(anyString(), anyString(), anyString());
+                .when(keycloakService).changePassword(anyString(), anyString());
 
         assertThatThrownBy(() -> identityService.changePassword(request))
                 .isInstanceOf(InvalidPasswordException.class)
                 .hasMessageContaining("Password does not meet policy requirements");
-    }
-
-    @Test
-    void changePassword_whenCurrentPasswordIncorrect_shouldThrowException() {
-        String keycloakId = UUID.randomUUID().toString();
-        ChangePasswordRequest request = new ChangePasswordRequest("wrongPass", "newPassword123");
-        
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(jwt);
-        when(jwt.getSubject()).thenReturn(keycloakId);
-        
-        doThrow(new InvalidPasswordException("Current password is incorrect"))
-                .when(keycloakService).changePassword(anyString(), anyString(), anyString());
-
-        assertThatThrownBy(() -> identityService.changePassword(request))
-                .isInstanceOf(InvalidPasswordException.class)
-                .hasMessageContaining("Current password is incorrect");
     }
 
     @Test
