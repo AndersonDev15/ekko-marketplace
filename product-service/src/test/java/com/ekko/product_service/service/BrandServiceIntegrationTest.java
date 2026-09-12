@@ -36,7 +36,7 @@ class BrandServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     @Test
     void createBrand_persisteMarcaActiva() {
         BrandResponse response = brandService.createBrand(
-                new CreateBrandRequest("Samsung", "samsung", "https://cdn.example.com/samsung.png", "Samsung brand"));
+                new CreateBrandRequest("Samsung", "Samsung brand"));
 
         assertEquals("Samsung", response.name());
         assertEquals("samsung", response.slug());
@@ -50,16 +50,22 @@ class BrandServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         brandRepository.flush();
 
         assertThrows(DuplicateBrandNameException.class, () ->
-                brandService.createBrand(new CreateBrandRequest("Samsung", "samsung-x", null, null)));
+                brandService.createBrand(new CreateBrandRequest("Samsung", "Samsung brand x")));
     }
 
     @Test
-    void createBrand_slugDuplicadoLanzaDuplicateSlug() {
+    void createBrand_slugDuplicadoGeneraSlugUnico() {
         persistBrand("Samsung", "samsung");
         brandRepository.flush();
+        // Create another brand with the same slug to trigger unique generation
+        persistBrand("Samsung X", "samsungx");
+        brandRepository.flush();
 
-        assertThrows(DuplicateBrandSlugException.class, () ->
-                brandService.createBrand(new CreateBrandRequest("Samsung-X", "samsung", null, null)));
+        // Use a different name that generates the same slug "samsungx"
+        BrandResponse response = brandService.createBrand(
+                new CreateBrandRequest("SamsungX", "Samsung brand"));
+
+        assertEquals("samsungx-2", response.slug());
     }
 
     // ------------------------------------------------------------- updateBrand
@@ -70,7 +76,7 @@ class BrandServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         brandRepository.flush();
 
         BrandResponse response = brandService.updateBrand(brand.getId(),
-                new UpdateBrandRequest("Actualizado", "actualizado", null, "nueva desc"));
+                new UpdateBrandRequest("Actualizado", "nueva desc"));
 
         assertEquals("Actualizado", response.name());
         assertEquals("actualizado", response.slug());
@@ -81,7 +87,7 @@ class BrandServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     void updateBrand_noExisteLanzaNotFound() {
         assertThrows(BrandNotFoundException.class, () ->
                 brandService.updateBrand(UUID.randomUUID(),
-                        new UpdateBrandRequest("X", "x", null, null)));
+                        new UpdateBrandRequest("X", "x")));
     }
 
     @Test
@@ -92,7 +98,7 @@ class BrandServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
         assertThrows(DuplicateBrandNameException.class, () ->
                 brandService.updateBrand(brand.getId(),
-                        new UpdateBrandRequest("Otro", null, null, null)));
+                        new UpdateBrandRequest("Otro", null)));
     }
 
     @Test
@@ -101,7 +107,7 @@ class BrandServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         brandRepository.flush();
 
         BrandResponse response = brandService.updateBrand(brand.getId(),
-                new UpdateBrandRequest("Apple", null, null, null));
+                new UpdateBrandRequest("Apple", null));
 
         assertEquals("Apple", response.name());
     }

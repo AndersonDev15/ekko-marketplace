@@ -44,6 +44,12 @@ public class RabbitMQConfig {
     public static final String SELLER_DOCUMENT_REVIEW_ROUTING_KEY = "seller.document.review";
     public static final String SELLER_SLUG_CHANGED_ROUTING_KEY = "seller.slug.changed";
 
+
+    /**
+     * Configuracion de eventos para el servicio de seller-service.
+     * Se declaran los exchanges, colas y bindings necesarios
+     * para recibir eventos de order-service
+     */
     @Bean
     public DirectExchange orderExchange() {
         // order-service already declares order.exchange as a DirectExchange.
@@ -87,6 +93,12 @@ public class RabbitMQConfig {
                 .with(ORDER_CONFIRMED_ROUTING_KEY);
     }
 
+
+    /**
+     * Configuracion de eventos para el servicio de seller-service.
+     * Se declaran los exchanges, colas y bindings necesarios
+     * para recibir eventos de review-service
+     */
     @Bean
     public DirectExchange reviewExchange() {
         // review-service already declares review.exchange as a DirectExchange.
@@ -122,6 +134,12 @@ public class RabbitMQConfig {
                 .with(REVIEW_CREATED_ROUTING_KEY);
     }
 
+
+    /**
+     * Configuracion de eventos para el servicio de seller-service.
+     * Se declaran los exchanges, colas y bindings necesarios
+     * para recibir eventos de product-service
+     */
     @Bean
     public DirectExchange productExchange() {
         // product-service already declares product.exchange as a DirectExchange.
@@ -184,6 +202,13 @@ public class RabbitMQConfig {
                 .to(sellerDlx)
                 .with(PRODUCT_DEACTIVATED_ROUTING_KEY);
     }
+
+
+    /**
+     * Configuracion de eventos para el servicio de seller-service.
+     * Se declaran los exchanges, colas y bindings necesarios
+     * para publicar eventos hacia otros servicios
+     */
 
     @Bean
     public DirectExchange sellerExchange() {

@@ -1,38 +1,42 @@
 package com.ekko.seller_service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
-import org.springframework.boot.jdbc.autoconfigure.JdbcTemplateAutoConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
-@ImportAutoConfiguration({FlywayAutoConfiguration.class, JdbcTemplateAutoConfiguration.class})
+@ContextConfiguration(classes = {SellerServiceApplication.class, TestContainersConfig.class})
 @TestPropertySource(properties = "spring.jpa.hibernate.ddl-auto=validate")
 public abstract class AbstractPostgresRepositoryTest {
 
-    protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-            DockerImageName.parse("postgres:16.14"))
-            .withDatabaseName("seller_db")
-            .withUsername("ekko")
-            .withPassword("ekko123");
-
-    static {
-        POSTGRES.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(POSTGRES::stop));
-    }
-
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        PostgreSQLContainer<?> postgres = TestContainersConfig.postgresContainer();
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
     }
 
     @Autowired
     protected JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void cleanDatabase() {
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE order_confirmations,
+                           product_events,
+                           review_confirmations,
+                           seller_documents,
+                           seller_bank_accounts,
+                           seller_addresses,
+                           seller_metrics,
+                           sellers
+                RESTART IDENTITY CASCADE
+                """);
+    }
 }

@@ -217,10 +217,10 @@ class AdminProductServiceTest {
         Page<Product> page = new PageImpl<>(List.of(p1, p2),
                 PageRequest.of(1, 20), 2);
 
-        when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(productRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(page);
         when(productMapper.toResponse(any())).thenReturn(mock(ProductResponse.class));
 
-        Page<ProductResponse> result = adminProductService.getAllProducts(1, 20);
+        Page<ProductResponse> result = adminProductService.getAllProducts(null, 1, 20);
 
         assertEquals(2, result.getContent().size());
         assertEquals(2, result.getNumberOfElements());
@@ -231,12 +231,12 @@ class AdminProductServiceTest {
     void getAllProducts_respetaLaPaginacion() {
         Page<Product> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
 
-        when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(productRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(page);
 
-        adminProductService.getAllProducts(0, 20);
+        adminProductService.getAllProducts(null, 0, 20);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(productRepository).findAll(captor.capture());
+        verify(productRepository).findByDeletedAtIsNull(captor.capture());
         assertEquals(0, captor.getValue().getPageNumber());
         assertEquals(20, captor.getValue().getPageSize());
     }
@@ -245,9 +245,9 @@ class AdminProductServiceTest {
     void getAllProducts_retornaPaginaVaciaCuandoNoHayProductos() {
         Page<Product> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
 
-        when(productRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+        when(productRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(emptyPage);
 
-        Page<ProductResponse> result = adminProductService.getAllProducts(0, 20);
+        Page<ProductResponse> result = adminProductService.getAllProducts(null, 0, 20);
 
         assertEquals(0, result.getContent().size());
         assertEquals(0, result.getTotalElements());

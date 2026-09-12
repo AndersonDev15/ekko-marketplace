@@ -2,6 +2,7 @@ package com.ekko.seller_service;
 
 import com.ekko.seller_service.support.JwtTestUtils;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
 class SellerAddressMockMvcTest extends AbstractPostgresIntegrationTest {
 
     private static final String ADDRESS_JSON = """

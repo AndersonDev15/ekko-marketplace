@@ -1,4 +1,4 @@
-package com.ekko.payment_service.infrastructure.persistence.adapter.in.web;
+package com.ekko.payment_service.infrastructure.persistence.adapter.in.web.controller;
 
 import com.ekko.payment_service.application.exception.PaymentAccessDeniedException;
 import com.ekko.payment_service.domain.model.Payment;

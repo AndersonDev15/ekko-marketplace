@@ -68,7 +68,7 @@ class ImageServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         CloudinaryService.UploadResult upload = new CloudinaryService.UploadResult(
                 "products/iphone-16",
                 "https://res.cloudinary.com/gqrn3sdp/image/upload/v1/products/iphone-16.jpg");
-        when(cloudinaryService.upload(file)).thenReturn(upload);
+        when(cloudinaryService.upload(file, "products")).thenReturn(upload);
 
         ProductImageResponse response = imageService.uploadImage(product.getId(), file, false, sellerId);
 

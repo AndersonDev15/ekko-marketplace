@@ -23,6 +23,7 @@ import com.ekko.order_service.infrastructure.persistence.repository.OrderStatusH
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
@@ -47,6 +48,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+@SpringBootTest
 class OrderPaymentCallbackServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired

@@ -56,13 +56,14 @@ class SellerDocumentRepositoryTest extends AbstractPostgresRepositoryTest {
     }
 
     @Test
-    void constraintUkSellerDocumentType_mismoTipoMismoVendedor_lanzaViolacion() {
+    void mismoTipoDistintoEstado_esPermitido() {
         Seller seller = saveSeller("kc-001", "a@ekko.test");
         documentRepository.saveAndFlush(document(seller, DocumentType.ID_CARD));
 
-        assertThatThrownBy(() -> documentRepository.saveAndFlush(
-                document(seller, DocumentType.ID_CARD, DocumentStatus.APPROVED)))
-                .isInstanceOf(DataIntegrityViolationException.class);
+        SellerDocument approved = document(seller, DocumentType.ID_CARD, DocumentStatus.APPROVED);
+        documentRepository.saveAndFlush(approved);
+
+        assertThat(documentRepository.findBySellerId(seller.getId())).hasSize(2);
     }
 
     @Test
@@ -94,14 +95,15 @@ class SellerDocumentRepositoryTest extends AbstractPostgresRepositoryTest {
 
     @Test
     void constraintsYIndicesUnicosExistenEnEsquema() {
-        Integer constraints = jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM pg_constraint WHERE conname IN ('uk_seller_document_type')", Integer.class);
         Integer pendingIndex = jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'uk_seller_document_pending'",
                 Integer.class);
+        Integer approvedIndex = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'uk_seller_document_approved'",
+                Integer.class);
 
-        assertThat(constraints).isEqualTo(1);
         assertThat(pendingIndex).isEqualTo(1);
+        assertThat(approvedIndex).isEqualTo(1);
     }
 
     private Seller saveSeller(String keycloakId, String email) {

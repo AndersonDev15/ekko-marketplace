@@ -185,7 +185,7 @@ class VariantControllerTest {
         when(variantService.deactivateVariant(eq(PRODUCT_ID), eq(VARIANT_ID), eq(SELLER_ID)))
                 .thenReturn(response);
 
-        mockMvc.perform(patch(baseUrl() + "/" + VARIANT_ID + "/deactivate")
+        mockMvc.perform(patch(baseUrl() + "/" + VARIANT_ID + "/desactivate")
                         .with(sellerAuth()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(VARIANT_ID.toString()))
@@ -196,13 +196,13 @@ class VariantControllerTest {
 
     @Test
     void deactivateVariant_devuelve401SinJWT() throws Exception {
-        mockMvc.perform(patch(baseUrl() + "/" + VARIANT_ID + "/deactivate"))
+        mockMvc.perform(patch(baseUrl() + "/" + VARIANT_ID + "/desactivate"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void deactivateVariant_devuelve403ConRolIncorrecto() throws Exception {
-        mockMvc.perform(patch(baseUrl() + "/" + VARIANT_ID + "/deactivate")
+        mockMvc.perform(patch(baseUrl() + "/" + VARIANT_ID + "/desactivate")
                         .with(customerAuth()))
                 .andExpect(status().isForbidden());
     }

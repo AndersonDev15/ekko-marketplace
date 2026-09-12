@@ -1,6 +1,7 @@
 package com.ekko.seller_service.messaging;
 
 import com.ekko.seller_service.messaging.dto.consume.OrderConfirmedEvent;
+import com.ekko.seller_service.messaging.event.OrderConfirmedEventListener;
 import com.ekko.seller_service.service.OrderConfirmedMetricsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

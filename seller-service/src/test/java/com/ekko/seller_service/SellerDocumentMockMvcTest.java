@@ -6,6 +6,7 @@ import com.ekko.seller_service.support.JwtTestUtils;
 import com.ekko.seller_service.support.SellerTestDataBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -19,6 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
 class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     private static final MockMultipartFile DOCUMENT_FILE = new MockMultipartFile(

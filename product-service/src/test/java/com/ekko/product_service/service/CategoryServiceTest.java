@@ -14,10 +14,11 @@ import com.ekko.product_service.exception.DuplicateSlugException;
 import com.ekko.product_service.exception.InactiveParentCategoryException;
 import com.ekko.product_service.repository.CategoryRepository;
 import com.ekko.product_service.repository.ProductRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -43,15 +44,17 @@ class CategoryServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private CloudinaryService cloudinaryService;
+
+    @Spy
+    private SlugService slugService = new SlugService(productRepository);
+
+    @InjectMocks
     private CategoryService categoryService;
 
     private final UUID categoryId = UUID.randomUUID();
     private final UUID parentId = UUID.randomUUID();
-
-    @BeforeEach
-    void setUp() {
-        categoryService = new CategoryService(categoryRepository, productRepository);
-    }
 
     // ------------------------------------------------------------- createCategory
 
@@ -64,14 +67,19 @@ class CategoryServiceTest {
 
         verify(categoryRepository).save(any());
         assertTrue(response.isActive());
+        assertEquals("electronica", response.slug());
     }
 
     @Test
-    void createCategory_slugDuplicadoLanzaDuplicateSlug() {
-        when(categoryRepository.existsBySlug("electronica")).thenReturn(true);
+    void createCategory_slugDuplicadoGeneraSlugUnico() {
+        when(categoryRepository.existsBySlug("electronica")).thenReturn(true, false);
+        when(categoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThrows(DuplicateSlugException.class,
-                () -> categoryService.createCategory(createRequest("electronica")));
+        CategoryResponse response = categoryService.createCategory(createRequestWithoutParent("electronica"));
+
+        verify(categoryRepository).save(any());
+        assertTrue(response.isActive());
+        assertEquals("electronica-2", response.slug());
     }
 
     @Test
@@ -114,7 +122,7 @@ class CategoryServiceTest {
         when(categoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         CategoryResponse response = categoryService.updateCategory(categoryId,
-                new UpdateCategoryRequest("Celulares", "celulares", null, null, null, null));
+                new UpdateCategoryRequest("Celulares", "celulares"));
 
         assertEquals("Celulares", response.name());
         assertEquals("celulares", response.slug());
@@ -124,51 +132,37 @@ class CategoryServiceTest {
     void updateCategory_noExisteLanzaNotFound() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.empty());
 
-        assertThrows(CategoryNotFoundException.class, () -> categoryService.updateCategory(categoryId, new UpdateCategoryRequest(null, null, null, null, null, null)));
+        assertThrows(CategoryNotFoundException.class, () -> categoryService.updateCategory(categoryId, new UpdateCategoryRequest(null, null)));
     }
 
     @Test
-    void updateCategory_slugDuplicadoLanzaDuplicateSlug() {
+    void updateCategory_slugDuplicadoGeneraSlugUnico() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(activeCategory(categoryId)));
-        when(categoryRepository.existsBySlugAndIdNot("dup", categoryId)).thenReturn(true);
+        when(categoryRepository.existsBySlugAndIdNot("electronica", categoryId)).thenReturn(true, false);
+        when(categoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThrows(DuplicateSlugException.class, () -> categoryService.updateCategory(categoryId,
-                new UpdateCategoryRequest(null, "dup", null, null, null, null)));
+        CategoryResponse response = categoryService.updateCategory(categoryId,
+                new UpdateCategoryRequest("Electrónica", "desc"));
+
+        assertEquals("Electrónica", response.name());
+        assertEquals("electronica-2", response.slug());
     }
 
     @Test
-    void updateCategory_moverBajoSuHijoLanzaCyclic() {
-        Category self = activeCategory(categoryId);
-        Category child = activeCategory(UUID.randomUUID());
-        child.setParent(self);
+    void updateCategory_cambioNombreGeneraSlugUnico() {
+        Category category = activeCategory(categoryId);
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(categoryRepository.existsBySlugAndIdNot("electronica", categoryId)).thenReturn(true, false);
+        when(categoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(self));
-        when(categoryRepository.findById(child.getId())).thenReturn(Optional.of(child));
+        CategoryResponse response = categoryService.updateCategory(categoryId,
+                new UpdateCategoryRequest("Electrónica", "desc"));
 
-        assertThrows(CyclicCategoryException.class, () -> categoryService.updateCategory(categoryId,
-                new UpdateCategoryRequest(null, null, null, null, child.getId(), null)));
+        assertEquals("Electrónica", response.name());
+        assertEquals("electronica-2", response.slug());
     }
 
-    @Test
-    void updateCategory_moverseASiMismoLanzaCyclic() {
-        Category self = activeCategory(categoryId);
-        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(self));
-
-        assertThrows(CyclicCategoryException.class, () -> categoryService.updateCategory(categoryId,
-                new UpdateCategoryRequest(null, null, null, null, categoryId, null)));
-    }
-
-    @Test
-    void updateCategory_parentInactivoLanzaInactiveParent() {
-        Category self = activeCategory(categoryId);
-        Category parent = activeCategory(parentId);
-        parent.setIsActive(false);
-        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(self));
-        when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));
-
-        assertThrows(InactiveParentCategoryException.class, () -> categoryService.updateCategory(categoryId,
-                new UpdateCategoryRequest(null, null, null, null, parentId, null)));
-    }
+    // Tests for parent movement are not applicable since updateCategory only supports name/description changes
 
     // ------------------------------------------------------------- getCategoryTree
 
@@ -231,11 +225,11 @@ class CategoryServiceTest {
     // ------------------------------------------------------------- helpers
 
     private CreateCategoryRequest createRequest(String slug) {
-        return new CreateCategoryRequest("Electrónica", slug, null, null, parentId);
+        return new CreateCategoryRequest("Electrónica", "Descripción", parentId);
     }
 
     private CreateCategoryRequest createRequestWithoutParent(String slug) {
-        return new CreateCategoryRequest("Electrónica", slug, null, null, null);
+        return new CreateCategoryRequest("Electrónica", "Descripción", null);
     }
 
     private Category activeCategory(Category parent) {

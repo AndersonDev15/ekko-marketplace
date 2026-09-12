@@ -7,6 +7,7 @@ import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
+import com.ekko.seller_service.messaging.publish.RabbitMQSellerEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -29,6 +30,7 @@ class RabbitMQSellerEventPublisherTest {
                 UUID.randomUUID(),
                 "kc-test-0001",
                 "Mi tienda",
+                "mi-tienda",
                 "seller@ekko.test",
                 SellerStatus.PENDING_REVIEW,
                 LocalDateTime.of(2026, 1, 1, 10, 0));

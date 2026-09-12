@@ -2,6 +2,7 @@ package com.ekko.seller_service.messaging;
 
 import com.ekko.seller_service.messaging.dto.consume.ProductDeactivatedEvent;
 import com.ekko.seller_service.messaging.dto.consume.ProductPublishedEvent;
+import com.ekko.seller_service.messaging.event.ProductStatusEventListener;
 import com.ekko.seller_service.service.ProductStatusMetricsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

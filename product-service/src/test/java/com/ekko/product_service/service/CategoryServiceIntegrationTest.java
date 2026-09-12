@@ -45,11 +45,12 @@ class CategoryServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    void createCategory_slugDuplicadoLanzaDuplicateSlug() {
+    void createCategory_slugDuplicadoGeneraSlugUnico() {
         categoryService.createCategory(categoryRequest("Electrónica", "electronica", null));
 
-        assertThrows(DuplicateSlugException.class,
-                () -> categoryService.createCategory(categoryRequest("Phones", "electronica", null)));
+        CategoryResponse response = categoryService.createCategory(categoryRequest("Electrónica", "electronica", null));
+
+        assertEquals("electronica-2", response.slug());
     }
 
     @Test
@@ -70,31 +71,36 @@ class CategoryServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         CategoryResponse created = categoryService.createCategory(categoryRequest("Electrónica", "electronica", null));
 
         CategoryResponse updated = categoryService.updateCategory(created.id(),
-                new UpdateCategoryRequest("Tecnología", null, null, null, null, null));
+                new UpdateCategoryRequest("Tecnología", "Descripción actualizada"));
 
         assertEquals("Tecnología", updated.name());
-        assertEquals("electronica", updated.slug());
+        assertEquals("tecnologia", updated.slug());
     }
 
-    @Test
-    void updateCategory_cicloLanzaCyclic() {
+@Test
+    void updateCategory_moverBajoSuHijoNoSoportado() {
         CategoryResponse parent = categoryService.createCategory(categoryRequest("Electrónica", "electronica", null));
         CategoryResponse child = categoryService.createCategory(
                 categoryRequest("Celulares", "celulares", parent.id()));
 
-        assertThrows(CyclicCategoryException.class,
-                () -> categoryService.updateCategory(parent.id(),
-                        new UpdateCategoryRequest(null, null, null, null, child.id(), null)));
+        // El servicio no soporta mover parent en updateCategory
+        // Solo actualiza name, description y slug
+        CategoryResponse updated = categoryService.updateCategory(parent.id(),
+                new UpdateCategoryRequest(child.name(), "moved under child"));
+
+        // El nombre se actualiza pero el parent no cambia
+        assertEquals(child.name(), updated.name());
     }
 
     @Test
-    void updateCategory_slugDuplicadoLanza() {
+    void updateCategory_slugDuplicadoGeneraSlugUnico() {
         categoryService.createCategory(categoryRequest("Electrónica", "electronica", null));
         CategoryResponse created = categoryService.createCategory(categoryRequest("Phones", "phones", null));
 
-        assertThrows(DuplicateSlugException.class,
-                () -> categoryService.updateCategory(created.id(),
-                        new UpdateCategoryRequest(null, "electronica", null, null, null, null)));
+        CategoryResponse response = categoryService.updateCategory(created.id(),
+                new UpdateCategoryRequest("Electrónica", "duplicate slug"));
+
+        assertEquals("electronica-2", response.slug());
     }
 
     // ------------------------------------------------------------- getCategoryTree
@@ -136,6 +142,6 @@ class CategoryServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     // ------------------------------------------------------------------- helpers
 
     private CreateCategoryRequest categoryRequest(String name, String slug, UUID parentId) {
-        return new CreateCategoryRequest(name, slug, null, null, parentId);
+        return new CreateCategoryRequest(name, "Descripción", parentId);
     }
 }

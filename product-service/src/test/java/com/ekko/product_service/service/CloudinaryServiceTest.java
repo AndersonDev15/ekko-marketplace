@@ -50,7 +50,7 @@ class CloudinaryServiceTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "iphone-16.jpg", "image/jpeg", new byte[]{1, 2, 3});
 
-        CloudinaryService.UploadResult upload = cloudinaryService.upload(file);
+        CloudinaryService.UploadResult upload = cloudinaryService.upload(file, "products");
 
         assertEquals(PUBLIC_ID, upload.publicId());
         assertEquals(SECURE_URL, upload.url());
@@ -60,7 +60,7 @@ class CloudinaryServiceTest {
     void upload_archivoVacioLanzaImageUploadException() {
         MockMultipartFile empty = new MockMultipartFile("file", "empty.jpg", "image/jpeg", new byte[0]);
 
-        assertThrows(ImageUploadException.class, () -> cloudinaryService.upload(empty));
+        assertThrows(ImageUploadException.class, () -> cloudinaryService.upload(empty, "products"));
     }
 
     @Test
@@ -70,7 +70,7 @@ class CloudinaryServiceTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "iphone-16.jpg", "image/jpeg", new byte[]{1});
 
-        assertThrows(ImageUploadException.class, () -> cloudinaryService.upload(file));
+        assertThrows(ImageUploadException.class, () -> cloudinaryService.upload(file, "products"));
     }
 
     @Test

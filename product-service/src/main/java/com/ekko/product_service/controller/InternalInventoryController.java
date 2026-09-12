@@ -29,4 +29,22 @@ public class InternalInventoryController {
 
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<Void> confirm(
+            @RequestBody InventoryQuantityRequest request) {
+
+        inventoryService.confirmStock(request.variantId(), request.quantity());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/release")
+    public ResponseEntity<Void> release(
+            @RequestBody InventoryQuantityRequest request) {
+
+        inventoryService.releaseStock(request.variantId(), request.quantity());
+
+        return ResponseEntity.ok().build();
+    }
 }

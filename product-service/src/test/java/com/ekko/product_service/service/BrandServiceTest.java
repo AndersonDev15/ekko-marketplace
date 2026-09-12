@@ -9,10 +9,12 @@ import com.ekko.product_service.exception.BrandNotFoundException;
 import com.ekko.product_service.exception.DuplicateBrandNameException;
 import com.ekko.product_service.exception.DuplicateBrandSlugException;
 import com.ekko.product_service.repository.BrandRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.ekko.product_service.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -21,9 +23,14 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,14 +40,16 @@ class BrandServiceTest {
     @Mock
     private BrandRepository brandRepository;
 
+    @Mock
+    private CloudinaryService cloudinaryService;
+
+    @Spy
+    private SlugService slugService = new SlugService(mock(ProductRepository.class));
+
+    @InjectMocks
     private BrandService brandService;
 
     private final UUID brandId = UUID.randomUUID();
-
-    @BeforeEach
-    void setUp() {
-        brandService = new BrandService(brandRepository);
-    }
 
     // ------------------------------------------------------------- createBrand
 
@@ -67,12 +76,15 @@ class BrandServiceTest {
     }
 
     @Test
-    void createBrand_slugDuplicadoLanzaDuplicateSlug() {
+    void createBrand_slugDuplicadoGeneraSlugUnico() {
         when(brandRepository.existsByName("Apple")).thenReturn(false);
-        when(brandRepository.existsBySlug("apple")).thenReturn(true);
+        when(brandRepository.existsBySlug("apple")).thenReturn(true, false);
+        when(brandRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThrows(DuplicateBrandSlugException.class,
-                () -> brandService.createBrand(createRequest()));
+        BrandResponse response = brandService.createBrand(createRequest());
+
+        assertTrue(response.isActive());
+        assertEquals("apple-2", response.slug());
     }
 
     // ------------------------------------------------------------- updateBrand
@@ -86,7 +98,7 @@ class BrandServiceTest {
         when(brandRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         BrandResponse response = brandService.updateBrand(brandId,
-                new UpdateBrandRequest("Samsung", "samsung", null, null));
+                new UpdateBrandRequest("Samsung", "samsung"));
 
         assertEquals("Samsung", response.name());
         assertEquals("samsung", response.slug());
@@ -97,7 +109,7 @@ class BrandServiceTest {
         when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
 
         assertThrows(BrandNotFoundException.class, () ->
-                brandService.updateBrand(brandId, new UpdateBrandRequest(null, null, null, null)));
+                brandService.updateBrand(brandId, new UpdateBrandRequest(null, null)));
     }
 
     @Test
@@ -107,7 +119,7 @@ class BrandServiceTest {
         when(brandRepository.existsByNameAndIdNot("AppleX", brandId)).thenReturn(true);
 
         assertThrows(DuplicateBrandNameException.class, () ->
-                brandService.updateBrand(brandId, new UpdateBrandRequest("AppleX", null, null, null)));
+                brandService.updateBrand(brandId, new UpdateBrandRequest("AppleX", null)));
     }
 
     @Test
@@ -117,19 +129,26 @@ class BrandServiceTest {
         when(brandRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         BrandResponse response = brandService.updateBrand(brandId,
-                new UpdateBrandRequest("Apple", null, null, null));
+                new UpdateBrandRequest("Apple", null));
 
         assertEquals("Apple", response.name());
     }
 
-    @Test
-    void updateBrand_slugDuplicadoEnOtraMarcaLanzaDuplicateSlug() {
+@Test
+    void updateBrand_slugDuplicadoEnOtraMarcaGeneraSlugUnico() {
         Brand brand = BrandTestDataBuilder.aBrand().withId(brandId).build();
         when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
-        when(brandRepository.existsBySlugAndIdNot("appleX", brandId)).thenReturn(true);
+        // Simulate that "apple-new" slug already exists for another brand
+        when(brandRepository.existsBySlugAndIdNot("apple-new", brandId)).thenReturn(true);
+        when(brandRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThrows(DuplicateBrandSlugException.class, () ->
-                brandService.updateBrand(brandId, new UpdateBrandRequest(null, "appleX", null, null)));
+        // Change name to trigger slug generation
+        BrandResponse response = brandService.updateBrand(brandId,
+                new UpdateBrandRequest("Apple New", "desc"));
+
+        // The service generates unique slugs - verify it's different from base
+        assertNotEquals("apple-new", response.slug());
+        assertTrue(response.slug().startsWith("apple-new"));
     }
 
     @Test
@@ -139,7 +158,7 @@ class BrandServiceTest {
         when(brandRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         BrandResponse response = brandService.updateBrand(brandId,
-                new UpdateBrandRequest(null, null, null, null));
+                new UpdateBrandRequest(null, null));
 
         assertEquals("Apple", response.name());
         assertEquals("apple", response.slug());
@@ -181,7 +200,6 @@ class BrandServiceTest {
     // --------------------------------------------------------------- helpers
 
     private CreateBrandRequest createRequest() {
-        return new CreateBrandRequest("Apple", "apple",
-                "https://cdn.example.com/apple.png", "Apple brand");
+        return new CreateBrandRequest("Apple", "Apple brand");
     }
 }

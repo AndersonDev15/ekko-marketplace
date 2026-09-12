@@ -9,7 +9,7 @@ import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
-import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.publish.SellerEventPublisher;
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerSlugChangedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;

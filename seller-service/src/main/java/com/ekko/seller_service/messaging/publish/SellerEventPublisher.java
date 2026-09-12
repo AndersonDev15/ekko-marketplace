@@ -1,4 +1,4 @@
-package com.ekko.seller_service.messaging;
+package com.ekko.seller_service.messaging.publish;
 
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;

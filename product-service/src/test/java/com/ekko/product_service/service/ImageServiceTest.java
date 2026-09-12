@@ -279,13 +279,13 @@ class ImageServiceTest {
         CloudinaryService.UploadResult upload = new CloudinaryService.UploadResult(
                 "products/iphone-16",
                 "https://res.cloudinary.com/gqrn3sdp/image/upload/v1/products/iphone-16.jpg");
-        when(cloudinaryService.upload(file)).thenReturn(upload);
+        when(cloudinaryService.upload(file, "products")).thenReturn(upload);
         when(activeProductOwnershipValidator.validate(productId, sellerId)).thenReturn(ownedProduct());
         when(imageRepository.findByProductIdOrderBySortOrderAsc(productId)).thenReturn(List.of());
 
         imageService.uploadImage(productId, file, false, sellerId);
 
-        verify(cloudinaryService).upload(file);
+        verify(cloudinaryService).upload(file, "products");
         ArgumentCaptor<ProductImage> imageCaptor = ArgumentCaptor.forClass(ProductImage.class);
         verify(imageRepository).save(imageCaptor.capture());
         ProductImage saved = imageCaptor.getValue();
@@ -298,7 +298,7 @@ class ImageServiceTest {
     void uploadImage_propagaErrorDeCloudinarySinPersistir() {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "iphone-16.jpg", "image/jpeg", new byte[]{1});
-        when(cloudinaryService.upload(file)).thenThrow(ImageUploadException.class);
+        when(cloudinaryService.upload(file, "products")).thenThrow(ImageUploadException.class);
 
         assertThrows(ImageUploadException.class,
                 () -> imageService.uploadImage(productId, file, false, sellerId));

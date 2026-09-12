@@ -13,7 +13,9 @@ import com.ekko.product_service.entity.Product;
 import com.ekko.product_service.entity.ProductAttribute;
 import com.ekko.product_service.entity.ProductImage;
 import com.ekko.product_service.entity.ProductVariant;
+import com.ekko.product_service.entity.SellerStatusView;
 import com.ekko.product_service.enums.ProductStatus;
+import com.ekko.product_service.enums.SellerStatus;
 import com.ekko.product_service.exception.InvalidProductStatusException;
 import com.ekko.product_service.exception.NoActiveVariantException;
 import com.ekko.product_service.exception.NoPrimaryImageException;
@@ -107,7 +109,12 @@ class ProductServiceTest {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(sellerStatusValidator).validateCanOperate(sellerId);
+        SellerStatusView sellerView = SellerStatusView.builder()
+                .sellerKeycloakId(sellerId)
+                .sellerSlug("test-seller")
+                .status(SellerStatus.ACTIVE)
+                .build();
+        when(sellerStatusValidator.validateCanOperate(sellerId)).thenReturn(sellerView);
     }
 
     // ------------------------------------------------------------------ createProduct
@@ -117,7 +124,7 @@ class ProductServiceTest {
         CreateProductRequest request = new CreateProductRequest(
                 PRODUCT_NAME, "desc", null, CATEGORY_ID, null);
 
-        when(slugService.generateUnique(request.name(), sellerId)).thenReturn("iphone-16");
+        when(slugService.generate(request.name())).thenReturn("iphone-16");
         when(categoryRepository.findById(CATEGORY_ID))
                 .thenReturn(Optional.of(mock(Category.class)));
         when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -139,7 +146,7 @@ class ProductServiceTest {
         CreateProductRequest request = new CreateProductRequest(
                 PRODUCT_NAME, null, null, CATEGORY_ID, null);
 
-        when(slugService.generateUnique(request.name(), sellerId)).thenReturn("iphone-16-2");
+        when(slugService.generate(request.name())).thenReturn("iphone-16-2");
         when(categoryRepository.findById(CATEGORY_ID))
                 .thenReturn(Optional.of(mock(Category.class)));
         when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -147,7 +154,7 @@ class ProductServiceTest {
 
         productService.createProduct(request, sellerId);
 
-        verify(slugService).generateUnique(request.name(), sellerId);
+        verify(slugService).generate(request.name());
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
         verify(productRepository).save(captor.capture());
@@ -223,7 +230,7 @@ class ProductServiceTest {
                 "Samsung Galaxy", null, null, null);
 
         when(ownershipValidator.validate(productId, sellerId)).thenReturn(product);
-        when(slugService.generateUnique("Samsung Galaxy", sellerId))
+        when(slugService.generate("Samsung Galaxy"))
                 .thenReturn("samsung-galaxy");
         when(productMapper.toResponse(any())).thenReturn(mock(ProductResponse.class));
 
@@ -231,7 +238,7 @@ class ProductServiceTest {
 
         assertEquals("Samsung Galaxy", product.getName());
         assertEquals("samsung-galaxy", product.getSlug());
-        verify(slugService).generateUnique("Samsung Galaxy", sellerId);
+        verify(slugService).generate("Samsung Galaxy");
     }
 
     @Test

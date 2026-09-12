@@ -1,4 +1,4 @@
-package com.ekko.seller_service.messaging;
+package com.ekko.seller_service.messaging.event;
 
 import com.ekko.seller_service.config.RabbitMQConfig;
 import com.ekko.seller_service.messaging.dto.consume.ReviewCreatedEvent;

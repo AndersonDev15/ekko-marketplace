@@ -1,6 +1,7 @@
 package com.ekko.seller_service.messaging;
 
 import com.ekko.seller_service.messaging.dto.consume.ReviewCreatedEvent;
+import com.ekko.seller_service.messaging.event.ReviewCreatedEventListener;
 import com.ekko.seller_service.service.ReviewCreatedMetricsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -3,6 +3,7 @@ package com.ekko.seller_service;
 import com.ekko.seller_service.support.JwtTestUtils;
 import com.ekko.seller_service.support.SellerTestDataBuilder;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
 class SellerProfileMockMvcTest extends AbstractPostgresIntegrationTest {
 
     // ── 401 Unauthorized ────────────────────────────────────────────────────

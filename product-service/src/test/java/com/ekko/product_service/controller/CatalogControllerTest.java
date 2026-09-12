@@ -54,7 +54,8 @@ class CatalogControllerTest {
     @Test
     void searchProducts_devuelve200YPagina() throws Exception {
         ProductSummaryResponse summary = new ProductSummaryResponse(PRODUCT_ID,
-                "iPhone 16", "iphone-16", new BigDecimal("999.99"),
+                "iPhone 16", "iphone-16", "apple-store",
+                new BigDecimal("999.99"),
                 "https://cdn.example.com/iphone-16.jpg", "Apple", "Phones", true);
         org.springframework.data.domain.Page<ProductSummaryResponse> page =
                 new org.springframework.data.domain.PageImpl<>(List.of(summary));

@@ -8,9 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -27,28 +27,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
 @AutoConfigureMockMvc
-@Import(TestJwtDecoderConfig.class)
+@ContextConfiguration(classes = {SellerServiceApplication.class, TestContainersConfig.class, TestJwtDecoderConfig.class})
 @TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
 public abstract class AbstractPostgresIntegrationTest {
 
-    protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-            DockerImageName.parse("postgres:16.14"))
-            .withDatabaseName("seller_db")
-            .withUsername("ekko")
-            .withPassword("ekko123");
-
-    static {
-        POSTGRES.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(POSTGRES::stop));
-    }
-
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        PostgreSQLContainer<?> postgres = TestContainersConfig.postgresContainer();
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.datasource.hikari.maximum-pool-size", () -> "32");
     }
 

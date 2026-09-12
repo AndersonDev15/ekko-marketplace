@@ -7,6 +7,7 @@ import com.ekko.seller_service.messaging.dto.consume.OrderConfirmedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
 class OrderConfirmedMetricsServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired

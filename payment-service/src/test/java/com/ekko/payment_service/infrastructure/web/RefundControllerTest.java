@@ -7,7 +7,7 @@ import com.ekko.payment_service.domain.enums.PaymentStatus;
 import com.ekko.payment_service.domain.model.Refund;
 import com.ekko.payment_service.domain.enums.RefundReason;
 import com.ekko.payment_service.infrastructure.config.SecurityConfig;
-import com.ekko.payment_service.infrastructure.persistence.adapter.in.web.AdminRefundController;
+import com.ekko.payment_service.infrastructure.persistence.adapter.in.web.controller.AdminRefundController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

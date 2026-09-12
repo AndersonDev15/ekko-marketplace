@@ -19,7 +19,7 @@ import com.ekko.seller_service.exception.SellerDocumentNotFoundException;
 import com.ekko.seller_service.exception.SellerMetricsNotFoundException;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.mapper.SellerMapper;
-import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.publish.SellerEventPublisher;
 import com.ekko.seller_service.messaging.dto.publish.SellerDocumentReviewEvent;
 import com.ekko.seller_service.messaging.dto.publish.SellerStatusChangedEvent;
 import com.ekko.seller_service.repository.SellerDocumentRepository;

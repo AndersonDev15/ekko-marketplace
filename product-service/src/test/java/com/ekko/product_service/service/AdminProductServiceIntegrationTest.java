@@ -145,7 +145,7 @@ class AdminProductServiceIntegrationTest extends AbstractPostgresIntegrationTest
         persistProduct(ProductStatus.ACTIVE);
         persistProduct(ProductStatus.PENDING_REVIEW);
 
-        Page<ProductResponse> result = adminProductService.getAllProducts(0, 2);
+        Page<ProductResponse> result = adminProductService.getAllProducts(null, 0, 2);
 
         assertEquals(2, result.getContent().size());
         assertEquals(4, result.getTotalElements());
@@ -157,9 +157,9 @@ class AdminProductServiceIntegrationTest extends AbstractPostgresIntegrationTest
             persistProduct(ProductStatus.DRAFT);
         }
 
-        Page<ProductResponse> firstPage = adminProductService.getAllProducts(0, 2);
-        Page<ProductResponse> secondPage = adminProductService.getAllProducts(1, 2);
-        Page<ProductResponse> thirdPage = adminProductService.getAllProducts(2, 2);
+        Page<ProductResponse> firstPage = adminProductService.getAllProducts(null, 0, 2);
+        Page<ProductResponse> secondPage = adminProductService.getAllProducts(null, 1, 2);
+        Page<ProductResponse> thirdPage = adminProductService.getAllProducts(null, 2, 2);
 
         assertEquals(2, firstPage.getContent().size());
         assertEquals(2, secondPage.getContent().size());
@@ -169,7 +169,7 @@ class AdminProductServiceIntegrationTest extends AbstractPostgresIntegrationTest
 
     @Test
     void getAllProducts_retornaPaginaVaciaCuandoNoExistenProductos() {
-        Page<ProductResponse> result = adminProductService.getAllProducts(0, 20);
+        Page<ProductResponse> result = adminProductService.getAllProducts(null, 0, 20);
 
         assertEquals(0, result.getContent().size());
         assertEquals(0, result.getTotalElements());
@@ -181,7 +181,7 @@ class AdminProductServiceIntegrationTest extends AbstractPostgresIntegrationTest
         Product product = persistProduct(ProductStatus.DRAFT);
         addAttribute(product, ATTRIBUTE_NAME, ATTRIBUTE_VALUE);
 
-        Page<ProductResponse> result = adminProductService.getAllProducts(0, 20);
+        Page<ProductResponse> result = adminProductService.getAllProducts(null, 0, 20);
 
         assertEquals(1, result.getTotalElements());
         ProductResponse response = result.getContent().get(0);

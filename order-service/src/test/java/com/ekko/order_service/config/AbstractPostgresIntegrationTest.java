@@ -1,28 +1,21 @@
 package com.ekko.order_service.config;
 
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-@SpringBootTest
+@ContextConfiguration(classes = {com.ekko.order_service.OrderServiceApplication.class, TestContainersConfig.class})
 public abstract class AbstractPostgresIntegrationTest {
-
-    private static final PostgreSQLContainer<?> POSTGRES;
-
-    static {
-        POSTGRES = new PostgreSQLContainer<>("postgres:16")
-                .withDatabaseName("order_db")
-                .withUsername("ekko")
-                .withPassword("ekko123");
-        POSTGRES.start();
-    }
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        PostgreSQLContainer<?> postgres = TestContainersConfig.postgresContainer();
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false");
+        registry.add("eureka.client.enabled", () -> "false");
     }
 }

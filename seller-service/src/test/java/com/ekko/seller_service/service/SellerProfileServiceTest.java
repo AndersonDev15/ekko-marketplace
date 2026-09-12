@@ -9,11 +9,10 @@ import com.ekko.seller_service.enums.SellerStatus;
 import com.ekko.seller_service.exception.SellerNotFoundException;
 import com.ekko.seller_service.exception.SellerSuspendedException;
 import com.ekko.seller_service.mapper.SellerMapper;
-import com.ekko.seller_service.messaging.SellerEventPublisher;
+import com.ekko.seller_service.messaging.publish.SellerEventPublisher;
 import com.ekko.seller_service.messaging.dto.publish.SellerCreatedEvent;
 import com.ekko.seller_service.repository.SellerMetricsRepository;
 import com.ekko.seller_service.repository.SellerRepository;
-import com.ekko.seller_service.service.CloudinaryService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +34,7 @@ import static com.ekko.seller_service.support.SellerTestDataBuilder.aSeller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -67,6 +67,9 @@ class SellerProfileServiceTest {
 
     @Mock
     private CloudinaryService cloudinaryService;
+
+    @Mock
+    private SellerSlugService sellerSlugService;
 
     @InjectMocks
     private SellerProfileService sellerProfileService;
@@ -102,6 +105,7 @@ class SellerProfileServiceTest {
             when(metricsRepository.saveAndFlush(any(SellerMetrics.class))).thenAnswer(inv -> inv.getArgument(0));
             when(sellerMapper.toResponse(any(Seller.class))).thenReturn(expected);
             when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
+            when(sellerSlugService.generateUnique(anyString())).thenAnswer(inv -> "mi-tienda");
 
             SellerResponse result = sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL);
 
@@ -135,6 +139,7 @@ class SellerProfileServiceTest {
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(race);
             when(sellerMapper.toResponse(existing)).thenReturn(expected);
             when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
+            when(sellerSlugService.generateUnique(anyString())).thenAnswer(inv -> "mi-tienda");
 
             SellerResponse result = sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL);
 
@@ -151,6 +156,7 @@ class SellerProfileServiceTest {
             when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.empty());
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(violation);
             when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
+            when(sellerSlugService.generateUnique(anyString())).thenAnswer(inv -> "mi-tienda");
 
             assertThrows(DataIntegrityViolationException.class,
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
@@ -166,6 +172,7 @@ class SellerProfileServiceTest {
             when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.empty());
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(violation);
             when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
+            when(sellerSlugService.generateUnique(anyString())).thenAnswer(inv -> "mi-tienda");
 
             assertThrows(DataIntegrityViolationException.class,
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
@@ -181,6 +188,7 @@ class SellerProfileServiceTest {
             when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.empty());
             when(sellerRepository.saveAndFlush(any(Seller.class))).thenThrow(violation);
             when(transactionManager.getTransaction(any())).thenReturn(transactionStatus);
+            when(sellerSlugService.generateUnique(anyString())).thenAnswer(inv -> "mi-tienda");
 
             assertThrows(DataIntegrityViolationException.class,
                     () -> sellerProfileService.getOrCreateMyProfile(KEYCLOAK_ID, EMAIL));
@@ -201,6 +209,7 @@ class SellerProfileServiceTest {
             when(sellerRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(seller));
             when(sellerRepository.save(seller)).thenReturn(seller);
             when(sellerMapper.toResponse(seller)).thenReturn(expected);
+            when(sellerSlugService.generateUnique(anyString())).thenAnswer(inv -> "nueva-tienda");
 
             SellerResponse result = sellerProfileService.updateMyProfile(KEYCLOAK_ID, request);
 

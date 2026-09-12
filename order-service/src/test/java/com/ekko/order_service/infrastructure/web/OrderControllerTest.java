@@ -12,6 +12,7 @@ import com.ekko.order_service.domain.port.in.CreateOrderUseCase;
 import com.ekko.order_service.domain.port.in.GetMyOrdersUseCase;
 import com.ekko.order_service.domain.port.in.GetOrderByOrderNumberUseCase;
 import com.ekko.order_service.infrastructure.config.SecurityConfig;
+import com.ekko.order_service.domain.port.out.ProductServicePort;
 import com.ekko.order_service.infrastructure.persistence.adapter.in.web.controller.OrderController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,6 +74,9 @@ class OrderControllerTest {
 
     @MockitoBean
     private CancelOrderUseCase cancelOrderUseCase;
+
+    @MockitoBean
+    private ProductServicePort productServicePort;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
