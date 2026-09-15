@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/reviews/eligible").authenticated()
                         .requestMatchers(HttpMethod.GET, "/reviews/*").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth

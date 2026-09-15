@@ -74,6 +74,61 @@ spring:
               filters:
                 - SetPath=/realms/ekko/protocol/openid-connect/userinfo
 
+            # --- Rutas de docs
+
+            - id: identity-service-docs
+              uri: lb://identity-service
+              predicates:
+                - Path=/api/identity/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+            - id: seller-service-docs
+              uri: lb://seller-service
+              predicates:
+                - Path=/api/sellers/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+            - id: product-service-docs
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+            - id: order-service-docs
+              uri: lb://order-service
+              predicates:
+                - Path=/api/orders/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+            - id: payment-service-docs
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+            - id: review-service-docs
+              uri: lb://review-service
+              predicates:
+                - Path=/api/reviews/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+            - id: notification-service-docs
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notifications/v3/api-docs/**
+              filters:
+                - StripPrefix=2
+
+
+
+            # --- Rutas de negocio
+
             - id: seller-service
               uri: lb://seller-service
               predicates:
@@ -161,6 +216,25 @@ spring:
                     fallbackUri: forward:/fallback/identity
                 - StripPrefix=1
 
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: identity-service
+        url: /api/identity/v3/api-docs
+      - name: seller-service
+        url: /api/sellers/v3/api-docs
+      - name: product-service
+        url: /api/products/v3/api-docs
+      - name: order-service
+        url: /api/orders/v3/api-docs
+      - name: payment-service
+        url: /api/payments/v3/api-docs
+      - name: review-service
+        url: /api/reviews/v3/api-docs
+      - name: notification-service
+        url: /api/notifications/v3/api-docs
 
 eureka:
   client:

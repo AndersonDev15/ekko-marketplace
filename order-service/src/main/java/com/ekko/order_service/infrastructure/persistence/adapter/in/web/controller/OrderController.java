@@ -3,16 +3,25 @@ package com.ekko.order_service.infrastructure.persistence.adapter.in.web.control
 import com.ekko.order_service.application.dto.CreateOrderRequest;
 import com.ekko.order_service.application.dto.OrderDetailResponse;
 import com.ekko.order_service.application.dto.OrderSummaryResponse;
+import com.ekko.order_service.application.exception.OrderAccessDeniedException;
 import com.ekko.order_service.application.mapper.OrderMapper;
 import com.ekko.order_service.domain.model.Order;
 import com.ekko.order_service.domain.model.OrderAddress;
 import com.ekko.order_service.domain.model.OrderDraft;
-import com.ekko.order_service.application.exception.OrderAccessDeniedException;
 import com.ekko.order_service.domain.port.in.CancelOrderUseCase;
 import com.ekko.order_service.domain.port.in.CreateOrderUseCase;
 import com.ekko.order_service.domain.port.in.GetMyOrdersUseCase;
 import com.ekko.order_service.domain.port.in.GetOrderByOrderNumberUseCase;
 import com.ekko.order_service.infrastructure.persistence.adapter.in.web.dto.CancelOrderRequest;
+import com.ekko.order_service.infrastructure.persistence.adapter.in.web.exception.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,6 +46,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
+@Tag(name = "Orders", description = "Customer-facing order management endpoints")
 public class OrderController {
 
     private final CreateOrderUseCase createOrderUseCase;
@@ -45,10 +55,27 @@ public class OrderController {
     private final CancelOrderUseCase cancelOrderUseCase;
     private final OrderMapper orderMapper;
 
+    @Operation(
+            summary = "Create a new order",
+            description = "Creates a new order for authenticated customers or guest users. " +
+                    "For authenticated users (JWT present), customerId and email are extracted from token. " +
+                    "For guests, guestEmail from request body is used. " +
+                    "Returns the created order with full details."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Order created successfully",
+                    content = @Content(schema = @Schema(implementation = OrderDetailResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Insufficient stock or order number generation failed",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "503", description = "Stock service unavailable",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping
     public ResponseEntity<OrderDetailResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
 
         UUID customerId = jwt != null ? keycloakId(jwt) : null;
         String guestEmail = jwt != null ? null : request.guestEmail();
@@ -59,11 +86,28 @@ public class OrderController {
                 .body(orderMapper.toDetailResponse(order));
     }
 
+    @Operation(
+            summary = "Get order by order number",
+            description = "Retrieves order details by order number. " +
+                    "Authenticated users (JWT) can access their own orders. " +
+                    "Guest users must provide the guestEmail query parameter matching the order's guest email. " +
+                    "Returns 403 if access is denied."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order found",
+                    content = @Content(schema = @Schema(implementation = OrderDetailResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid guest email",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - invalid or missing credentials",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{orderNumber}")
     public ResponseEntity<OrderDetailResponse> getOrderByOrderNumber(
-            @PathVariable String orderNumber,
-            @RequestParam(required = false) String guestEmail,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Parameter(description = "Order number", example = "ORD-20240115-ABC123") @PathVariable String orderNumber,
+            @Parameter(description = "Guest email (required for guest orders)") @RequestParam(required = false) String guestEmail,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
 
         UUID keycloakId = jwt != null ? keycloakId(jwt) : null;
         if (keycloakId == null && (guestEmail == null || guestEmail.isBlank())) {
@@ -73,21 +117,52 @@ public class OrderController {
         return ResponseEntity.ok(orderMapper.toDetailResponse(order));
     }
 
-    @GetMapping("/me")
+    @Operation(
+            summary = "Get authenticated user's orders",
+            description = "Returns a paginated list of orders for the authenticated customer. " +
+                    "Requires CUSTOMER role. Returns order summaries with basic information."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid or missing JWT"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires CUSTOMER role")
+    })
+    @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/me")
     public ResponseEntity<Page<OrderSummaryResponse>> getMyOrders(
-            @AuthenticationPrincipal Jwt jwt,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Pagination parameters") @PageableDefault(size = 20) Pageable pageable) {
 
         Page<Order> orders = getMyOrdersUseCase.execute(keycloakId(jwt), pageable);
         return ResponseEntity.ok(orders.map(orderMapper::toSummaryResponse));
     }
 
+    @Operation(
+            summary = "Cancel an order",
+            description = "Cancels an order by order number. " +
+                    "Authenticated users can cancel their own orders. " +
+                    "Guest users must provide guestEmail in request body. " +
+                    "Returns 403 if access is denied, 409 if cancellation is not allowed for the current order status."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order cancelled successfully",
+                    content = @Content(schema = @Schema(implementation = OrderDetailResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - invalid or missing credentials",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Cancellation not allowed for current order status",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/{orderNumber}/cancel")
     public ResponseEntity<OrderDetailResponse> cancelOrder(
-            @PathVariable String orderNumber,
+            @Parameter(description = "Order number", example = "ORD-20240115-ABC123") @PathVariable String orderNumber,
             @RequestBody(required = false) CancelOrderRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
 
         UUID keycloakId = jwt != null ? keycloakId(jwt) : null;
         String guestEmail = jwt != null

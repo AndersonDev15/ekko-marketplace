@@ -4,6 +4,11 @@ import com.ekko.payment_service.application.service.WebhookDispatcherService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/webhooks/stripe")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Stripe Webhooks", description = "Stripe webhook endpoint for receiving payment events")
 public class StripeWebhookController {
 
     private final WebhookDispatcherService webhookDispatcherService;
@@ -25,10 +31,18 @@ public class StripeWebhookController {
     @Value("${stripe.webhook-secret}")
     private String webhookSecret;
 
+    @Operation(
+            summary = "Handle Stripe webhook",
+            description = "Receives and processes Stripe webhook events. Validates the webhook signature before processing."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Webhook processed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid Stripe signature")
+    })
     @PostMapping
     public ResponseEntity<Void> handleWebhook(
-            @RequestBody String payload,
-            @RequestHeader("Stripe-Signature") String stripeSignatureHeader) {
+            @Parameter(description = "Raw webhook payload", required = true) @RequestBody String payload,
+            @Parameter(description = "Stripe signature header", required = true) @RequestHeader("Stripe-Signature") String stripeSignatureHeader) {
 
         log.info("- STRIPE WEBHOOK RECEIVED -");
 

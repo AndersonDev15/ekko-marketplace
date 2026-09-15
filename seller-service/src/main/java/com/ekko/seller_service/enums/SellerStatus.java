@@ -1,8 +1,10 @@
 package com.ekko.seller_service.enums;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import java.util.Set;
 
+@Schema(description = "Seller status", allowableValues = {"PENDING_REVIEW", "ACTIVE", "SUSPENDED"})
 public enum SellerStatus {
     PENDING_REVIEW, ACTIVE, SUSPENDED;
 

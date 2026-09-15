@@ -49,7 +49,7 @@ class ProductReviewsControllerTest {
     private JwtDecoder jwtDecoder;
 
     @Test
-    @DisplayName("GET /products/{id}/reviews sin JWT -> 200 (endpoint público)")
+    @DisplayName("GET /product-reviews/{id}/reviews sin JWT -> 200 (endpoint público)")
     void getProductReviews_shouldReturn200WithoutJwt() throws Exception {
         // given
         ReviewResponse review = reviewResponse();
@@ -62,7 +62,7 @@ class ProductReviewsControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/products/{productId}/reviews", PRODUCT_ID))
+        mockMvc.perform(get("/product-reviews/{productId}/reviews", PRODUCT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.averageRating").value(4.5))
                 .andExpect(jsonPath("$.totalReviews").value(1))
@@ -74,7 +74,7 @@ class ProductReviewsControllerTest {
     }
 
     @Test
-    @DisplayName("GET /products/{id}/reviews sin reviews -> 200 con promedio 0.0")
+    @DisplayName("GET /product-reviews/{id}/reviews sin reviews -> 200 con promedio 0.0")
     void getProductReviews_shouldReturnZeroAverageWhenNoReviews() throws Exception {
         // given
         ProductReviewsResponse response = new ProductReviewsResponse(
@@ -86,7 +86,7 @@ class ProductReviewsControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/products/{productId}/reviews", PRODUCT_ID))
+        mockMvc.perform(get("/product-reviews/{productId}/reviews", PRODUCT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.averageRating").value(0.0))
                 .andExpect(jsonPath("$.totalReviews").value(0))
@@ -94,7 +94,7 @@ class ProductReviewsControllerTest {
     }
 
     @Test
-    @DisplayName("GET /products/{id}/reviews respeta la paginación enviada")
+    @DisplayName("GET /product-reviews/{id}/reviews respeta la paginación enviada")
     void getProductReviews_shouldPropagatePageableParameters() throws Exception {
         // given
         ProductReviewsResponse response = new ProductReviewsResponse(
@@ -105,7 +105,7 @@ class ProductReviewsControllerTest {
         when(reviewQueryService.getProductReviews(eq(PRODUCT_ID), any(Pageable.class))).thenReturn(response);
 
         // when
-        mockMvc.perform(get("/products/{productId}/reviews", PRODUCT_ID)
+        mockMvc.perform(get("/product-reviews/{productId}/reviews", PRODUCT_ID)
                         .param("page", "1")
                         .param("size", "5"))
                 .andExpect(status().isOk());

@@ -60,8 +60,7 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
 
         return reviewMapper.toResponse(saved, List.of());
     }
-
-    @Override
+@Override
     @Transactional
     public ReviewResponse updateReview(UUID reviewId, UpdateReviewRequest request, String customerId) {
         Review review = reviewRepository.findById(reviewId)
@@ -71,11 +70,23 @@ public class ReviewCommandServiceImpl implements ReviewCommandService {
         editWindowValidator.assertWithinWindow(review.getCreatedAt());
 
 
-
         Integer previousRating = review.getRating();
         review.setRating(request.rating());
         review.setTitle(request.title());
         review.setComment(request.comment());
+
+        if (request.imageUrls() != null) {
+            reviewImageRepository.deleteByReviewId(reviewId);
+            List<ReviewImage> newImages = new ArrayList<>();
+            for (int i = 0; i < request.imageUrls().size(); i++) {
+                ReviewImage image = new ReviewImage();
+                image.setReview(review);
+                image.setUrl(request.imageUrls().get(i));
+                image.setSortOrder(i);
+                newImages.add(image);
+            }
+            reviewImageRepository.saveAll(newImages);
+        }
 
         if (ratingChanged(previousRating, review.getRating())) {
             applicationEventPublisher.publishEvent(new RatingRecalculationRequestedEvent(review.getProductId()));

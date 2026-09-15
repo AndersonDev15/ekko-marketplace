@@ -32,6 +32,24 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/actuator/health").permitAll()
 
+                        .pathMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/webjars/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // specs JSON de cada microservicio, consumidas por la UI del gateway
+                        .pathMatchers(
+                                "/api/identity/v3/api-docs/**",
+                                "/api/sellers/v3/api-docs/**",
+                                "/api/products/v3/api-docs/**",
+                                "/api/orders/v3/api-docs/**",
+                                "/api/payments/v3/api-docs/**",
+                                "/api/reviews/v3/api-docs/**",
+                                "/api/notifications/v3/api-docs/**"
+                        ).permitAll()
+
                         .pathMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/catalog/products/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
@@ -59,6 +77,8 @@ public class SecurityConfig {
 
                         .pathMatchers("/test/oauth2").authenticated()
                         .pathMatchers("/test/relay").authenticated()
+
+
 
                         .anyExchange().authenticated()
                 )

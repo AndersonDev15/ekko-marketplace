@@ -51,15 +51,15 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
     // ---------- createReview ----------
 
     @Test
-    @DisplayName("createReview persiste review + imágenes con sortOrder y dispara el recálculo real del rating")
-    void createReview_shouldPersistReviewWithImagesAndTriggerRecalculation() {
+    @DisplayName("createReview persiste review y dispara el recálculo real del rating")
+    void createReview_shouldPersistReviewAndTriggerRecalculation() {
         // given
         UUID orderId = UUID.randomUUID();
         UUID orderItemId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         CreateReviewRequest request = new CreateReviewRequest(
-                productId, orderId, orderItemId, 5, "Great", "Nice", List.of("url-1", "url-2"));
+                productId, orderId, orderItemId, 5, "Great", "Nice");
 
         // when
         ReviewResponse response = reviewCommandService.createReview(request, CUSTOMER_ID);
@@ -68,14 +68,10 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         assertThat(response.id()).isNotNull();
         assertThat(response.status()).isEqualTo(ReviewStatus.VISIBLE);
         assertThat(response.isVerifiedPurchase()).isTrue();
-        assertThat(response.imageUrls()).containsExactly("url-1", "url-2");
+        assertThat(response.imageUrls()).isEmpty();
         Long images = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM review_images WHERE review_id = ?", Long.class, response.id());
-        assertThat(images).isEqualTo(2L);
-        List<Integer> sortOrders = jdbcTemplate.queryForList(
-                "SELECT sort_order FROM review_images WHERE review_id = ? ORDER BY sort_order",
-                Integer.class, response.id());
-        assertThat(sortOrders).containsExactly(0, 1);
+        assertThat(images).isEqualTo(0L);
 
         ArgumentCaptor<ProductRatingUpdatedEvent> captor = ArgumentCaptor.forClass(ProductRatingUpdatedEvent.class);
         verify(reviewEventPublisher).publishProductRatingUpdated(captor.capture());
@@ -103,7 +99,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
     void createReview_shouldThrowWhenCustomerNotEligible() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 5, "Great", "Nice", List.of());
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 5, "Great", "Nice");
 
         // when
         // then
@@ -121,9 +117,9 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         CreateReviewRequest first = new CreateReviewRequest(
-                productId, orderId, orderItemId, 5, "Great", "Nice", List.of());
+                productId, orderId, orderItemId, 5, "Great", "Nice");
         CreateReviewRequest duplicate = new CreateReviewRequest(
-                productId, orderId, orderItemId, 4, "Again", "Again", List.of());
+                productId, orderId, orderItemId, 4, "Again", "Again");
         reviewCommandService.createReview(first, CUSTOMER_ID);
 
         // when
@@ -144,7 +140,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of("old-url")),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         reset(reviewEventPublisher);
         UpdateReviewRequest request = new UpdateReviewRequest(4, "New title", "New comment", List.of("new-url"));
@@ -175,7 +171,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of()),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         reset(reviewEventPublisher);
         UpdateReviewRequest request = new UpdateReviewRequest(5, "Only title", null, null);
@@ -197,7 +193,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of()),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
 
         // when
@@ -210,15 +206,15 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
     // ---------- deleteReview ----------
 
     @Test
-    @DisplayName("deleteReview borra la review y sus imágenes y votos por cascade en la BD")
-    void deleteReview_shouldCascadeDeleteImagesAndVotes() {
+    @DisplayName("deleteReview borra la review y sus votos por cascade en la BD")
+    void deleteReview_shouldCascadeDeleteVotes() {
         // given
         UUID orderId = UUID.randomUUID();
         UUID orderItemId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of("img")),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         jdbcTemplate.update(
                 "INSERT INTO review_helpful_votes (review_id, customer_id) VALUES (?, ?)",
@@ -246,7 +242,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of()),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         reset(reviewEventPublisher);
 
@@ -272,7 +268,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of()),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         reset(reviewEventPublisher);
 
@@ -300,7 +296,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of()),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         reset(reviewEventPublisher);
 
@@ -327,7 +323,7 @@ class ReviewCommandServiceIntegrationTest extends AbstractPostgresIntegrationTes
         UUID productId = UUID.randomUUID();
         insertEligibility(orderId, orderItemId, productId);
         ReviewResponse created = reviewCommandService.createReview(
-                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice", List.of("img")),
+                new CreateReviewRequest(productId, orderId, orderItemId, 5, "Great", "Nice"),
                 CUSTOMER_ID);
         jdbcTemplate.update(
                 "INSERT INTO review_helpful_votes (review_id, customer_id) VALUES (?, ?)",

@@ -91,8 +91,7 @@ class ReviewControllerTest {
                                   "orderItemId": "%s",
                                   "rating": 5,
                                   "title": "Great",
-                                  "comment": "Nice",
-                                  "imageUrls": ["https://img/1"]
+                                  "comment": "Nice"
                                 }
                                 """.formatted(PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID)))
                 .andExpect(status().isCreated())
@@ -363,7 +362,7 @@ class ReviewControllerTest {
                 "Nice",
                 com.ekko.review_service.enums.ReviewStatus.VISIBLE,
                 true,
-                List.of("https://img/1"),
+                List.of(),
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().minusDays(1),
                 2L);

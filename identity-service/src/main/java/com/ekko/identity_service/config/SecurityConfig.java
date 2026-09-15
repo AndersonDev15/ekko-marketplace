@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/identity/email/resend-verification").authenticated()
                         .requestMatchers("/identity/credentials/**").authenticated()
                         .requestMatchers("/identity/register/admin").hasRole("ADMIN")
+                        .requestMatchers("/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth

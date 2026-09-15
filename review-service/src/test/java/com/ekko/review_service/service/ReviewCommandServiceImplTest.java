@@ -19,6 +19,7 @@ import com.ekko.review_service.dto.request.AdminUpdateContentRequest;
 import com.ekko.review_service.dto.request.CreateReviewRequest;
 import com.ekko.review_service.dto.response.ReviewResponse;
 import com.ekko.review_service.dto.request.UpdateReviewRequest;
+import com.ekko.review_service.validator.ReviewEditWindowValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -76,17 +78,20 @@ class ReviewCommandServiceImplTest {
     @Mock
     private ReviewEventPublisher reviewEventPublisher;
 
+    @Mock
+    private ReviewEditWindowValidator editWindowValidator;
+
     @InjectMocks
     private ReviewCommandServiceImpl reviewCommandService;
 
     // ---------- createReview ----------
 
     @Test
-    @DisplayName("createReview persiste review + imágenes, publica evento y retorna el ReviewResponse")
-    void createReview_shouldPersistReviewAndImagesPublishEventAndReturnResponse() {
+    @DisplayName("createReview persiste review, publica evento y retorna el ReviewResponse")
+    void createReview_shouldPersistReviewPublishEventAndReturnResponse() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of("url-1", "url-2", "url-3"));
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice");
         Review review = aReview()
                 .withProductId(PRODUCT_ID)
                 .withOrderId(ORDER_ID)
@@ -107,7 +112,6 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findByOrderItemIdAndCustomerId(ORDER_ITEM_ID, CUSTOMER_ID))
                 .thenReturn(Optional.empty());
         when(reviewRepository.save(review)).thenReturn(saved);
-        when(reviewImageRepository.save(any(ReviewImage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(reviewMapper.toResponse(eq(saved), anyList())).thenReturn(response);
 
         // when
@@ -116,7 +120,7 @@ class ReviewCommandServiceImplTest {
         // then
         assertThat(result).isEqualTo(response);
         verify(reviewRepository).save(review);
-        verify(reviewImageRepository, times(3)).save(any(ReviewImage.class));
+        verify(reviewImageRepository, never()).save(any(ReviewImage.class));
         ArgumentCaptor<RatingRecalculationRequestedEvent> eventCaptor =
                 ArgumentCaptor.forClass(RatingRecalculationRequestedEvent.class);
         verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
@@ -128,7 +132,7 @@ class ReviewCommandServiceImplTest {
     void createReview_shouldPublishReviewCreatedEventWithSavedReviewDetails() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of());
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice");
         Review review = aReview()
                 .withProductId(PRODUCT_ID)
                 .withOrderId(ORDER_ID)
@@ -174,7 +178,7 @@ class ReviewCommandServiceImplTest {
     void createReview_shouldNotPublishCreatedEventWhenCustomerNotEligible() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of());
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice");
         doThrow(new NotEligibleToReviewException())
                 .when(eligibilityService).assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID);
 
@@ -192,7 +196,7 @@ class ReviewCommandServiceImplTest {
     void createReview_shouldNotPersistAnythingWhenCustomerNotEligible() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of());
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice");
         doThrow(new NotEligibleToReviewException())
                 .when(eligibilityService).assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID);
 
@@ -209,7 +213,7 @@ class ReviewCommandServiceImplTest {
     void createReview_shouldThrowReviewAlreadyExistsWhenReviewForOrderItemAndCustomerExists() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of());
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice");
         when(reviewRepository.findByOrderItemIdAndCustomerId(ORDER_ITEM_ID, CUSTOMER_ID))
                 .thenReturn(Optional.of(aReview().build()));
 
@@ -221,11 +225,11 @@ class ReviewCommandServiceImplTest {
     }
 
     @Test
-    @DisplayName("createReview persiste las imágenes con sortOrder acorde al orden de la lista del request")
-    void createReview_shouldPersistImagesWithSortOrderFollowingRequestOrder() {
+    @DisplayName("createReview no persiste imágenes (se gestionan en updateReview)")
+    void createReview_shouldNotPersistImages() {
         // given
         CreateReviewRequest request = new CreateReviewRequest(
-                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice", List.of("url-1", "url-2"));
+                PRODUCT_ID, ORDER_ID, ORDER_ITEM_ID, 5, "Great", "Nice");
         Review review = aReview().withOrderItemId(ORDER_ITEM_ID).build();
         Review saved = aReview().withId(REVIEW_ID).withOrderItemId(ORDER_ITEM_ID).build();
         when(eligibilityService.assertEligible(CUSTOMER_ID, ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID))
@@ -234,21 +238,13 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findByOrderItemIdAndCustomerId(ORDER_ITEM_ID, CUSTOMER_ID))
                 .thenReturn(Optional.empty());
         when(reviewRepository.save(review)).thenReturn(saved);
-        when(reviewImageRepository.save(any(ReviewImage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(reviewMapper.toResponse(eq(saved), anyList())).thenReturn(response(saved));
 
         // when
         reviewCommandService.createReview(request, CUSTOMER_ID);
 
         // then
-        ArgumentCaptor<ReviewImage> imageCaptor = ArgumentCaptor.forClass(ReviewImage.class);
-        verify(reviewImageRepository, times(2)).save(imageCaptor.capture());
-        assertThat(imageCaptor.getAllValues())
-                .extracting(ReviewImage::getSortOrder)
-                .containsExactly(0, 1);
-        assertThat(imageCaptor.getAllValues())
-                .extracting(ReviewImage::getUrl)
-                .containsExactly("url-1", "url-2");
+        verify(reviewImageRepository, never()).save(any(ReviewImage.class));
     }
 
     // ---------- updateReview ----------
@@ -320,6 +316,8 @@ class ReviewCommandServiceImplTest {
                 .withCreatedAt(LocalDateTime.now().minusDays(16))
                 .build();
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
+        doThrow(new ReviewEditWindowExpiredException())
+                .when(editWindowValidator).assertWithinWindow(any());
 
         // when
         // then
@@ -342,6 +340,7 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
         when(reviewImageRepository.findByReviewIdOrderBySortOrderAsc(REVIEW_ID)).thenReturn(List.of());
         when(reviewMapper.toResponse(review, List.of())).thenReturn(response(review));
+        doNothing().when(editWindowValidator).assertWithinWindow(any());
 
         // when
         // then
@@ -363,6 +362,7 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
         when(reviewImageRepository.findByReviewIdOrderBySortOrderAsc(REVIEW_ID)).thenReturn(List.of());
         when(reviewMapper.toResponse(review, List.of())).thenReturn(response(review));
+        doNothing().when(editWindowValidator).assertWithinWindow(any());
 
         // when
         // then
@@ -381,16 +381,16 @@ class ReviewCommandServiceImplTest {
                 .build();
         UpdateReviewRequest request = new UpdateReviewRequest(5, "New title", "New comment", List.of("new-url"));
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
-        when(reviewImageRepository.save(any(ReviewImage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(reviewImageRepository.findByReviewIdOrderBySortOrderAsc(REVIEW_ID)).thenReturn(List.of());
         when(reviewMapper.toResponse(review, List.of())).thenReturn(response(review));
+        doNothing().when(editWindowValidator).assertWithinWindow(any());
 
         // when
         reviewCommandService.updateReview(REVIEW_ID, request, CUSTOMER_ID);
 
         // then
         verify(reviewImageRepository).deleteByReviewId(REVIEW_ID);
-        verify(reviewImageRepository).save(any(ReviewImage.class));
+        verify(reviewImageRepository).saveAll(anyList());
     }
 
     @Test
@@ -402,6 +402,7 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
         when(reviewImageRepository.findByReviewIdOrderBySortOrderAsc(REVIEW_ID)).thenReturn(List.of());
         when(reviewMapper.toResponse(review, List.of())).thenReturn(response(review));
+        doNothing().when(editWindowValidator).assertWithinWindow(any());
 
         // when
         reviewCommandService.updateReview(REVIEW_ID, request, CUSTOMER_ID);
@@ -420,6 +421,7 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
         when(reviewImageRepository.findByReviewIdOrderBySortOrderAsc(REVIEW_ID)).thenReturn(List.of());
         when(reviewMapper.toResponse(review, List.of())).thenReturn(response(review));
+        doNothing().when(editWindowValidator).assertWithinWindow(any());
 
         // when
         reviewCommandService.updateReview(REVIEW_ID, request, CUSTOMER_ID);
@@ -437,6 +439,7 @@ class ReviewCommandServiceImplTest {
         when(reviewRepository.findById(REVIEW_ID)).thenReturn(Optional.of(review));
         when(reviewImageRepository.findByReviewIdOrderBySortOrderAsc(REVIEW_ID)).thenReturn(List.of());
         when(reviewMapper.toResponse(review, List.of())).thenReturn(response(review));
+        doNothing().when(editWindowValidator).assertWithinWindow(any());
 
         // when
         reviewCommandService.updateReview(REVIEW_ID, request, CUSTOMER_ID);

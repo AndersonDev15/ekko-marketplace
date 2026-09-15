@@ -1,4 +1,8 @@
 package com.ekko.seller_service.dto.response;
 
-public record SellerLogoResponse(String logoUrl) {
-}
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record SellerLogoResponse(
+        @Schema(description = "Uploaded logo URL", example = "https://cdn.example.com/logos/store123.png")
+        String logoUrl
+) {}

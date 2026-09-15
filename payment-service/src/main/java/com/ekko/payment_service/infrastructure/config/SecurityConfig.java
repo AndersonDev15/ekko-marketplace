@@ -29,6 +29,7 @@ public class SecurityConfig {
                         .requestMatchers("/webhooks/stripe").permitAll()
                         .requestMatchers("/payments/**").permitAll()
                         .requestMatchers("/vendor-accounts/onboarding/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth

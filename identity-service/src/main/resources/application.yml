@@ -1,5 +1,7 @@
 server:
   port: 8087
+  forward-headers-strategy: framework
+
 
 spring:
   config:
@@ -65,6 +67,13 @@ management:
 
 logging:
   level:
+    org.springframework.cloud.gateway: TRACE
+    reactor.netty.http.client: DEBUG
+    reactor.netty.http.server: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.security.web.server.csrf: TRACE
     org.springframework.web: DEBUG
-    org.keycloak: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+    reactor.netty: DEBUG
+
+
