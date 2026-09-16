@@ -1,6 +1,7 @@
-version: "3.9"
 
 services:
+  # ---------------- Infraestructura ----------------
+
   keycloak-db:
     image: postgres:16-alpine
     container_name: ekko-keycloak-db
@@ -29,6 +30,7 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      JAVA_OPTS_APPEND: "-Xms256m -Xmx512m"
     ports:
       - "8180:8080"
     depends_on:
@@ -90,6 +92,17 @@ services:
       retries: 5
     networks:
       - ekko-network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ekko-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - ekko-network
+
+  # ---------------- Bases de datos por servicio ----------------
 
   seller-db:
     image: postgres:16-alpine
@@ -224,12 +237,340 @@ services:
     networks:
       - ekko-network
 
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: ekko-mailpit
+  # ---------------- Service discovery ----------------
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: ekko-eureka
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ekko-network
+
+  # ---------------- Microservicios (escalables) ----------------
+  # Sin container_name ni "ports" fijo: ambos impiden correr más de una
+  # réplica. Se usa "expose" porque el gateway habla con ellos por la red
+  # interna vía lb://<servicio> (Eureka + LoadBalancer), no necesitan
+  # puerto publicado al host.
+  #
+  # IMPORTANTE: cada servicio necesita en su application.yml:
+  #   eureka:
+  #     instance:
+  #       instance-id: ${spring.application.name}:${random.value}
+  # para que Eureka distinga cada réplica como una instancia separada.
+  #
+  # Para escalar: docker compose up --scale seller-service=2 -d
+
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+
+    env_file:
+    - ./identity-service/.env
+
+    environment:
+      DB_HOST: identity-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8087"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8087/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      identity-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - ekko-network
+
+  seller-service:
+    build:
+      context: ./seller-service
+      dockerfile: Dockerfile
+    
+    env_file:
+    - ./seller-service/.env
+
+    environment:
+      DB_HOST: seller-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8081"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      seller-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ekko-network
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+
+    env_file:
+    - ./product-service/.env
+
+    environment:
+      DB_HOST: product-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8082"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      product-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ekko-network
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+
+    env_file:
+    - ./order-service/.env
+
+    environment:
+      DB_HOST: order-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8083"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      order-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ekko-network
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+
+    env_file:
+    - ./payment-service/.env
+
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8084"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ekko-network
+
+  review-service:
+    build:
+      context: ./review-service
+      dockerfile: Dockerfile
+
+    env_file:
+    - ./review-service/.env
+
+    environment:
+      DB_HOST: review-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8085"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      review-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ekko-network
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+
+    env_file:
+    - ./notification-service/.env
+      
+    environment:
+      DB_HOST: notification-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_HOST: eureka-server
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
+    expose:
+      - "8086"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 480s
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ekko-network
+
+  # ---------------- API Gateway ----------------
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: ekko-api-gateway
+    environment:
+      EUREKA_HOST: eureka-server
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ekko
+      KEYCLOAK_CLIENT_ID: ekko-bff
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      REDIS_HOST: redis
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      seller-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      review-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
     networks:
       - ekko-network
 

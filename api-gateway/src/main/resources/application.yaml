@@ -14,6 +14,12 @@ spring:
   application:
     name: api-gateway
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+
   security:
     oauth2:
       client:
@@ -135,6 +141,11 @@ spring:
                 - Path=/api/sellers/**,/api/admin/sellers/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: seller-cb
@@ -147,6 +158,11 @@ spring:
                 - Path=/api/products/**,/api/seller/products/**,/api/admin/products/**,/api/admin/categories/**,/api/admin/brands/**,/api/catalog/products/**,/api/categories/**,/api/brands/**,/api/seller/variants/**,/api/internal/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: product-cb
@@ -159,6 +175,11 @@ spring:
                 - Path=/api/orders,/api/orders/**,/api/admin/orders,/api/admin/orders/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: order-cb
@@ -171,6 +192,11 @@ spring:
                 - Path=/api/payments/**,/api/admin/payments/**,/api/vendor-accounts/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: payment-cb
@@ -188,6 +214,11 @@ spring:
                 - Path=/api/reviews/**,/api/admin/reviews/**,/api/product-reviews/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: review-cb
@@ -199,6 +230,11 @@ spring:
                 - Path=/api/notifications/**,/api/admin/notification-templates/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: notification-cb
@@ -210,6 +246,11 @@ spring:
                 - Path=/api/identity/**
               filters:
                 - TokenRelay
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userOrIpKeyResolver}"
                 - name: CircuitBreaker
                   args:
                     name: identity-cb
