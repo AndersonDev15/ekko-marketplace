@@ -52,7 +52,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+          issuer-uri: ${KEYCLOAK_PUBLIC_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak:8080}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}

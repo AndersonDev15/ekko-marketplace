@@ -31,7 +31,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+          issuer-uri: ${KEYCLOAK_PUBLIC_URL}/realms/${KEYCLOAK_REALM:ekko}
+          jwk-set-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
@@ -45,7 +46,7 @@ spring:
 
 keycloak:
   admin:
-    url: ${KEYCLOAK_URL:http://localhost:8180}
+    url: ${KEYCLOAK_URL}
     realm: ${KEYCLOAK_REALM:ekko}
     client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:identity-service}
     client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}

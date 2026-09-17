@@ -37,11 +37,16 @@ spring:
 
         provider:
           keycloak:
-            issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+            authorization-uri: ${KEYCLOAK_PUBLIC_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/auth
+            token-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/token
+            user-info-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/userinfo
+            jwk-set-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
 
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:ekko}
+          issuer-uri: ${KEYCLOAK_PUBLIC_URL}/realms/${KEYCLOAK_REALM:ekko}
+          jwk-set-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
 
   cloud:
     gateway:

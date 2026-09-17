@@ -30,6 +30,8 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8180
       JAVA_OPTS_APPEND: "-Xms256m -Xmx512m"
     ports:
       - "8180:8080"
@@ -287,6 +289,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL}
       KEYCLOAK_REALM: ekko
       JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
     expose:
@@ -327,6 +330,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL}
       KEYCLOAK_REALM: ekko
       JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
     expose:
@@ -545,6 +549,7 @@ services:
     environment:
       EUREKA_HOST: eureka-server
       KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL}
       KEYCLOAK_REALM: ekko
       KEYCLOAK_CLIENT_ID: ekko-bff
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
