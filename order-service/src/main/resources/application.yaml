@@ -11,6 +11,13 @@ spring:
   profiles:
     active: dev
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          product-service:
+            loggerLevel: basic
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5435}/order_db
     username: ${DB_USER:ekko}
@@ -62,15 +69,22 @@ spring:
 
 services:
  product-service:
-  url: http://localhost:8082
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
 
 logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
+    com.ekko.order_service.infrastructure.persistence.adapter.out.product.ProductServiceClient: DEBUG
+    org.springframework.cloud.openfeign: DEBUG

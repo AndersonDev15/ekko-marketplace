@@ -51,11 +51,17 @@ app:
   stripe-onboarding:
     refresh-url: ${STRIPE_ONBOARDING_REFRESH_URL:http://localhost:8080/api/vendor-accounts/onboarding/refresh}
     return-url: ${STRIPE_ONBOARDING_RETURN_URL:http://localhost:8080/api/vendor-accounts/onboarding/return}
+
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
 
 logging:
   level:

@@ -15,6 +15,10 @@ import org.springframework.security.oauth2.client.web.DefaultReactiveOAuth2Autho
 import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizedClientRepository;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
+import org.springframework.security.web.server.csrf.CsrfWebFilter;
+import org.springframework.security.web.server.util.matcher.AndServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -24,9 +28,15 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                  .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
+                  .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                  .requireCsrfProtectionMatcher(new AndServerWebExchangeMatcher(
+                CsrfWebFilter.DEFAULT_CSRF_MATCHER,
+                new NegatedServerWebExchangeMatcher(
+                        new PathPatternParserServerWebExchangeMatcher("/webhooks/stripe")
                 )
+        ))
+)
                 .addFilterAfter(new CsrfCookieWebFilter(), SecurityWebFiltersOrder.CSRF)
 
                 .authorizeExchange(exchanges -> exchanges
@@ -84,8 +94,6 @@ public class SecurityConfig {
                 )
 
                 .oauth2Login(Customizer.withDefaults())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-
                 .build();
     }
 }

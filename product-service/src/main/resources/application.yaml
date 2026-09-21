@@ -48,10 +48,16 @@ spring:
     password: ${RABBITMQ_PASSWORD:ekko123}
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}

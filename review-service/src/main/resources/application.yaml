@@ -51,10 +51,15 @@ cloudinary:
   api-secret: ${CLOUDINARY_API_SECRET}
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
 
 logging:
   level:

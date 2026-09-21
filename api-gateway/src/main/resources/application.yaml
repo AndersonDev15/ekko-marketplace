@@ -43,10 +43,7 @@ spring:
             jwk-set-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
             user-name-attribute: preferred_username
 
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_PUBLIC_URL}/realms/${KEYCLOAK_REALM:ekko}
-          jwk-set-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM:ekko}/protocol/openid-connect/certs
+      
 
   cloud:
     gateway:
