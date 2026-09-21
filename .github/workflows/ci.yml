@@ -1,0 +1,183 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+
+  api-gateway:
+    name: API Gateway
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: api-gateway/pom.xml
+
+      - name: Run tests
+        working-directory: api-gateway
+        run: ./mvnw -B test
+
+  eureka-server:
+    name: Eureka Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: eureka-server/pom.xml
+
+      - name: Run tests
+        working-directory: eureka-server
+        run: ./mvnw -B test
+
+  identity-service:
+    name: Identity Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: identity-service/pom.xml
+
+      - name: Run tests
+        working-directory: identity-service
+        run: ./mvnw -B test
+
+  notification-service:
+    name: Notification Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: notification-service/pom.xml
+
+      - name: Run tests
+        working-directory: notification-service
+        run: ./mvnw -B test
+
+  order-service:
+    name: Order Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: order-service/pom.xml
+
+      - name: Run tests
+        working-directory: order-service
+        run: ./mvnw -B test
+
+  payment-service:
+    name: Payment Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: payment-service/pom.xml
+
+      - name: Run tests
+        working-directory: payment-service
+        run: ./mvnw -B test
+
+  product-service:
+    name: Product Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: product-service/pom.xml
+
+      - name: Run tests
+        working-directory: product-service
+        run: ./mvnw -B test
+
+  review-service:
+    name: Review Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: review-service/pom.xml
+
+      - name: Run tests
+        working-directory: review-service
+        run: ./mvnw -B test
+
+  seller-service:
+    name: Seller Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: seller-service/pom.xml
+
+      - name: Run tests
+        working-directory: seller-service
+        run: ./mvnw -B test
