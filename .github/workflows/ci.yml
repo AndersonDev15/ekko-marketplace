@@ -189,3 +189,17 @@ jobs:
           name: seller-service-surefire-reports
           path: seller-service/target/surefire-reports/
           if-no-files-found: warn
+
+      - name: Extract test failure causes
+        if: failure()
+        run: |
+          echo "=== SELLER SERVICE ROOT CAUSES ==="
+          grep -R -n -B 5 -A 20 "Caused by:" seller-service/target/surefire-reports/ \
+            | head -n 500 > seller-service-failure-causes.txt
+          cat seller-service-failure-causes.txt
+
+      - name: Upload failure analysis
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: seller-service-failure-analysis
