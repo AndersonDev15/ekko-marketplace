@@ -181,3 +181,11 @@ jobs:
       - name: Run tests
         working-directory: seller-service
         run: ./mvnw -B test
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: seller-service-surefire-reports
+          path: seller-service/target/surefire-reports/
+          if-no-files-found: warn
