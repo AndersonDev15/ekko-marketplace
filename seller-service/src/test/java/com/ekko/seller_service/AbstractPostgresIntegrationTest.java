@@ -6,12 +6,12 @@ import com.ekko.seller_service.repository.SellerRepository;
 import com.ekko.seller_service.service.MinioService;
 import com.ekko.seller_service.support.SellerTestDataBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.minio.MinioClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -53,31 +53,11 @@ public abstract class AbstractPostgresIntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-
-        registry.add(
-                "spring.rabbitmq.listener.simple.auto-startup",
-                () -> "false"
-        );
-
-        registry.add(
-                "eureka.client.enabled",
-                () -> "false"
-        );
-
-        registry.add(
-                "spring.flyway.enabled",
-                () -> "true"
-        );
-
-        registry.add(
-                "spring.flyway.locations",
-                () -> "classpath:db/migration"
-        );
-
-        registry.add(
-                "spring.datasource.hikari.maximum-pool-size",
-                () -> "32"
-        );
+        registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false");
+        registry.add("eureka.client.enabled", () -> "false");
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("spring.flyway.locations", () -> "classpath:db/migration");
+        registry.add("spring.datasource.hikari.maximum-pool-size", () -> "32");
     }
 
     @Autowired
@@ -97,6 +77,9 @@ public abstract class AbstractPostgresIntegrationTest {
 
     @MockitoBean
     protected MinioService minioService;
+
+    @MockitoBean
+    protected MinioClient minioClient;
 
     @BeforeEach
     void cleanDatabase() {
