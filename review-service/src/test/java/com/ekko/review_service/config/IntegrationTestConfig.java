@@ -1,4 +1,4 @@
-package com.ekko.payment_service.config;
+package com.ekko.review_service.config;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
@@ -7,39 +7,27 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
 
 @Configuration
 @ComponentScan(
-        basePackages = "com.ekko.payment_service",
+        basePackages = "com.ekko.review_service",
         excludeFilters = {
                 @ComponentScan.Filter(
                         type = FilterType.ASSIGNABLE_TYPE,
-                        classes = com.ekko.payment_service.PaymentServiceApplication.class
-                ),
-                @ComponentScan.Filter(
-                        type = FilterType.ASSIGNABLE_TYPE,
-                        classes = TestApplicationConfig.class
+                        classes = com.ekko.review_service.ReviewServiceApplication.class
                 )
         }
 )
-@EntityScan(basePackages = {
-        "com.ekko.payment_service.domain.model",
-        "com.ekko.payment_service.infrastructure.persistence.entity"
-})
-@EnableJpaRepositories(
-        basePackages = "com.ekko.payment_service.infrastructure.persistence.repository"
-)
+@EntityScan(basePackages = "com.ekko.review_service.entity")
+@EnableJpaRepositories(basePackages = "com.ekko.review_service.repository")
 @EnableAutoConfiguration(excludeName = {
         "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration",
         "org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration",
         "org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration"
 })
 @Import({
-        com.ekko.payment_service.infrastructure.config.SecurityConfig.class
+        com.ekko.review_service.config.SecurityConfig.class,
+        com.ekko.review_service.config.RabbitMQConfig.class
 })
 public class IntegrationTestConfig {
 }

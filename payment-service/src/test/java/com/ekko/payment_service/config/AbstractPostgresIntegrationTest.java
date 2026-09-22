@@ -1,34 +1,28 @@
-package com.ekko.review_service.config;
+package com.ekko.payment_service.config;
 
-import com.ekko.review_service.messaging.ReviewEventPublisher;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.RabbitMQContainer;
 
 @SpringBootTest
 @ContextConfiguration(classes = IntegrationTestConfig.class)
-@TestPropertySource(properties = {
-        "spring.rabbitmq.listener.simple.auto-startup=false"
-})
 public abstract class AbstractPostgresIntegrationTest {
 
     static final PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("review_db")
+                    .withDatabaseName("payment_db")
                     .withUsername("ekko")
                     .withPassword("ekko123");
 
+    static final RabbitMQContainer rabbitmq =
+            new RabbitMQContainer("rabbitmq:3.13-management-alpine");
+
     static {
         postgres.start();
+        rabbitmq.start();
     }
 
     @DynamicPropertySource
@@ -37,6 +31,11 @@ public abstract class AbstractPostgresIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
 
+        registry.add("spring.rabbitmq.host", rabbitmq::getHost);
+        registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
+        registry.add("spring.rabbitmq.username", rabbitmq::getAdminUsername);
+        registry.add("spring.rabbitmq.password", rabbitmq::getAdminPassword);
+
         registry.add(
                 "spring.rabbitmq.listener.simple.auto-startup",
                 () -> "false"
@@ -44,27 +43,19 @@ public abstract class AbstractPostgresIntegrationTest {
 
         registry.add("eureka.client.enabled", () -> "false");
 
+        registry.add(
+                "stripe.api-key",
+                () -> "sk_test_fake_key_for_testing"
+        );
+        registry.add(
+                "stripe.webhook-secret",
+                () -> "whsec_fake_secret_for_testing"
+        );
+
         registry.add("spring.flyway.enabled", () -> "true");
         registry.add(
                 "spring.flyway.locations",
                 () -> "classpath:db/migration"
         );
-    }
-
-    @MockitoBean
-    protected ReviewEventPublisher reviewEventPublisher;
-
-    @Autowired
-    protected JdbcTemplate jdbcTemplate;
-
-    @BeforeEach
-    void cleanDatabase() {
-        jdbcTemplate.execute("""
-                TRUNCATE TABLE review_images,
-                           review_helpful_votes,
-                           reviews,
-                           eligible_reviews
-                RESTART IDENTITY CASCADE
-                """);
     }
 }

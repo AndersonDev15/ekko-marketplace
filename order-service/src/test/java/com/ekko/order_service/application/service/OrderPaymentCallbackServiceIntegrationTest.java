@@ -48,7 +48,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest
+
 class OrderPaymentCallbackServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired

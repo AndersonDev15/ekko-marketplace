@@ -1,5 +1,6 @@
 package com.ekko.payment_service.application.service;
 
+import com.ekko.payment_service.config.AbstractPostgresIntegrationTest;
 import com.ekko.payment_service.config.IntegrationTestConfig;
 import com.ekko.payment_service.domain.command.InitiatePaymentCommand;
 import com.ekko.payment_service.domain.exception.PaymentAlreadySucceededException;
@@ -43,11 +44,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@ContextConfiguration(classes = IntegrationTestConfig.class)
-@Import(IntegrationTestConfig.class)
 @Transactional
-class PaymentServiceIntegrationTest {
+class PaymentServiceIntegrationTest extends AbstractPostgresIntegrationTest {
 
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final String PAYMENT_INTENT_ID = "pi_test_123";

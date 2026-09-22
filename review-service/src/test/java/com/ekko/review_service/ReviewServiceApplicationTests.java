@@ -1,13 +1,11 @@
 package com.ekko.review_service;
 
+import com.ekko.review_service.config.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class ReviewServiceApplicationTests {
+class ReviewServiceApplicationTests extends AbstractPostgresIntegrationTest {
 
 	@Test
 	void contextLoads() {
 	}
-
 }

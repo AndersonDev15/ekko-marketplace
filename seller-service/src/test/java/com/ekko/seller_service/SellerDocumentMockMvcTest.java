@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+
 class SellerDocumentMockMvcTest extends AbstractPostgresIntegrationTest {
 
     private static final MockMultipartFile DOCUMENT_FILE = new MockMultipartFile(
