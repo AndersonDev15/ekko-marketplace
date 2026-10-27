@@ -1,0 +1,79 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seller-service
+spec:
+  replicas: 1
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: seller-service
+  template:
+    metadata:
+      labels:
+        app: seller-service
+    spec:
+      containers:
+        - name: seller-service
+          image: ekko-seller-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+                    # Comprueba si la aplicación sigue funcionando
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Comprueba si la aplicación está lista para recibir tráfico
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            # PostgreSQL: permanece en Docker Compose
+            - name: DB_HOST
+              value: "192.168.131.9"
+            - name: DB_PORT
+              value: "5433"
+            - name: DB_USER
+              value: "ekko"
+            - name: DB_PASSWORD
+              value: "ekko123"
+
+            # Eureka: deshabilitado para esta prueba
+            - name: EUREKA_CLIENT_ENABLED
+              value: "false"
+
+            # MinIO: accesible desde Kubernetes mediante la IP de WSL
+            - name: MINIO_ENDPOINT
+              value: "http://192.168.131.9:9000"
+            - name: MINIO_ACCESS_KEY
+              value: "ekko"
+            - name: MINIO_SECRET_KEY
+              value: "ekko12345"
+            - name: MINIO_BUCKET
+              value: "ekko-documents"
+
+            # Cloudinary
+            - name: CLOUDINARY_CLOUD_NAME
+              value: "gqrn3sdp"
+            - name: CLOUDINARY_API_KEY
+              value: "611363523739451"
+            - name: CLOUDINARY_API_SECRET
+              value: "A6_Z5PBEHTdGDBRf3YNtOjWvoY4"
+

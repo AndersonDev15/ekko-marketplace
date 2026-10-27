@@ -1,0 +1,12 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seller-service-config
+data:
+  DB_HOST: "192.168.131.9"
+  DB_PORT: "5433"
+  EUREKA_CLIENT_ENABLED: "false"
+  MINIO_ENDPOINT: "http://minio:9000"
+  MINIO_BUCKET: "ekko-documents"
+  CLOUDINARY_CLOUD_NAME: "gqrn3sdp"

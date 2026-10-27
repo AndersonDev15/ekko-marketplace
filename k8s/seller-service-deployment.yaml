@@ -1,0 +1,105 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seller-service
+spec:
+  replicas: 1
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: seller-service
+  template:
+    metadata:
+      labels:
+        app: seller-service
+    spec:
+      containers:
+        - name: seller-service
+          image: ekko-seller-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1536Mi"
+
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 30
+                  
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Comprueba si la aplicación está lista para recibir tráfico
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          envFrom:
+            - configMapRef:
+                name: seller-service-config
+
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: seller-service-secrets
+                  key: DB_USER
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: seller-service-secrets
+                  key: DB_PASSWORD
+
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seller-service-secrets
+                  key: MINIO_ACCESS_KEY
+
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seller-service-secrets
+                  key: MINIO_SECRET_KEY
+
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seller-service-secrets
+                  key: CLOUDINARY_API_KEY
+
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: seller-service-secrets
+                  key: CLOUDINARY_API_SECRET
+
+
