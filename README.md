@@ -1,59 +1,81 @@
 # Ekko
 
-Ekko es una plataforma de e-commerce multi-vendedor que resuelve el flujo completo de un marketplace: registro y catálogo independiente por vendedor, reserva de inventario, checkout con liquidación individual vía Stripe Connect, y comunicación desacoplada entre servicios mediante eventos. Está construida con una arquitectura de microservicios en Java y Spring Boot, coordinada por un API Gateway.
+Ekko es una plataforma de e-commerce multi-vendedor que implementa el flujo completo de un marketplace: registro de usuarios, gestión independiente de vendedores y catálogos, control de inventario, checkout y procesamiento de pagos con liquidación individual mediante Stripe Connect.
+
+Está construida con una arquitectura de microservicios basada en Java y Spring Boot. Los servicios se comunican de forma síncrona mediante REST y OpenFeign, y de forma asíncrona mediante eventos con RabbitMQ. Spring Cloud Gateway implementa el patrón BFF (Backend for Frontend) y centraliza el acceso a la plataforma.
 
 ## Arquitectura
 
-El sistema está compuesto por microservicios independientes que se comunican de forma síncrona (REST vía Feign) y asíncrona (eventos vía RabbitMQ), coordinados a través de un API Gateway que actúa como Backend for Frontend (BFF).
+El sistema está compuesto por microservicios independientes, con responsabilidades delimitadas y persistencia propia. La comunicación entre servicios combina llamadas REST y mensajería asíncrona.
 
 ![Arquitectura de Ekko](.github/assets/architecture.svg)
 
-Diagrama interactivo: [IcePanel](https://s.icepanel.io/ZthmG6qMlCbyqv/aQH9)
 
-- **Descubrimiento de servicios:** Eureka
-- **Gateway:** Spring Cloud Gateway (puerto 8080), TokenRelay, Resilience4j CircuitBreaker, rate limiting con Redis
-- **Autenticación y autorización:** Keycloak (OAuth2/OIDC), roles vía `realm_access.roles`
-- **Comunicación asíncrona:** RabbitMQ (patrón DLQ, outbox pattern en `identity-service`)
-- **Pagos:** Stripe Connect (separate charges and transfers)
-- **Almacenamiento:** Cloudinary (imágenes), MinIO (documentos)
-- **Persistencia:** PostgreSQL (enums nativos, UUID como PK)
 
-Las decisiones de arquitectura están documentadas mediante un conjunto de ADRs (Architecture Decision Records) que cubren, entre otros temas: justificación de microservicios, UUID como PK, Saga por coreografía, integración con Stripe Connect, mensajería con RabbitMQ, migraciones con Flyway, uso de enums de PostgreSQL, arquitectura hexagonal selectiva, integración con Keycloak, comunicación REST + eventos, y el rol de Spring Cloud Gateway y Eureka.
+- **Descubrimiento de servicios:** Netflix Eureka.
+- **BFF y API Gateway:** Spring Cloud Gateway actúa como punto de entrada para el cliente, centralizando el enrutamiento, Token Relay, seguridad, resiliencia y control de solicitudes.
+- **Resiliencia:** Resilience4j CircuitBreaker y endpoints de fallback
+- **Rate limiting:** Redis
+- **Autenticación y autorización:** Keycloak mediante OAuth2/OIDC, con autorización basada en roles.
+- **Comunicación síncrona:** REST y OpenFeign.
+- **Comunicación asíncrona:** RabbitMQ, con Dead Letter Queues (DLQ) y patrón Outbox en identity-service.
+- **Pagos:** tripe Connect, mediante el modelo Separate Charges and Transfers.
+- **Almacenamiento:** Cloudinary para imágenes y MinIO para documentos.
+- **Persistencia:** PostgreSQL, con bases de datos independientes por servicio, UUID como clave primaria y enums nativos.
+
+Las decisiones de arquitectura están documentadas mediante ADRs (Architecture Decision Records), que cubren, entre otros temas, microservicios, UUID, Saga por coreografía, Stripe Connect, RabbitMQ, Flyway, arquitectura hexagonal, Keycloak, comunicación entre servicios y Spring Cloud Gateway.
 
 ## Microservicios
 
 | Servicio | Responsabilidad |
 |---|---|
-| `identity-service` | Registro de usuarios en Keycloak, gestión de credenciales, verificación de email, cambio de contraseña con step-up auth |
+| `identity-service` | Registro de usuarios, gestión de credenciales, verificación de email y cambio de contraseña con step-up authentication. |
 | `seller-service` | Gestión de perfiles y datos de negocio de vendedores |
 | `product-service` | Catálogo de productos, inventario, categorías |
-| `order-service` | Orquestación de pedidos (arquitectura hexagonal) |
-| `payment-service` | Procesamiento de pagos vía Stripe Connect (arquitectura hexagonal) |
-| `review-service` | Reseñas de productos |
-| `notification-service` | Notificaciones por email e in app |
-| `api-gateway` | Punto de entrada único, enrutamiento, seguridad, resiliencia |
-| `eureka-server` | Registro y descubrimiento de servicios |
+| `order-service` | Gestión y orquestación de pedidos mediante arquitectura hexagonal y Saga por coreografía. |
+| `payment-service` | Procesamiento de pagos y liquidaciones mediante Stripe Connect. |
+| `review-service` | Gestión de reseñas de productos. |
+| `notification-service` | Notificaciones por correo electrónico e in-app, basadas en eventos. |
+| `api-gateway` | BFF, punto de entrada único, enrutamiento, seguridad y resiliencia. |
+| `eureka-server` | Registro y descubrimiento de servicios. |
 
 ## Stack tecnológico
 
 **Backend**
 - Java 21
-- Spring Boot, Spring Cloud Gateway, Spring Security (OAuth2)
+- Spring Boot
+- Spring Cloud Gateway
+- Spring Cloud OpenFeign
+- Spring Security (OAuth2)
+- Spring Data JPA / Hibernate
+- Spring Boot Actuator
 
 **Datos y mensajería**
 - PostgreSQL
 - RabbitMQ
 - Redis
+- Flyway
 
 **Identidad y seguridad**
 - Keycloak
+- OAuth2 / OpenID Connect
+- JWT
 
 **Infraestructura**
-- Docker, Docker Compose
+- Docker
+- Docker Compose
+- Kubernetes
+- Minio
 
 **Pagos y almacenamiento**
 - Stripe Connect
-- Cloudinary, MinIO
+- Cloudinary
+
+**Pruebas y automatización**
+- JUnit 5
+- Mockito
+- Pruebas unitarias e integración
+- GitHub Actions
 
 ## Funcionalidades clave
 
@@ -64,70 +86,130 @@ Las decisiones de arquitectura están documentadas mediante un conjunto de ADRs 
 - Comunicación interna entre servicios autenticada vía client credentials, sin depender de tokens de usuario.
 
 **Catálogo e inventario**
-- Gestión de catálogo por vendedor: productos, variantes, categorías con detección de ciclos.
-- Control de inventario con bloqueo pesimista para evitar sobreventa en condiciones de concurrencia.
+- Gestión independiente de catálogos por vendedor.
+- Administración de productos, variantes y categorías, con detección de ciclos.
+- Control de inventario mediante bloqueo pesimista para reducir el riesgo de sobreventa ante operaciones concurrentes.
 
 **Pedidos y pagos**
-- Flujo completo de pedidos con reserva de inventario y orquestación mediante Saga por coreografía.
-- Procesamiento de pagos vía Stripe Connect con liquidación independiente por vendedor.
-- Manejo explícito de estados de pago (creado, iniciado, cancelado) con protección de datos sensibles según el estado.
+- Flujo de pedidos con reserva de inventario.
+- Orquestación distribuida mediante Saga por coreografía.
+- Procesamiento de pagos con Stripe Connect.
+- Liquidaciones independientes para cada vendedor.
+- Gestión explícita de estados de pago y protección de información sensible.
 
 **Resiliencia y observabilidad**
-- Circuit breakers configurados por servicio en el Gateway, con endpoints de fallback.
-- Colas de mensajes muertos (DLQ) para eventos que fallan en su procesamiento.
-- Health checks vía Spring Boot Actuator en todos los servicios, usados para orquestar el arranque en Docker Compose.
-- Balanceo de carga real entre múltiples instancias vía Eureka y rate limiting a nivel de Gateway.
+- Circuit breakers y endpoints de fallback en el Gateway.
+- Dead Letter Queues para mensajes que no pueden procesarse.
+- Health checks mediante Spring Boot Actuator.
+- Balanceo de carga mediante Eureka y Spring Cloud LoadBalancer en el Gateway.
+- Rate limiting mediante Redis.
 
 **Notificaciones y reseñas**
-- Notificaciones por email e in app basadas en eventos del sistema, con plantillas configurables.
+- Notificaciones por correo electrónico e in-app.
+- Procesamiento de notificaciones basado en eventos de RabbitMQ.
+- Plantillas configurables para los distintos tipos de notificación.
 - Sistema de reseñas de productos.
 
-## Cómo ejecutar el proyecto
 
-### Requisitos previos
+## Despliegue
+Ekko cuenta con dos alternativas de despliegue: Docker Compose y Kubernetes.
 
-- Docker y Docker Compose
-- Variables de entorno configuradas (Keycloak, Stripe, Cloudinary, MinIO)
-
-### Levantar el sistema
+**Docker Compose**
+Requisitos previos
+- Docker Engine.
+- Docker Compose.
+- Variables de entorno configuradas para Keycloak, Stripe, Cloudinary, MinIO y SMTP.
+  Para levantar el sistema:
 
 ```bash
 docker-compose up --build
 ```
 
-Docker Compose orquesta el arranque de todos los servicios respetando dependencias mediante `condition: service_healthy`, verificado a través de Spring Boot Actuator en cada microservicio.
+Docker Compose coordina el arranque de los servicios mediante dependencias y health checks basados en Spring Boot Actuator.
+
+**Kubernetes**
+El repositorio incluye manifiestos Kubernetes organizados por responsabilidad, para desplegar los microservicios y sus dependencias de infraestructura.
+
+La configuración contempla:
+- Namespace ekko.
+- API Gateway y Eureka Server.
+- Microservicios de identidad, vendedores, productos, pedidos, pagos, reseñas y notificaciones.
+- PostgreSQL para los servicios y Keycloak.
+- Keycloak, Redis, RabbitMQ y MinIO.
+- Configuración de Ingress.
+- ConfigMaps y Secrets para la configuración de los servicios.
+  Los manifiestos están escritos en Kubernetes YAML nativo, sin Helm charts.
+
+**Configuración y secretos**
+
+Los archivos reales de configuración y secretos se mantienen fuera del control de versiones:
+- ```k8s/config/```
+- ```k8s/secrets/```
+  
+El repositorio incluye plantillas de referencia:
+- ```k8s/config.example/```
+- ```k8s/secrets.example/```
+ 
+Antes del despliegue es necesario crear los archivos de configuración y secretos correspondientes, reemplazando los valores de ejemplo por los valores del entorno.
+
+
 
 ## Estructura del repositorio
-
-Este es un monorepo: todos los microservicios, el API Gateway y el servidor de descubrimiento viven en un único repositorio, cada uno en su propio módulo.
+Ekko está organizado como un monorepo: los microservicios, la infraestructura y los manifiestos de despliegue viven en un único repositorio.
 
 ```
-ekko/
-  -  api-gateway/
-  - eureka-server/
-  - identity-service/
-  - seller-service/
-  - product-service/
-  - order-service/
-  - payment-service/
-  - review-service/
-  - notification-service/
-  - docker-compose.yml
+ekko-marketplace/
+├── api-gateway/
+├── eureka-server/
+├── identity-service/
+├── seller-service/
+├── product-service/
+├── order-service/
+├── payment-service/
+├── review-service/
+├── notification-service/
+├── k8s/
+│   ├── config.example/
+│   ├── eureka/
+│   ├── gateway/
+│   ├── infrastructure/
+│   │   ├── keycloak/
+│   │   ├── minio/
+│   │   ├── postgresql/
+│   │   ├── rabbitmq/
+│   │   └── redis/
+│   ├── ingress/
+│   ├── namespace/
+│   ├── secrets.example/
+│   ├── services/
+│   ├── config/
+│   └── secrets/
+├── .github/
+│   └── assets/
+│       └── architecture.svg
+├── docker-compose.yml
+├── README.md
+└── LICENSE
 ```
-
 ## Documentación adicional
 
 Documentación técnica y decisiones de arquitectura (ADRs): [Documentación técnica](https://andersondiaz15.atlassian.net/wiki/external/MDhhMDAyMGJlZjNkNGU2NGJlM2U3ZTY4NmJiZGZkMTY)
 
+Diagrama interactivo: [IcePanel](https://s.icepanel.io/ZthmG6qMlCbyqv/aQH9)
+
 ## Roadmap
 
-- [x] Servicios de dominio (identidad, vendedores, productos, pedidos, pagos, reseñas, notificaciones)
-- [x] Comunicación síncrona y asíncrona entre servicios
-- [x] Gateway como punto único de entrada, con seguridad y resiliencia
-- [x] Balanceo de carga y rate limiting validados en Docker
-- [ ] Frontend
-- [ ] Observabilidad centralizada (logs, métricas, trazas)
-- [ ] Despliegue en entorno cloud
+- [x] Microservicios de dominio.
+- [x] Comunicación síncrona y asíncrona.
+- [x] API Gateway con patrón BFF como punto de entrada único.
+- [x] Autenticación y autorización mediante Keycloak.
+- [x] Procesamiento de pagos con Stripe Connect.
+- [x] Resiliencia, balanceo de carga y rate limiting.
+- [x] Infraestructura contenerizada con Docker Compose.
+- [x] Manifiestos Kubernetes para los servicios y la infraestructura.
+- [ ] Frontend.
+- [ ] Observabilidad centralizada: logs, métricas y trazas.
+- [ ] Despliegue en un entorno cloud.
 
 ## Licencia
 
