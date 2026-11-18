@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-service
+  namespace: ekko
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: review-service
+  template:
+    metadata:
+      labels:
+        app: review-service
+    spec:
+      containers:
+        - name: review-service
+          image: ekko/review-service:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: DB_HOST
+              value: review-db
+            - name: DB_PORT
+              value: "5432"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms64m -Xmx320m"
+          envFrom:
+            - configMapRef:
+                name: ekko-app-config
+            - secretRef:
+                name: ekko-db-secret
+            - secretRef:
+                name: rabbitmq-secret
+            - secretRef:
+                name: seller-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 90
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: review-service
+  namespace: ekko
+spec:
+  selector:
+    app: review-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+  type: ClusterIP

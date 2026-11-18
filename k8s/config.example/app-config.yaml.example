@@ -1,0 +1,45 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ekko-app-config
+  namespace: ekko
+
+data:
+   # Keycloak
+  KEYCLOAK_URL: "VALOR"
+  KEYCLOAK_SERVER_URL: "VALOR"
+  KEYCLOAK_PUBLIC_URL: "VALOR"
+  KEYCLOAK_REALM: "VALOR"
+  KEYCLOAK_CLIENT_ID: "VALOR"
+
+
+  # Eureka
+  EUREKA_HOST: "VALOR"
+  EUREKA_URL: "VALOR"
+
+  # Redis
+  REDIS_HOST: "VALOR"
+  REDIS_PORT: "VALOR"
+
+  # RabbitMQ
+  RABBITMQ_HOST: "VALOR"
+  RABBITMQ_PORT: "VALOR"
+
+  # MinIO
+  MINIO_ENDPOINT: "VALOR"
+  MINIO_PUBLIC_ENDPOINT: "VALOR"
+  MINIO_BUCKET: "VALOR"
+
+  # Mailpit
+  MAIL_HOST: "VALOR"
+  MAIL_PORT: "VALOR"
+  MAIL_AUTH: "VALOR"
+  MAIL_STARTTLS: "VALOR"
+
+  # Service to service
+  PRODUCT_SERVICE_URL: "VALOR"
+
+  # Stripe onboarding
+  STRIPE_ONBOARDING_REFRESH_URL: "VALOR"
+  STRIPE_ONBOARDING_RETURN_URL: "VALOR"

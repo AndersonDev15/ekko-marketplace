@@ -10,3 +10,6 @@ logs/
 
 **/target/
 **/build/
+# Configuracion privada de Kubernetes
+/k8s/config/
+/k8s/secrets/
